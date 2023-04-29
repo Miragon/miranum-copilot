@@ -1,9 +1,10 @@
-import * as vscode from "vscode";
+import { commands, ExtensionContext } from "vscode";
+import { CopilotPanel } from "./CopilotPanel";
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: ExtensionContext) {
     console.log("Congratulations, your extension 'copilot' is now active!");
-    let disposable = vscode.commands.registerCommand("copilot.helloWorld", () => {
-        vscode.window.showInformationMessage("Hello World from copilot!");
+    let disposable = commands.registerCommand("copilot.start", () => {
+        CopilotPanel.createOrShow(context.extensionUri);
     });
 
     context.subscriptions.push(disposable);
