@@ -1,7 +1,9 @@
 import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import { Logger } from "./Logger";
+import { MessageType, VscMessage } from "./shared/types";
 
 export class CopilotPanel {
-    public static readonly VIEWTYPE: string = "miranum-copilot";
+    public static readonly viewType: string = "miranum-copilot";
 
     public static currentPanel: CopilotPanel | undefined;
     private readonly panel: WebviewPanel;
@@ -9,6 +11,8 @@ export class CopilotPanel {
     private disposables: Disposable[] = [];
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
+        Logger.get().clear();
+
         this.panel = panel;
         this.extensionUri = extensionUri;
 
@@ -17,11 +21,39 @@ export class CopilotPanel {
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
-            (message) => {
-                switch (message.type) {
-                    case "alert":
-                        window.showErrorMessage(message.content);
-                        return;
+            async (message: VscMessage<JSON>) => {
+                try {
+                    switch (message.type) {
+                        case `${CopilotPanel.viewType}.${MessageType.initialize}`: {
+                            Logger.info(
+                                "[Miranum.Copilot]",
+                                `(Webview: ${this.panel.title})`,
+                                message.info ?? ""
+                            );
+                            await this.postMessage(MessageType.initialize);
+                            break;
+                        }
+                        case `${CopilotPanel.viewType}.${MessageType.restore}`: {
+                            Logger.info(
+                                "[Miranum.Copilot]",
+                                `(Webview: ${this.panel.title})`,
+                                message.info ?? ""
+                            );
+                            await this.postMessage(MessageType.restore);
+                            break;
+                        }
+                        case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
+                            // react on message
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : `${error}`;
+                    Logger.error(
+                        "[Miranum.Copilot]",
+                        `(Webview: ${this.panel.title})`,
+                        message
+                    );
                 }
             },
             null,
@@ -30,11 +62,8 @@ export class CopilotPanel {
 
         this.panel.webview.postMessage({});
 
-        // Upate the content based on view changes
         this.panel.onDidChangeViewState(() => {}, null, this.disposables);
 
-        // Liten for when the panel is disposed
-        // Ths happens when the user closes the panel or when the panel is closed programmatically
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     }
 
@@ -51,7 +80,7 @@ export class CopilotPanel {
 
         // Otherwise, create a new panel.
         const panel = window.createWebviewPanel(
-            CopilotPanel.VIEWTYPE,
+            CopilotPanel.viewType,
             "Miranum Copilot",
             column || ViewColumn.Beside,
             {
@@ -62,19 +91,45 @@ export class CopilotPanel {
         CopilotPanel.currentPanel = new CopilotPanel(panel, extensionUri);
     }
 
-    private dispose() {}
+    private dispose(): void {
+        CopilotPanel.currentPanel = undefined;
 
-    private getHtml() {
+        // Clean up our resources
+        this.panel.dispose();
+
+        while (this.disposables.length) {
+            const x = this.disposables.pop();
+            if (x) {
+                x.dispose();
+            }
+        }
+    }
+
+    private async postMessage(messageType: MessageType) {
+        const res: boolean = await this.panel.webview.postMessage({
+            type: `${CopilotPanel.viewType}.${messageType}`,
+            data: { example: "Hello World" },
+        });
+        if (!res) {
+            Logger.error(
+                "[Miranum.Copilot]",
+                `(Webview: ${this.panel.title})`,
+                `Could not post message (Viewtype: ${this.panel.visible})`
+            );
+        }
+    }
+
+    private getHtml(): string {
         const webview = this.panel.webview;
 
-        const stylesResetUri = webview.asWebviewUri(
+        const stylesResetUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "resources", "css", "reset.css")
         );
-        const scriptUri = webview.asWebviewUri(
+        const scriptUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
         );
 
-        const nonce = this.getNonce();
+        const nonce: string = this.getNonce();
 
         return `
             <!DOCTYPE html>
@@ -92,6 +147,9 @@ export class CopilotPanel {
             </head>
             <body>
                 <div id="app"></div>
+                <script type="text/javascript" nonce="${nonce}">
+                    const globalViewType = '${CopilotPanel.viewType}';
+                </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>
