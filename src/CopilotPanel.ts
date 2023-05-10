@@ -30,7 +30,11 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.info ?? ""
                             );
-                            await this.postMessage(MessageType.initialize);
+                            await this.postMessage(
+                                MessageType.initialize,
+                                // send initial data
+                                JSON.parse("{ \"example\": \"Hello World\" }")
+                            );
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -44,6 +48,22 @@ export class CopilotPanel {
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             // react on message
+                            break;
+                        }
+                        case `${CopilotPanel.viewType}.${MessageType.info}`: {
+                            Logger.info(
+                                "[Miranum.Copilot.Webview]",
+                                `(Webview: ${this.panel.title}`,
+                                message.info ?? ""
+                            );
+                            break;
+                        }
+                        case `${CopilotPanel.viewType}.${MessageType.error}`: {
+                            Logger.error(
+                                "[Miranum.Copilot.Webview]",
+                                `(Webview: ${this.panel.title}`,
+                                message.info ?? ""
+                            );
                             break;
                         }
                     }
@@ -105,10 +125,10 @@ export class CopilotPanel {
         }
     }
 
-    private async postMessage(messageType: MessageType) {
+    private async postMessage(messageType: MessageType, data?: JSON) {
         const res: boolean = await this.panel.webview.postMessage({
             type: `${CopilotPanel.viewType}.${messageType}`,
-            data: { example: "Hello World" },
+            data,
         });
         if (!res) {
             Logger.error(
