@@ -4,7 +4,7 @@ import { Logger } from "./Logger";
 
 export function activate(context: ExtensionContext) {
     let disposable = commands.registerCommand("copilot.start", () => {
-        CopilotPanel.createOrShow(context.extensionUri);
+        CopilotPanel.createOrShow(context);
     });
 
     context.subscriptions.push(Logger.get("Miranum: Copilot"));
