@@ -166,7 +166,9 @@ export class CopilotPanel {
                 <title>Miranum Copilot</title>
             </head>
             <body>
-                <div id="app"></div>
+                <div id="app">
+                    <vscode-button id="howdy">Howdy!</vscode-button>
+                </div>
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>

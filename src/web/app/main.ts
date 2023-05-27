@@ -1,44 +1,47 @@
 import { MessageType, VscMessage } from "../../shared/types";
 import { StateController } from "@/StateController";
 import { initialize, initialized } from "@/utils";
+import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
 
 declare const globalViewType: string;
+provideVSCodeDesignSystem().register(vsCodeButton());
+
 const stateController = new StateController();
 
-const app = document.getElementById("app");
+//const app = document.getElementById("app");
 
 // Referenzen to HTML-elements
-const inputText = document.getElementById("inputText")! as HTMLInputElement;
-const outputText = document.getElementById("outputText")! as HTMLInputElement;
-const submitButton = document.getElementById("submitButton")! as HTMLInputElement;
-//check if
-if (!inputText || !outputText || !submitButton) {
-    throw new Error("Required element not found");
-}
+//const inputText = document.getElementById("inputText")! as HTMLInputElement;
+//const outputText = document.getElementById("outputText")! as HTMLInputElement;
+//const submitButton = document.getElementById("submitButton")! as HTMLInputElement;
+////check if
+//if (!inputText || !outputText || !submitButton) {
+//    throw new Error("Required element not found");
+//}
 
 /**
  * A function to send a message to the ChatGPT API and view the response.
  */
-async function sendMessageToGpt() {
-    if (!inputText.value) {
-        return;
-    }
-
-    const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-            ["Content-Type"]: "application/json",
-        },
-        body: JSON.stringify({ inputText: inputText.value }),
-    });
-
-    const data = await response.json();
-
-    outputText.value = data.message;
-}
+//async function sendMessageToGpt() {
+//    if (!inputText.value) {
+//        return;
+//    }
+//
+//    const response = await fetch("/api/chat", {
+//        method: "POST",
+//        headers: {
+//            ["Content-Type"]: "application/json",
+//        },
+//        body: JSON.stringify({ inputText: inputText.value }),
+//    });
+//
+//    const data = await response.json();
+//
+//    outputText.value = data.message;
+//}
 
 // click event listner to button
-submitButton.addEventListener("click", sendMessageToGpt);
+//submitButton.addEventListener("click", sendMessageToGpt);
 
 /**
  * Send a message to the backend.
@@ -103,9 +106,9 @@ function update(data: JSON) {
     stateController.updateState({ data });
 
     // do something ...
-    if (app) {
-        app.innerText = JSON.stringify(data, undefined, 4);
-    }
+    //if (app) {
+    //    app.innerText = JSON.stringify(data, undefined, 4);
+    //}
 }
 
 /**
