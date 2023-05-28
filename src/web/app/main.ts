@@ -1,10 +1,10 @@
 import { MessageType, VscMessage } from "../../shared/types";
 import { StateController } from "@/StateController";
 import { initialize, initialized } from "@/utils";
-import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
+import { provideVSCodeDesignSystem, vsCodeButton, vsCodeTextArea } from "@vscode/webview-ui-toolkit";
 
 declare const globalViewType: string;
-provideVSCodeDesignSystem().register(vsCodeButton());
+provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea);
 
 const stateController = new StateController();
 
