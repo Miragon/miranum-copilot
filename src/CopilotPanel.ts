@@ -166,7 +166,13 @@ export class CopilotPanel {
                 <title>Miranum Copilot</title>
             </head>
             <body>
-                <div id="app"></div>
+                <div id="app">
+                    <vscode-text-area id="prompt">Enter your prompt here</vscode-text-area>
+                    <vscode-button id="howdy">Howdy!</vscode-button>
+                </div>
+                <div id="app">
+                    <vscode-text-area id="response">Response from ChatGPT</vscode-text-area>
+                </div>
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>
