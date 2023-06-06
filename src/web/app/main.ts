@@ -4,7 +4,7 @@ import { initialize, initialized } from "@/utils";
 import { provideVSCodeDesignSystem, vsCodeButton, vsCodeTextArea } from "@vscode/webview-ui-toolkit";
 
 declare const globalViewType: string;
-provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea);
+provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 
 const stateController = new StateController();
 
