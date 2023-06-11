@@ -167,11 +167,9 @@ export class CopilotPanel {
             </head>
             <body>
                 <div id="app">
-                    <p>
-                    <vscode-text-area id="prompt" placeholder="Enter your prompt here" resize="both">Your question:</vscode-text-area>
-                    <vscode-button id="howdy">Send Prompt</vscode-button><br>
-                    <vscode-text-area id="response" readonly>Response from ChatGPT</vscode-text-area>
-                    </p>
+                    <vscode-text-area id="prompt">Enter your prompt here</vscode-text-area>
+                    <vscode-button id="howdy">Howdy!</vscode-button>
+                    <vscode-text-area id="response">Response from ChatGPT</vscode-text-area>
                 </div>
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
