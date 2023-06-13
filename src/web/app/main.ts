@@ -7,7 +7,6 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-declare const axios: any;
 declare const globalViewType: string;
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 
@@ -28,6 +27,7 @@ if (!inputText || !outputText || !submitButton) {
  * A function to send a message to the ChatGPT API and view the response.
  */
 
+/*
 async function sendMessageToGpt() {
     if (!inputText.value) {
         return;
@@ -52,9 +52,12 @@ async function sendMessageToGpt() {
 
     outputText.value = data;
 }
+*/
 
 // click event listener to button
-submitButton.addEventListener("click", sendMessageToGpt);
+submitButton.addEventListener("click", () => {
+    postMessage(MessageType.msgFromWebview, JSON.parse(`{ "test": "${inputText.value}" }`));
+});
 
 /**
  * Send a message to the backend.

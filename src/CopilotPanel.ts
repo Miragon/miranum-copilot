@@ -47,7 +47,7 @@ export class CopilotPanel {
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
-                            // react on message
+                            console.log(message.data);
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.info}`: {
