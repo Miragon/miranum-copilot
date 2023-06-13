@@ -1,4 +1,13 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import {
+    commands,
+    Disposable,
+    ExtensionContext,
+    extensions,
+    Uri,
+    ViewColumn,
+    WebviewPanel,
+    window,
+} from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 
@@ -10,14 +19,19 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
-    private constructor(panel: WebviewPanel, extensionUri: Uri) {
+    private constructor(
+        private readonly context: ExtensionContext,
+        panel: WebviewPanel
+    ) {
         Logger.get().clear();
 
         this.panel = panel;
-        this.extensionUri = extensionUri;
+        this.extensionUri = context.extensionUri;
 
         this.panel.title = "Miranum Copilot";
         this.panel.webview.html = this.getHtml();
+
+        this.registerCommands();
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
@@ -87,7 +101,7 @@ export class CopilotPanel {
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     }
 
-    public static createOrShow(extensionUri: Uri) {
+    public static createOrShow(context: ExtensionContext) {
         const column = window.activeTextEditor
             ? window.activeTextEditor.viewColumn
             : undefined;
@@ -108,7 +122,7 @@ export class CopilotPanel {
             }
         );
 
-        CopilotPanel.currentPanel = new CopilotPanel(panel, extensionUri);
+        CopilotPanel.currentPanel = new CopilotPanel(context, panel);
     }
 
     private dispose(): void {
@@ -184,5 +198,23 @@ export class CopilotPanel {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    private registerCommands(): void {
+        const bpmnModeler = extensions.getExtension("miragon-gmbh.mock-te");
+        const importedApi = bpmnModeler?.exports;
+
+        this.context.subscriptions.push(
+            commands.registerCommand("copilot.setBpmn", () => {
+                importedApi.setText("This is a test.");
+            })
+        );
+
+        this.context.subscriptions.push(
+            commands.registerCommand("copilot.getBpmn", () => {
+                const bpmn = importedApi.getText();
+                window.showInformationMessage(bpmn);
+            })
+        );
     }
 }
