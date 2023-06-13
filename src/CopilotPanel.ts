@@ -167,9 +167,9 @@ export class CopilotPanel {
             </head>
             <body>
                 <div id="app">
-                <p><vscode-text-area id="prompt" placeholder="Enter your prompt here" resize="both">Your question:</vscode-text-area>
-                <vscode-button id="howdy">Send Prompt</vscode-button><br>
-                <vscode-text-area id="response" readonly>Response from ChatGPT</vscode-text-area>
+                <p><vscode-text-area id="inputText" placeholder="Enter your prompt here" resize="both">Your question:</vscode-text-area>
+                <vscode-button id="submitButton">Send Prompt</vscode-button><br>
+                <vscode-text-area id="outputText" readonly>Response from ChatGPT</vscode-text-area>
                 </p>
                 </div>
                 <script type="text/javascript" nonce="${nonce}">

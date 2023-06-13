@@ -53,7 +53,7 @@ async function sendMessageToGpt() {
     outputText.value = data;
 }
 
-// click event listner to button
+// click event listener to button
 submitButton.addEventListener("click", sendMessageToGpt);
 
 /**
