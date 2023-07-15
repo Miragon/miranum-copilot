@@ -21,7 +21,7 @@ export class CopilotPanel {
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
-            async (message: VscMessage<JSON>) => {
+            async (message: VscMessage<string>) => {
                 try {
                     switch (message.type) {
                         case `${CopilotPanel.viewType}.${MessageType.initialize}`: {
@@ -47,7 +47,17 @@ export class CopilotPanel {
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
-                            console.log(message.data);
+                            try {
+                                const res = await this.getResponseFromApi(message.data);
+                                await this.postMessage(
+                                    MessageType.msgFromExtension,
+                                    JSON.parse(res)
+                                );
+                            } catch (err) {
+                                const errMsg =
+                                    err instanceof Error ? err.message : `${err}`;
+                                Logger.error(errMsg);
+                            }
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.info}`: {
@@ -189,5 +199,14 @@ export class CopilotPanel {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    private async getResponseFromApi(prompt?: string): Promise<string> {
+        if (!prompt) {
+            throw Error("No prompt given!");
+        }
+        console.log(prompt);
+        // ...
+        return Promise.resolve("");
     }
 }

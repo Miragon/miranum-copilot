@@ -56,7 +56,7 @@ async function sendMessageToGpt() {
 
 // click event listener to button
 submitButton.addEventListener("click", () => {
-    postMessage(MessageType.msgFromWebview, JSON.parse(`{ "test": "${inputText.value}" }`));
+    postMessage(MessageType.msgFromWebview, inputText.value);
 });
 
 /**
@@ -65,12 +65,12 @@ submitButton.addEventListener("click", () => {
  * @param data (optional) The data of the message
  * @param info (optional) Information that will be logged
  */
-function postMessage(type: MessageType, data?: JSON, info?: string): void {
+function postMessage(type: MessageType, data?: string, info?: string): void {
     switch (type) {
         case MessageType.msgFromWebview: {
             stateController.postMessage({
                 type: `${globalViewType}.${type}`,
-                data: JSON.parse(JSON.stringify(data)),
+                data: data ? data : "",
             });
             break;
         }
