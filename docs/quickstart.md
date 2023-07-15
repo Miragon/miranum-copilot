@@ -1,17 +1,19 @@
 # Getting started
 
-> **_NOTE:_** At some point in the future, this repository will be migrated to our [main repository](https://github.com/FlowSquad/miranum-ide).
- 
+> **_NOTE:_** At some point in the future, this repository will be migrated to
+> our [main repository](https://github.com/Miragon/miranum-ide).
+
 ### Built With
 
- 
 ### Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**.
-Please use semantic commit messages as described in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
+Please use semantic commit messages as described
+in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
 
-If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+If you have a suggestion that would make this better, please open an issue with the tag "enhancement", fork the repo and
+create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
 
 1. Open an issue with the tag "enhancement"
@@ -22,6 +24,7 @@ Don't forget to give the project a star! Thanks again!
 6. Open a Pull Request
 
 ### Project structure
+
 ```
 .
 ├── package.json
@@ -43,20 +46,25 @@ Don't forget to give the project a star! Thanks again!
 ```
 
 ### Quickstart
+
 ```shell
-git clone https://github.com/FlowSquad/miranum-copilot.git
+git clone https://github.com/Miragon/miranum-copilot.git
 cd miranum-copilot
 ```
+
 ```shell
 npm install
 npm run build
 ```
+
 ```shell
 code .
 ```
+
 Open `Extension Host` with `F5` and open the example folder.
 
 ### Development
+
 ```shell
 npm run esbuild-watch
 ```
