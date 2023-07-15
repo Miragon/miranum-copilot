@@ -1,6 +1,11 @@
 import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
+import { Configuration, OpenAIApi } from "openai";
+
+const configuration = new Configuration({
+    apiKey: "APIKEY",
+});
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -9,6 +14,7 @@ export class CopilotPanel {
     private readonly panel: WebviewPanel;
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
+    private openai = new OpenAIApi(configuration);
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -31,9 +37,9 @@ export class CopilotPanel {
                                 message.info ?? ""
                             );
                             await this.postMessage(
-                                MessageType.initialize,
+                                MessageType.initialize
                                 // send initial data
-                                JSON.parse("{ \"example\": \"Hello World\" }")
+                                //JSON.parse('{"example": "Hello World" }')
                             );
                             break;
                         }
@@ -48,11 +54,11 @@ export class CopilotPanel {
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             try {
-                                const res = await this.getResponseFromApi(message.data);
-                                await this.postMessage(
-                                    MessageType.msgFromExtension,
-                                    JSON.parse(res)
-                                );
+                                await this.getResponseFromApi(message.data);
+                                // await this.postMessage(
+                                //     MessageType.msgFromExtension,
+                                //     JSON.parse(res)
+                                // );
                             } catch (err) {
                                 const errMsg =
                                     err instanceof Error ? err.message : `${err}`;
@@ -201,12 +207,21 @@ export class CopilotPanel {
         return text;
     }
 
-    private async getResponseFromApi(prompt?: string): Promise<string> {
+    private async getResponseFromApi(prompt?: string): Promise<void> {
         if (!prompt) {
             throw Error("No prompt given!");
         }
         console.log(prompt);
-        // ...
-        return Promise.resolve("");
+        try {
+            const completion = await this.openai.createCompletion({
+                model: "text-davinci-003",
+                prompt: prompt,
+                temperature: 0.6,
+            });
+
+            console.log(completion);
+        } catch (error) {
+            Logger.error("something went wrong");
+        }
     }
 }
