@@ -219,7 +219,7 @@ export class CopilotPanel {
                 temperature: 0.6,
             });
 
-            console.log(completion);
+            console.log(completion.data.choices);
         } catch (error) {
             Logger.error("something went wrong");
         }
