@@ -175,7 +175,7 @@ export class CopilotPanel {
                 <vscode-text-area id="outputText" cols="60" rows="15" readonly placeholder="Your answer will be printed here">Response from ChatGPT</vscode-text-area>
               </div>
             </div>
-          </body>                    
+            </body>                    
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>
