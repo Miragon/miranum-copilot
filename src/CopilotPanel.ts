@@ -2,6 +2,10 @@ import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 import { Configuration, OpenAIApi } from "openai";
+import {
+    ChatCompletionRequestMessage,
+    ChatCompletionRequestMessageRoleEnum,
+} from "openai/api";
 
 const configuration = new Configuration({
     apiKey: "APIKEY",
@@ -36,11 +40,7 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.info ?? ""
                             );
-                            await this.postMessage(
-                                MessageType.initialize
-                                // send initial data
-                                //JSON.parse('{"example": "Hello World" }')
-                            );
+                            await this.postMessage(MessageType.initialize);
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -54,15 +54,15 @@ export class CopilotPanel {
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             try {
-                                await this.getResponseFromApi(message.data);
-                                // await this.postMessage(
-                                //     MessageType.msgFromExtension,
-                                //     JSON.parse(res)
-                                // );
+                                const res = await this.getResponseFromApi(message.data);
+                                await this.postMessage(
+                                    MessageType.msgFromExtension,
+                                    res
+                                );
                             } catch (err) {
                                 const errMsg =
                                     err instanceof Error ? err.message : `${err}`;
-                                Logger.error(errMsg);
+                                Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
                             }
                             break;
                         }
@@ -141,11 +141,14 @@ export class CopilotPanel {
         }
     }
 
-    private async postMessage(messageType: MessageType, data?: JSON) {
-        const res: boolean = await this.panel.webview.postMessage({
+    private async postMessage(messageType: MessageType, data?: string) {
+        const message: VscMessage<string> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
-        });
+        };
+
+        const res: boolean = await this.panel.webview.postMessage(message);
+
         if (!res) {
             Logger.error(
                 "[Miranum.Copilot]",
@@ -175,7 +178,7 @@ export class CopilotPanel {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" 
                     content="default-src 'none'; 
-                            style-src ${webview.cspSource}; 
+                            style-src ${webview.cspSource} 'unsafe-inline'; 
                             img-src ${webview.cspSource} https:; 
                             script-src 'nonce-${nonce}';">
                 <link href="${stylesResetUri}" rel="stylesheet">
@@ -207,21 +210,41 @@ export class CopilotPanel {
         return text;
     }
 
-    private async getResponseFromApi(prompt?: string): Promise<void> {
+    private async getResponseFromApi(prompt?: string): Promise<string> {
         if (!prompt) {
             throw Error("No prompt given!");
         }
-        console.log(prompt);
-        try {
-            const completion = await this.openai.createCompletion({
-                model: "text-davinci-003",
-                prompt: prompt,
-                temperature: 0.6,
-            });
 
-            console.log(completion.data.choices);
+        try {
+            return await this.getCompletion(prompt);
         } catch (error) {
-            Logger.error("something went wrong");
+            throw Error("Error while fetching data from OpenAI");
+        }
+    }
+
+    private async getCompletion(
+        prompt: string,
+        model = "gpt-3.5-turbo"
+    ): Promise<string> {
+        const messages: ChatCompletionRequestMessage[] = [
+            {
+                role: ChatCompletionRequestMessageRoleEnum.User,
+                content: prompt,
+            },
+        ];
+        const response = await this.openai.createChatCompletion({
+            model,
+            messages,
+            temperature: 0,
+        });
+
+        if (
+            response.data.choices[0].message &&
+            response.data.choices[0].message.content
+        ) {
+            return response.data.choices[0].message.content;
+        } else {
+            return "";
         }
     }
 }
