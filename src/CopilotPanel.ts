@@ -162,7 +162,7 @@ export class CopilotPanel {
         const webview = this.panel.webview;
 
         const stylesResetUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "resources", "css", "reset.css")
+            Uri.joinPath(this.extensionUri, "resources", "css", "style.css")
         );
         const scriptUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
