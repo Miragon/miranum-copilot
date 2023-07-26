@@ -1,4 +1,4 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import {Disposable, extensions, Uri, ViewColumn, WebviewPanel, window} from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 import { Configuration, OpenAIApi } from "openai";
@@ -18,6 +18,8 @@ export class CopilotPanel {
     private readonly panel: WebviewPanel;
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
+
+    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")?.exports;
     private openai = new OpenAIApi(configuration);
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
@@ -230,10 +232,11 @@ export class CopilotPanel {
         prompt: string,
         model = "gpt-3.5-turbo"
     ): Promise<string> {
+        const content = this.createCompletion(prompt);
         const messages: ChatCompletionRequestMessage[] = [
             {
                 role: ChatCompletionRequestMessageRoleEnum.User,
-                content: prompt,
+                content,
             },
         ];
         const response = await this.openai.createChatCompletion({
@@ -250,5 +253,14 @@ export class CopilotPanel {
         } else {
             return "";
         }
+    }
+
+    private createCompletion(prompt: string): string {
+        return `
+${prompt}
+The BPMN Process is delimited by triple quotes.
+
+'''${this.bpmnModeler.getBpmn()}'''
+        `;
     }
 }
