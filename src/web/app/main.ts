@@ -1,11 +1,32 @@
 import { MessageType, VscMessage } from "../../shared/types";
 import { StateController } from "@/StateController";
 import { initialize, initialized } from "@/utils";
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeTextArea,
+} from "@vscode/webview-ui-toolkit";
 
 declare const globalViewType: string;
+provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
+
 const stateController = new StateController();
 
 const app = document.getElementById("app");
+
+//Referenzen to HTML-elements
+const inputText = document.getElementById("inputText")! as HTMLInputElement;
+const outputText = document.getElementById("outputText")! as HTMLInputElement;
+const submitButton = document.getElementById("submitButton")! as HTMLInputElement;
+
+if (!inputText || !outputText || !submitButton) {
+    throw new Error("Required element not found");
+}
+
+// click event listener to button
+submitButton.addEventListener("click", () => {
+    postMessage(MessageType.msgFromWebview, inputText.value);
+});
 
 /**
  * Send a message to the backend.
@@ -13,12 +34,12 @@ const app = document.getElementById("app");
  * @param data (optional) The data of the message
  * @param info (optional) Information that will be logged
  */
-function postMessage(type: MessageType, data?: JSON, info?: string): void {
+function postMessage(type: MessageType, data?: string, info?: string): void {
     switch (type) {
         case MessageType.msgFromWebview: {
             stateController.postMessage({
                 type: `${globalViewType}.${type}`,
-                data: JSON.parse(JSON.stringify(data)),
+                data: data ? data : "",
             });
             break;
         }
@@ -36,10 +57,12 @@ function postMessage(type: MessageType, data?: JSON, info?: string): void {
  * Handle incoming messages.
  * @param message The incoming message
  */
-function receiveMessage(message: MessageEvent<VscMessage<JSON>>): void {
+function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
     try {
         const type = message.data.type;
         const data = message.data.data;
+
+        console.log("ViewType", globalViewType, "Type", type);
 
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -51,7 +74,8 @@ function receiveMessage(message: MessageEvent<VscMessage<JSON>>): void {
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
-                // do something ...
+                console.log("Data", data);
+                outputText.value = data ? data : "";
                 break;
             }
         }
@@ -70,9 +94,9 @@ function update(data: JSON) {
     stateController.updateState({ data });
 
     // do something ...
-    if (app) {
-        app.innerText = JSON.stringify(data, undefined, 4);
-    }
+    //if (app) {
+    //    app.innerText = JSON.stringify(data, undefined, 4);
+    //}
 }
 
 /**
