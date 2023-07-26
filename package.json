@@ -46,7 +46,18 @@
                 "title": "Miranum Copilot",
                 "category": "Miranum Copilot"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "MiranumCopilot",
+            "properties": {
+                "miranum.copilot.openaikey": {
+                    "scope": "application",
+                    "type": "string",
+                    "description": "Enter your Open AI API Key",
+                    "pattern": "sk-.*"
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",

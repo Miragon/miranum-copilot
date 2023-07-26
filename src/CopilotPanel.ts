@@ -1,4 +1,4 @@
-import {Disposable, extensions, Uri, ViewColumn, WebviewPanel, window} from "vscode";
+import {Disposable, extensions, Uri, ViewColumn, WebviewPanel, window, workspace} from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 import { Configuration, OpenAIApi } from "openai";
@@ -7,8 +7,9 @@ import {
     ChatCompletionRequestMessageRoleEnum,
 } from "openai/api";
 
+const OPEN_AI_KEY = workspace.getConfiguration("miranum.copilot").get<string>("openaikey");
 const configuration = new Configuration({
-    apiKey: "APIKEY",
+    apiKey: OPEN_AI_KEY,
 });
 
 export class CopilotPanel {
