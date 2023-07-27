@@ -30,6 +30,7 @@ export class CopilotPanel {
         this.extensionUri = extensionUri;
 
         this.panel.title = "Miranum Copilot";
+        this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
         // Handle messages from the webview
@@ -165,7 +166,7 @@ export class CopilotPanel {
         const webview = this.panel.webview;
 
         const stylesResetUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "resources", "css", "style.css")
+            Uri.joinPath(this.extensionUri, "dist", "client", "style.css")
         );
         const scriptUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
