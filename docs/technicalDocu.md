@@ -8,6 +8,7 @@ The communication between the two components is implemented in VS Code and uses 
 At the moment we are using the GPT model of OpenAI.
 
 ![copilot](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/Copilot.puml?raw=true)
+
 ![copilot-detailed](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/CopilotDetailed.puml?raw=true)
 
 ### Communication
