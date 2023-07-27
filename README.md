@@ -12,32 +12,28 @@
 <br />
 <div align="center">
     <a href="#">
-        <img src="https://raw.githubusercontent.com/FlowSquad/miranum-copilot/main/images/miranum_logo.png" alt="Logo" height="120">
+        <img src="https://raw.githubusercontent.com/Miragon/miranum-copilot/main/images/miranum_logo.png" alt="Logo" height="120">
     </a>
     <h3 ><a href="https://miranum.com/">Miranum IDE</a> <i>by <a href="https://miragon.io/">Miragon</a></i></h3>
     <p>
         <i>One IDE for everything!</i>
         <br />
-        <a href="https://github.com/FlowSquad/miranum-json-forms/issues">Report Bug</a>
+        <a href="https://github.com/Miragon/miranum-json-forms/issues">Report Bug</a>
         ·
-        <a href="https://github.com/FlowSquad/miranum-json-forms/pulls">Request Feature</a>
+        <a href="https://github.com/Miragon/miranum-json-forms/pulls">Request Feature</a>
     </p>
 </div>
 
-
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
-Miranum IDE is a collection of "VS Code Plugins" that allows you to edit, manage and access all artifacts for your 
+Miranum IDE is a collection of "VS Code Plugins" that allows you to edit, manage and access all artifacts for your
 process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
-
 
 **Miranum Copilot** is one component of our collection of *VS Code Plugins*.
 The copilot should help experienced but also new **BPM Developers** in there tasks.
 
-
 ## Features
-
 
 ## Contributing
 
@@ -54,18 +50,31 @@ Distributed under the [Apache License Version 2.0](LICENSE).
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/FlowSquad/miranum-copilot.svg?style=for-the-badge
-[contributors-url]: https://github.com/FlowSquad/miranum-copilot/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/FlowSquad/miranum-copilot.svg?style=for-the-badge
-[forks-url]: https://github.com/FlowSquad/miranum-copilot/network/members
-[stars-shield]: https://img.shields.io/github/stars/FlowSquad/miranum-copilot.svg?style=for-the-badge
-[stars-url]: https://github.com/FlowSquad/miranum-copilot/stargazers
-[issues-shield]: https://img.shields.io/github/issues/FlowSquad/miranum-copilot.svg?style=for-the-badge
-[issues-url]: https://github.com/FlowSquad/miranum-copilot/issues
-[license-shield]: https://img.shields.io/github/license/FlowSquad/miranum-copilot.svg?style=for-the-badge
-[license-url]: https://github.com/FlowSquad/miranum-copilot/blob/main/LICENSE
+
+[contributors-shield]: https://img.shields.io/github/contributors/Miragon/miranum-copilot.svg?style=for-the-badge
+
+[contributors-url]: https://github.com/Miragon/miranum-copilot/graphs/contributors
+
+[forks-shield]: https://img.shields.io/github/forks/Miragon/miranum-copilot.svg?style=for-the-badge
+
+[forks-url]: https://github.com/Miragon/miranum-copilot/network/members
+
+[stars-shield]: https://img.shields.io/github/stars/Miragon/miranum-copilot.svg?style=for-the-badge
+
+[stars-url]: https://github.com/Miragon/miranum-copilot/stargazers
+
+[issues-shield]: https://img.shields.io/github/issues/Miragon/miranum-copilot.svg?style=for-the-badge
+
+[issues-url]: https://github.com/Miragon/miranum-copilot/issues
+
+[license-shield]: https://img.shields.io/github/license/Miragon/miranum-copilot.svg?style=for-the-badge
+
+[license-url]: https://github.com/Miragon/miranum-copilot/blob/main/LICENSE
 
 [version-shield]: https://img.shields.io/visual-studio-marketplace/v/miragon-gmbh.miranum-copilot
+
 [version-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-copilot
+
 [installs-shield]: https://img.shields.io/visual-studio-marketplace/i/miragon-gmbh.miranum-copilot
+
 [installs-url]: https://marketplace.visualstudio.com/items?itemName=miragon-gmbh.miranum-copilot
