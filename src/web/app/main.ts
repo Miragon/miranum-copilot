@@ -7,6 +7,8 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
+import "./css/style.css";
+
 declare const globalViewType: string;
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 
@@ -62,8 +64,6 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
         const type = message.data.type;
         const data = message.data.data;
 
-        console.log("ViewType", globalViewType, "Type", type);
-
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
                 initialize(data);
@@ -74,7 +74,6 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
-                console.log("Data", data);
                 outputText.value = data ? data : "";
                 break;
             }
