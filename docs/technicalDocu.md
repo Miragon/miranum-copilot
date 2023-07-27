@@ -136,7 +136,7 @@ import {WebviewApi} from "vscode-webview";
 import {VscMessage} from "./types";
 
 export class StateController {
-   private vscode: WebviewApi<VscState<JSON>>;
+   private vscode: WebviewApi<VscState<string>>;
 
    constructor() {
       this.vscode = acquireVsCodeApi();
