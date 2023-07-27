@@ -3,8 +3,8 @@
 
 frame "Extension" {
     [CopilotPanel] ..> [Logger] : use
+    [CopilotPanel] <--> [Webview] : message
     frame "Webview" {
-        [CopilotPanel] <--> [main.ts] : message
         [main.ts] ..> [StateController] : use
     }
 }
