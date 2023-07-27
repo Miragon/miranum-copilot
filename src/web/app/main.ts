@@ -48,7 +48,7 @@ function postMessage(type: MessageType, data?: string, info?: string): void {
         default: {
             stateController.postMessage({
                 type: `${globalViewType}.${type}`,
-                info: info,
+                logger: info,
             });
             break;
         }

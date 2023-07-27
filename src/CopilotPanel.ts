@@ -42,7 +42,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             await this.postMessage(MessageType.initialize);
                             break;
@@ -51,7 +51,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             await this.postMessage(MessageType.restore);
                             break;
@@ -74,7 +74,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             break;
                         }
@@ -82,7 +82,7 @@ export class CopilotPanel {
                             Logger.error(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             break;
                         }
