@@ -1,0 +1,10 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+package "VS Code" {
+  [Backend / Extension] <--> [Frontend / Webview] : message
+}
+
+[Backend / Extension] ..> OpenAI : fetch
+
+@enduml
