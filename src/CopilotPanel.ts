@@ -1,6 +1,15 @@
 import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
+import { Configuration, OpenAIApi } from "openai";
+import {
+    ChatCompletionRequestMessage,
+    ChatCompletionRequestMessageRoleEnum,
+} from "openai/api";
+
+const configuration = new Configuration({
+    apiKey: "APIKEY",
+});
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -9,6 +18,7 @@ export class CopilotPanel {
     private readonly panel: WebviewPanel;
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
+    private openai = new OpenAIApi(configuration);
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -21,7 +31,7 @@ export class CopilotPanel {
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
-            async (message: VscMessage<JSON>) => {
+            async (message: VscMessage<string>) => {
                 try {
                     switch (message.type) {
                         case `${CopilotPanel.viewType}.${MessageType.initialize}`: {
@@ -30,11 +40,7 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.info ?? ""
                             );
-                            await this.postMessage(
-                                MessageType.initialize,
-                                // send initial data
-                                JSON.parse("{ \"example\": \"Hello World\" }")
-                            );
+                            await this.postMessage(MessageType.initialize);
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -47,7 +53,17 @@ export class CopilotPanel {
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
-                            console.log(message.data);
+                            try {
+                                const res = await this.getResponseFromApi(message.data);
+                                await this.postMessage(
+                                    MessageType.msgFromExtension,
+                                    res
+                                );
+                            } catch (err) {
+                                const errMsg =
+                                    err instanceof Error ? err.message : `${err}`;
+                                Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
+                            }
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.info}`: {
@@ -125,11 +141,14 @@ export class CopilotPanel {
         }
     }
 
-    private async postMessage(messageType: MessageType, data?: JSON) {
-        const res: boolean = await this.panel.webview.postMessage({
+    private async postMessage(messageType: MessageType, data?: string) {
+        const message: VscMessage<string> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
-        });
+        };
+
+        const res: boolean = await this.panel.webview.postMessage(message);
+
         if (!res) {
             Logger.error(
                 "[Miranum.Copilot]",
@@ -143,7 +162,7 @@ export class CopilotPanel {
         const webview = this.panel.webview;
 
         const stylesResetUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "resources", "css", "reset.css")
+            Uri.joinPath(this.extensionUri, "resources", "css", "style.css")
         );
         const scriptUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
@@ -159,7 +178,7 @@ export class CopilotPanel {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" 
                     content="default-src 'none'; 
-                            style-src ${webview.cspSource}; 
+                            style-src ${webview.cspSource} 'unsafe-inline'; 
                             img-src ${webview.cspSource} https:; 
                             script-src 'nonce-${nonce}';">
                 <link href="${stylesResetUri}" rel="stylesheet">
@@ -193,5 +212,43 @@ export class CopilotPanel {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    private async getResponseFromApi(prompt?: string): Promise<string> {
+        if (!prompt) {
+            throw Error("No prompt given!");
+        }
+
+        try {
+            return await this.getCompletion(prompt);
+        } catch (error) {
+            throw Error("Error while fetching data from OpenAI");
+        }
+    }
+
+    private async getCompletion(
+        prompt: string,
+        model = "gpt-3.5-turbo"
+    ): Promise<string> {
+        const messages: ChatCompletionRequestMessage[] = [
+            {
+                role: ChatCompletionRequestMessageRoleEnum.User,
+                content: prompt,
+            },
+        ];
+        const response = await this.openai.createChatCompletion({
+            model,
+            messages,
+            temperature: 0,
+        });
+
+        if (
+            response.data.choices[0].message &&
+            response.data.choices[0].message.content
+        ) {
+            return response.data.choices[0].message.content;
+        } else {
+            return "";
+        }
     }
 }

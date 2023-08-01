@@ -23,40 +23,9 @@ if (!inputText || !outputText || !submitButton) {
     throw new Error("Required element not found");
 }
 
-/**
- * A function to send a message to the ChatGPT API and view the response.
- */
-
-/*
-async function sendMessageToGpt() {
-    if (!inputText.value) {
-        return;
-    }
-
-    const response = await axios.post(
-        "https://api.openai.com/v1/engines/davinci-codex/completions",
-        {
-            prompt: inputText.value,
-            max_tokens: 60,
-        },
-        {
-            headers: {
-                //API Key
-                Authorization: "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",
-                "Content-Type": "application/json",
-            },
-        }
-    );
-
-    const data = response.data.choices[0].text.trim();
-
-    outputText.value = data;
-}
-*/
-
 // click event listener to button
 submitButton.addEventListener("click", () => {
-    postMessage(MessageType.msgFromWebview, JSON.parse(`{ "test": "${inputText.value}" }`));
+    postMessage(MessageType.msgFromWebview, inputText.value);
 });
 
 /**
@@ -65,12 +34,12 @@ submitButton.addEventListener("click", () => {
  * @param data (optional) The data of the message
  * @param info (optional) Information that will be logged
  */
-function postMessage(type: MessageType, data?: JSON, info?: string): void {
+function postMessage(type: MessageType, data?: string, info?: string): void {
     switch (type) {
         case MessageType.msgFromWebview: {
             stateController.postMessage({
                 type: `${globalViewType}.${type}`,
-                data: JSON.parse(JSON.stringify(data)),
+                data: data ? data : "",
             });
             break;
         }
@@ -88,10 +57,12 @@ function postMessage(type: MessageType, data?: JSON, info?: string): void {
  * Handle incoming messages.
  * @param message The incoming message
  */
-function receiveMessage(message: MessageEvent<VscMessage<JSON>>): void {
+function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
     try {
         const type = message.data.type;
         const data = message.data.data;
+
+        console.log("ViewType", globalViewType, "Type", type);
 
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -103,7 +74,8 @@ function receiveMessage(message: MessageEvent<VscMessage<JSON>>): void {
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
-                // do something ...
+                console.log("Data", data);
+                outputText.value = data ? data : "";
                 break;
             }
         }

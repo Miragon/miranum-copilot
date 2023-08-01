@@ -22,7 +22,7 @@ export class StateController {
         });
     }
 
-    public postMessage(message: VscMessage<JSON>) {
+    public postMessage(message: VscMessage<string>) {
         this.vscode.postMessage(message);
     }
 }

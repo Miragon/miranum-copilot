@@ -76,6 +76,7 @@
     },
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.2.2",
-        "axios": "^1.4.0"
+        "axios": "^1.4.0",
+        "openai": "^3.3.0"
     }
 }
