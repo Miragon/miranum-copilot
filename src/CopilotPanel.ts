@@ -1,4 +1,4 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import {Disposable, extensions, Uri, ViewColumn, WebviewPanel, window, workspace} from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 import { Configuration, OpenAIApi } from "openai";
@@ -7,8 +7,9 @@ import {
     ChatCompletionRequestMessageRoleEnum,
 } from "openai/api";
 
+const OPEN_AI_KEY = workspace.getConfiguration("miranum.copilot").get<string>("openaikey");
 const configuration = new Configuration({
-    apiKey: "APIKEY",
+    apiKey: OPEN_AI_KEY,
 });
 
 export class CopilotPanel {
@@ -18,6 +19,8 @@ export class CopilotPanel {
     private readonly panel: WebviewPanel;
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
+
+    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")?.exports;
     private openai = new OpenAIApi(configuration);
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
@@ -27,6 +30,7 @@ export class CopilotPanel {
         this.extensionUri = extensionUri;
 
         this.panel.title = "Miranum Copilot";
+        this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
         // Handle messages from the webview
@@ -38,7 +42,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             await this.postMessage(MessageType.initialize);
                             break;
@@ -47,7 +51,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             await this.postMessage(MessageType.restore);
                             break;
@@ -70,7 +74,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             break;
                         }
@@ -78,7 +82,7 @@ export class CopilotPanel {
                             Logger.error(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.info ?? ""
+                                message.logger ?? ""
                             );
                             break;
                         }
@@ -162,7 +166,7 @@ export class CopilotPanel {
         const webview = this.panel.webview;
 
         const stylesResetUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "resources", "css", "style.css")
+            Uri.joinPath(this.extensionUri, "dist", "client", "style.css")
         );
         const scriptUri: Uri = webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
@@ -230,10 +234,11 @@ export class CopilotPanel {
         prompt: string,
         model = "gpt-3.5-turbo"
     ): Promise<string> {
+        const content = this.createCompletion(prompt);
         const messages: ChatCompletionRequestMessage[] = [
             {
                 role: ChatCompletionRequestMessageRoleEnum.User,
-                content: prompt,
+                content,
             },
         ];
         const response = await this.openai.createChatCompletion({
@@ -250,5 +255,14 @@ export class CopilotPanel {
         } else {
             return "";
         }
+    }
+
+    private createCompletion(prompt: string): string {
+        return `
+${prompt}
+The BPMN Process is delimited by triple quotes.
+
+'''${this.bpmnModeler.getBpmn()}'''
+        `;
     }
 }
