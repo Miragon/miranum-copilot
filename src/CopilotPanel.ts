@@ -47,7 +47,7 @@ export class CopilotPanel {
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
-                            // react on message
+                            console.log(message.data);
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.info}`: {
@@ -166,7 +166,16 @@ export class CopilotPanel {
                 <title>Miranum Copilot</title>
             </head>
             <body>
-                <div id="app"></div>
+            <div id="app">
+              <div class="input-container">
+                <vscode-text-area id="inputText" cols="40" rows="10" placeholder="Enter your prompt here" resize="vertical" maxlength="1000">Your question:</vscode-text-area>
+                <vscode-button id="submitButton">Send Prompt</vscode-button>
+              </div>
+              <div class="output-container">
+                <vscode-text-area id="outputText" cols="60" rows="15" readonly placeholder="Your answer will be printed here">Response from ChatGPT</vscode-text-area>
+              </div>
+            </div>
+            </body>                    
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>
