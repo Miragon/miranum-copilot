@@ -10,7 +10,7 @@ export enum MessageType {
 export interface VscMessage<T> {
     type: string;
     data?: T;
-    info?: string;
+    logger?: string;
 }
 
 export interface VscState<T> {
