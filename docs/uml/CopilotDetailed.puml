@@ -1,0 +1,12 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+frame "Extension" {
+    [CopilotPanel] ..> [Logger] : use
+    [CopilotPanel] <--> [Webview] : message
+    frame "Webview" {
+        [main.ts] ..> [StateController] : use
+    }
+}
+
+@enduml
