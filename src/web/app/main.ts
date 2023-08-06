@@ -1,7 +1,11 @@
-import {MessageType, VscMessage} from "../../shared/types";
-import {StateController} from "@/StateController";
-import {initialize, initialized} from "@/utils";
-import {provideVSCodeDesignSystem, vsCodeButton, vsCodeTextArea,} from "@vscode/webview-ui-toolkit";
+import { MessageType, VscMessage } from "../../shared/types";
+import { StateController } from "@/composables/StateController";
+import { initialize, initialized } from "@/composables/utils";
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeTextArea,
+} from "@vscode/webview-ui-toolkit";
 
 import "./css/style.css";
 
@@ -44,7 +48,7 @@ window.onload = async function () {
             postMessage(
                 MessageType.restore,
                 undefined,
-                "State was restored successfully."
+                "State was restored successfully.",
             );
             const newData = await initialized(); // await the response form the backend
             if (newData) {
@@ -54,7 +58,7 @@ window.onload = async function () {
             postMessage(
                 MessageType.initialize,
                 undefined,
-                "Webview was loaded successfully."
+                "Webview was loaded successfully.",
             );
             const data = await initialized(); // await the response form the backend
             if (data) {
