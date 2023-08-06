@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
 import path from "path";
 
 export default defineConfig({
@@ -10,6 +11,16 @@ export default defineConfig({
             },
         ],
     },
+    plugins: [
+        vue({
+            template: {
+                compilerOptions: {
+                    // treat all tags with a dash as custom elements
+                    isCustomElement: (tag) => tag.includes("-"),
+                },
+            },
+        }),
+    ],
     build: {
         target: "es2021",
         commonjsOptions: {
@@ -21,7 +32,13 @@ export default defineConfig({
             fileName: "webview",
         },
         outDir: "dist/client",
-        rollupOptions: {},
+        rollupOptions: {
+            output: {
+                // don't hash the name of the output file (index.js)
+                entryFileNames: `[name].js`,
+                assetFileNames: `[name].[ext]`,
+            },
+        },
         minify: "esbuild",
     },
     define: {
