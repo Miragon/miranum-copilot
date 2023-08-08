@@ -20,7 +20,7 @@ provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 declare const globalViewType: string;
 const stateController = new StateController();
 
-let inputText = "";
+let inputText = ref("");
 let outputText = ref("");
 
 //
@@ -149,7 +149,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
         <div class="output-container">
             <vscode-text-area
                 id="outputText"
-                :value="outputText"
+                v-model="outputText"
                 cols="60"
                 placeholder="Your answer will be printed here"
                 readonly

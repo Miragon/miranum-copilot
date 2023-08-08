@@ -78,7 +78,6 @@ export class CopilotPanel {
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             try {
-                                console.log(message.data);
                                 const res = await this.getResponseFromApi(message.data);
                                 await this.postMessage(
                                     MessageType.msgFromExtension,
