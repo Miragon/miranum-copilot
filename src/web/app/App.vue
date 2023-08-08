@@ -6,8 +6,12 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 import { MessageType, VscMessage } from "../../shared/types";
-import { StateController } from "@/composables/StateController";
-import { initialize, initialized } from "@/composables/utils";
+import {
+    createResolver,
+    MockedStateController,
+    StateController,
+    VsCode,
+} from "@/composables";
 
 import "./css/style.css";
 
@@ -18,7 +22,14 @@ provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 // Globals
 //
 declare const globalViewType: string;
-const stateController = new StateController();
+const mode: string = window["process"].env.NODE_ENV;
+
+let stateController: VsCode;
+if (mode === "development") {
+    stateController = new MockedStateController();
+} else {
+    stateController = new StateController();
+}
 
 let inputText = ref("");
 let outputText = ref("");
@@ -26,6 +37,8 @@ let outputText = ref("");
 //
 // Logic
 //
+
+const resolver = createResolver();
 
 /**
  * The "main" method.
@@ -45,7 +58,7 @@ onBeforeMount(async () => {
                 undefined,
                 "State was restored successfully.",
             );
-            const newData = await initialized(); // await the response form the backend
+            const newData = await resolver.wait(); // initialized(); // await the response form the backend
             if (newData) {
                 stateController.setState({ data: newData });
             }
@@ -55,7 +68,7 @@ onBeforeMount(async () => {
                 undefined,
                 "Webview was loaded successfully.",
             );
-            const data = await initialized(); // await the response form the backend
+            const data = await resolver.wait(); // initialized(); // await the response form the backend
             if (data) {
                 stateController.setState({ data });
             }
@@ -106,11 +119,11 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
 
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
-                initialize(data);
+                resolver.done(data);
                 break;
             }
             case `${globalViewType}.${MessageType.restore}`: {
-                initialize(data);
+                resolver.done(data);
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {

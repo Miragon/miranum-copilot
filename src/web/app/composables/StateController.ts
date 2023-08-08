@@ -1,7 +1,8 @@
 import { WebviewApi } from "vscode-webview";
-import { VscMessage, VscState } from "../../shared/types";
+import { VscMessage, VscState } from "../../../shared/types";
+import { VsCode } from "@/composables/types";
 
-export class StateController {
+export class StateController implements VsCode {
     private vscode: WebviewApi<VscState<string>>;
 
     constructor() {

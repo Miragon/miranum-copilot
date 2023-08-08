@@ -64,12 +64,12 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./dist/test/runTest.js",
-    "build": "npm run esbuild-base -- --minify && npm run web",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-dev": "npm run esbuild-base -- --sourcemap --watch",
+    "build": "npm run esbuild -- --minify && npm run web",
+    "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild:dev": "npm run esbuild -- --sourcemap --watch",
     "web": "vite build --config src/web/vite.config.js",
-    "web-dev": "vite build --config src/web/vite.config.js --watch"
+    "web:dev": "vite build --config src/web/vite.config.js --watch",
+    "web:browser": "cd ./src/web && vite"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
