@@ -22,10 +22,10 @@ provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 // Globals
 //
 declare const globalViewType: string;
-const mode: string = window["process"].env.NODE_ENV;
+declare const process: { env: { NODE_ENV: string } };
 
 let stateController: VsCode;
-if (mode === "development") {
+if (process.env.NODE_ENV === "development") {
     stateController = new MockedStateController();
 } else {
     stateController = new StateController();
