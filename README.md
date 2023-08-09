@@ -65,7 +65,9 @@ contributions you make are **greatly appreciated**.
 To collect, prioritise and work on issues in a collaborative fashion we have established
 some [contribution guidelines](https://miranum.com/docs/components/contributing) as well as
 a [GitHub project](https://github.com/orgs/Miragon/projects/11).
-Please make sure to read through these guidelines before starting with your contribution.
+Please make sure to read through these guidelines before starting with your contribution.  
+Also take a look [here](./docs/technicalDocu.md) for a detailed explanation of how our extension is built.
+We also listed some suggestion for a better developing experience [here](./docs/development.md).
 
 ### PRs for every change
 

@@ -67,7 +67,7 @@
     "build": "npm run esbuild -- --minify && npm run web",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
     "esbuild:dev": "npm run esbuild -- --sourcemap --watch",
-    "web": "vite build --config src/web/vite.config.js",
+    "web": "vite build --config src/web/vite.config.js --minify esbuild",
     "web:dev": "vite build --config src/web/vite.config.js --watch",
     "web:browser": "cd ./src/web && vite"
   },

@@ -39,7 +39,6 @@ export default defineConfig({
                 assetFileNames: `[name].[ext]`,
             },
         },
-        minify: "esbuild",
     },
     define: {
         // eslint-disable-next-line @typescript-eslint/naming-convention

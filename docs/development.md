@@ -14,8 +14,8 @@
 ├── tsconfig.json
 ├── dist                    // the output folder when building the extension
 └── src
-    ├── shared              // between 'backend' and 'frontend'
-    ├── extension.ts
+    ├── shared              // data types definition used in 'backend' and 'frontend'
+    ├── extension.ts        // <-- Entry file to our extension
     ├── CopilotPanel.ts
     └── web                 // 'frontend'
         ├── tsconfig.json
@@ -49,7 +49,7 @@ Within the `Extension Host` use `Ctrl/Cmd + r` to update the running extension.
 
 ## Webview / Frontend
 
-The `src/web` folder contains the necessary files for building the webapp we use for the webview.  
+The [web](../src/web) folder contains the necessary files for building the webapp we use for the webview.  
 It is possible to develop the webview detached from the extension within a browser.  
 For that use the following command:
 
