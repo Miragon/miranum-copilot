@@ -26,13 +26,9 @@ export default defineConfig({
         commonjsOptions: {
             transformMixedEsModules: true,
         },
-        lib: {
-            entry: "src/web/app/main.ts",
-            name: "webview",
-            fileName: "webview",
-        },
         outDir: "dist/client",
         rollupOptions: {
+            input: "src/web/app/main.ts",
             output: {
                 // don't hash the name of the output file (index.js)
                 entryFileNames: `[name].js`,
