@@ -36,8 +36,7 @@ To try out the changes you made to the extension within VS Code in a local envir
 Use the following commands to build the extension.
 
 ```shell
-npm run esbuild:dev
-npm run web:dev
+npm run dev
 ```
 
 #### 2. Step Start the `Extension Host`
@@ -54,7 +53,7 @@ It is possible to develop the webview detached from the extension within a brows
 For that use the following command:
 
 ```shell
-npm run web:browser
+npm run vite:browser
 ```
 
 This will start a dev server. To try out the webview open `http://127.0.0.1:5173/` within your browser.

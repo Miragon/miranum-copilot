@@ -64,12 +64,11 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./dist/test/runTest.js",
-    "build": "npm run esbuild -- --minify && npm run web",
+    "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
+    "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
-    "esbuild:dev": "npm run esbuild -- --sourcemap --watch",
-    "web": "vite build --config src/web/vite.config.js --minify esbuild",
-    "web:dev": "vite build --config src/web/vite.config.js --watch",
-    "web:browser": "cd ./src/web && vite"
+    "vite": "vite build --config src/web/vite.config.js",
+    "vite:browser": "cd ./src/web && vite"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -81,6 +80,7 @@
     "@typescript-eslint/parser": "^6.2.1",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vscode/test-electron": "^2.3.4",
+    "concurrently": "^8.2.0",
     "esbuild": "^0.18.17",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
