@@ -58,3 +58,7 @@ npm run web:browser
 ```
 
 This will start a dev server. To try out the webview open `http://127.0.0.1:5173/` within your browser.
+
+> Note: We use
+> a [Postman Mock Server](https://learning.postman.com/docs/designing-and-developing-your-api/mocking-data/setting-up-mock/)
+> to simulate the OpenAI API call. The server will simulate a fixed network delay of 1000 seconds.
