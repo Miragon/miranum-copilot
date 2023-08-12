@@ -33,7 +33,7 @@ To try out the changes you made to the extension within VS Code in a local envir
 
 #### 1. Step Build the Extension
 
-Use the following commands to build the extension.
+Use the following command to build the extension.
 
 ```shell
 npm run dev
@@ -42,7 +42,7 @@ npm run dev
 #### 2. Step Start the `Extension Host`
 
 Once the extension is build you can open the `Extension Host` within VS Code with `F5`.
-If you have used the commands from step one, you can make changes to the code and when you save it, it will
+If you have used the command from step one, you can make changes to the code and when you save it, it will
 automatically recompile.  
 Within the `Extension Host` use `Ctrl/Cmd + r` to update the running extension.
 
