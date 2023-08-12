@@ -56,7 +56,7 @@ npm run build
 code .
 ```
 
-Open `Extension Host` with `F5` and open the example folder.
+Open the *Extension Host* with `F5` and then open the *Command Palette* with `cmd/ctrl + p` and search for `Miranum Copilot` and hit `enter`.
 
 ## Contributing
 
