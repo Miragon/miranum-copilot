@@ -68,7 +68,7 @@
     "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
     "vite": "vite build --config src/web/vite.config.js",
-    "vite:browser": "cd ./src/web && vite"
+    "vite:browser": "cd ./src/web && vite --open true"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
