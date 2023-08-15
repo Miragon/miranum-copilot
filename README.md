@@ -26,26 +26,75 @@
 
 ## About The Project [![Version][version-shield]][version-url] [![Installs][installs-shield]][installs-url]
 
+> **_NOTE:_** At some point in the future, this repository will be migrated to
+> our [main repository](https://github.com/Miragon/miranum-ide).
+
 Miranum IDE is a collection of "VS Code Plugins" that allows you to edit, manage and access all artifacts for your
 process application in one place.
 Please find our official docs [here](https://miranum.com/docs/components/miranum-ide/intro-miranum-ide).
 
 **Miranum Copilot** is one component of our collection of *VS Code Plugins*.
-The copilot should help experienced but also new **BPM Developers** in there tasks.
+The copilot helps experienced but also new **BPM Developers** in there tasks.
 
 ## Features
 
+* t.b.c
+
+## Quickstart
+
+```shell
+git clone https://github.com/Miragon/miranum-copilot.git
+cd miranum-copilot
+```
+
+```shell
+npm install
+npm run build
+```
+
+```shell
+code .
+```
+
+Open the *Extension Host* with `F5` and then open the *Command Palette* with `cmd/ctrl + p` and search for `Miranum Copilot` and hit `enter`.
+
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create.
-Any contributions you make are **greatly appreciated**.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
+contributions you make are **greatly appreciated**.
+To collect, prioritise and work on issues in a collaborative fashion we have established
+some [contribution guidelines](https://miranum.com/docs/components/contributing) as well as
+a [GitHub project](https://github.com/orgs/Miragon/projects/11).
+Please make sure to read through these guidelines before starting with your contribution.  
+Also take a look [here](./docs/technicalDocu.md) for a detailed explanation of how our extension is built.
+We also listed some suggestion for a better developing experience [here](./docs/development.md).
 
-For more information of the frameworks we use and how to contribute to our project see [here](docs/quickstart.md).  
-Furthermore, please have a look to our [Code of Conduct](https://miranum.com/docs/components/contributing/).
+### PRs for every change
 
-### License
+All changes have to be done in a separate Branch or Fork (if you are an external contributor). As soon as the changes
+are
+done please open a PR. A GitHub Action runs with every commit to a Branch and checks if the documentation can be built.
+If you create a new branch make sure to name it according to what it does (e.g. feat/xyz or fix/xyz). Please use
+semantic
+commit messages as described in [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
 
-Distributed under the [Apache License Version 2.0](LICENSE).
+### Code reviews
+
+We are using simple emoji's to help convey intention and added meaning in code review comments. A little bit of emoji
+can
+go a long way when it comes to code reviews and make giving and receiving code review a little bit more enjoyable.
+We are following this [guide by erikthedeveloper](https://github.com/erikthedeveloper/code-review-emoji-guide).
+
+## Code of Conduct
+
+This project adheres to the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are
+expected to uphold this code.
+Please report unacceptable behavior to info@miragon.io.
+
+## License
+
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) file for more information.
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->

@@ -1,4 +1,12 @@
-import {Disposable, extensions, Uri, ViewColumn, WebviewPanel, window, workspace} from "vscode";
+import {
+    Disposable,
+    extensions,
+    Uri,
+    ViewColumn,
+    WebviewPanel,
+    window,
+    workspace,
+} from "vscode";
 import { Logger } from "./Logger";
 import { MessageType, VscMessage } from "./shared/types";
 import { Configuration, OpenAIApi } from "openai";
@@ -7,10 +15,15 @@ import {
     ChatCompletionRequestMessageRoleEnum,
 } from "openai/api";
 
-const OPEN_AI_KEY = workspace.getConfiguration("miranum.copilot").get<string>("openaikey");
-const configuration = new Configuration({
-    apiKey: OPEN_AI_KEY,
-});
+function getOpenAiConf(): Configuration {
+    const apiKey = workspace
+        .getConfiguration("miranum.copilot")
+        .get<string>("openaikey");
+
+    return new Configuration({
+        apiKey,
+    });
+}
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -20,8 +33,9 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
-    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")?.exports;
-    private openai = new OpenAIApi(configuration);
+    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")
+        ?.exports;
+    private openai = new OpenAIApi(getOpenAiConf());
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -33,6 +47,12 @@ export class CopilotPanel {
         this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
+        workspace.onDidChangeConfiguration((conf) => {
+            if (conf.affectsConfiguration("miranum.copilot.openaikey")) {
+                this.openai = new OpenAIApi(getOpenAiConf());
+            }
+        });
+
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
             async (message: VscMessage<string>) => {
@@ -42,7 +62,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.logger ?? ""
+                                message.logger ?? "",
                             );
                             await this.postMessage(MessageType.initialize);
                             break;
@@ -51,7 +71,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot]",
                                 `(Webview: ${this.panel.title})`,
-                                message.logger ?? ""
+                                message.logger ?? "",
                             );
                             await this.postMessage(MessageType.restore);
                             break;
@@ -61,7 +81,7 @@ export class CopilotPanel {
                                 const res = await this.getResponseFromApi(message.data);
                                 await this.postMessage(
                                     MessageType.msgFromExtension,
-                                    res
+                                    res,
                                 );
                             } catch (err) {
                                 const errMsg =
@@ -74,7 +94,7 @@ export class CopilotPanel {
                             Logger.info(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.logger ?? ""
+                                message.logger ?? "",
                             );
                             break;
                         }
@@ -82,7 +102,7 @@ export class CopilotPanel {
                             Logger.error(
                                 "[Miranum.Copilot.Webview]",
                                 `(Webview: ${this.panel.title}`,
-                                message.logger ?? ""
+                                message.logger ?? "",
                             );
                             break;
                         }
@@ -92,12 +112,12 @@ export class CopilotPanel {
                     Logger.error(
                         "[Miranum.Copilot]",
                         `(Webview: ${this.panel.title})`,
-                        message
+                        message,
                     );
                 }
             },
             null,
-            this.disposables
+            this.disposables,
         );
 
         this.panel.webview.postMessage({});
@@ -125,7 +145,7 @@ export class CopilotPanel {
             column || ViewColumn.Beside,
             {
                 enableScripts: true,
-            }
+            },
         );
 
         CopilotPanel.currentPanel = new CopilotPanel(panel, extensionUri);
@@ -157,7 +177,7 @@ export class CopilotPanel {
             Logger.error(
                 "[Miranum.Copilot]",
                 `(Webview: ${this.panel.title})`,
-                `Could not post message (Viewtype: ${this.panel.visible})`
+                `Could not post message (Viewtype: ${this.panel.visible})`,
             );
         }
     }
@@ -166,10 +186,10 @@ export class CopilotPanel {
         const webview = this.panel.webview;
 
         const stylesResetUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "dist", "client", "style.css")
+            Uri.joinPath(this.extensionUri, "dist", "client", "main.css"),
         );
         const scriptUri: Uri = webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "dist", "client", "webview.mjs")
+            Uri.joinPath(this.extensionUri, "dist", "client", "main.js"),
         );
 
         const nonce: string = this.getNonce();
@@ -189,16 +209,7 @@ export class CopilotPanel {
                 <title>Miranum Copilot</title>
             </head>
             <body>
-            <div id="app">
-              <div class="input-container">
-                <vscode-text-area id="inputText" cols="40" rows="10" placeholder="Enter your prompt here" resize="vertical" maxlength="1000">Your question:</vscode-text-area>
-                <vscode-button id="submitButton">Send Prompt</vscode-button>
-              </div>
-              <div class="output-container">
-                <vscode-text-area id="outputText" cols="60" rows="15" readonly placeholder="Your answer will be printed here">Response from ChatGPT</vscode-text-area>
-              </div>
-            </div>
-            </body>                    
+                <div id="app"></div>
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>
@@ -226,13 +237,14 @@ export class CopilotPanel {
         try {
             return await this.getCompletion(prompt);
         } catch (error) {
-            throw Error("Error while fetching data from OpenAI");
+            const errMsg = error instanceof Error ? error.message : `${error}`;
+            throw Error(errMsg);
         }
     }
 
     private async getCompletion(
         prompt: string,
-        model = "gpt-3.5-turbo"
+        model = "gpt-3.5-turbo",
     ): Promise<string> {
         const content = this.createCompletion(prompt);
         const messages: ChatCompletionRequestMessage[] = [
