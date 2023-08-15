@@ -6,6 +6,14 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Launch localhost",
+			"type": "firefox",
+			"request": "launch",
+			"reAttach": true,
+			"url": "http://localhost:5173",
+			"webRoot": "${workspaceFolder}/src/web"
+		},
+		{
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
