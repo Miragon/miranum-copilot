@@ -76,12 +76,12 @@
     "@types/node": "20.x",
     "@types/vscode": "^1.81.0",
     "@types/vscode-webview": "^1.57.1",
-    "@typescript-eslint/eslint-plugin": "^6.2.1",
-    "@typescript-eslint/parser": "^6.2.1",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vscode/test-electron": "^2.3.4",
     "concurrently": "^8.2.0",
-    "esbuild": "^0.18.17",
+    "esbuild": "^0.19.2",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.16.1",
@@ -89,7 +89,7 @@
     "mocha": "^10.2.0",
     "prettier": "^3.0.1",
     "typescript": "^5.1.6",
-    "vite": "^4.4.8"
+    "vite": "^4.4.9"
   },
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.2.2",
