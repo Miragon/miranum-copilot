@@ -78,7 +78,7 @@
     "@types/vscode-webview": "^1.57.1",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "@typescript-eslint/parser": "^6.4.0",
-    "@vitejs/plugin-vue": "^4.2.3",
+    "@vitejs/plugin-vue": "^4.3.4",
     "@vscode/test-electron": "^2.3.4",
     "concurrently": "^8.2.0",
     "esbuild": "^0.19.2",
