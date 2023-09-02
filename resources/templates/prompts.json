@@ -1,0 +1,40 @@
+{
+	"generalQuestions": [
+	"What is business process modeling, and why is it important for organizations?",
+	"What does this process do?",
+	"What are common mistakes to avoid when creating BPMN diagrams?",
+	"Can you create a basic bpmn diagram for the following process:"
+	 ],
+	 
+	 "bpmnHelp": [
+	 "How can I represent decision points in a BPMN Diagram?",
+	 "What's the best way to depict parallel activities in BPMN?",
+	 "Explain the different types of gateways in BPMN and when to use each.",
+	 "Can you provide examples of inclusive and exclusive gateways?",
+	 "Can you help me understand when to use manual tasks and automated tasks?",
+	 "What are some best practices for naming tasks and activities in BPMN?"
+	 ],
+	 
+	 "specificTasks": [
+	 "Give me ideas on how to represent user tasks in BPMN.",
+	 "How do I model a service task that interacts with an external system?",
+	 "How can I show that an error occurred during a process step?",
+	 "Are there ways to improve this model?"
+	 ],
+	 
+	 "forms": [
+	 "What benefits does the creation and usage of forms have?",
+	 "Generate a form for user tasks in the process.",
+	 "Include a brief description for each form field in the form.",
+	 "How can I optimize this existing form?",
+	 "Design a visually appealing form layout for a process."
+	 ],
+	 
+	 "processDocumentation": [
+	 "Generate a process documentation as text",
+	 "Generate a process documentation as a .json file using the process.json template",
+	 "Generate a process documentation as a .json file using the process.schema.json template",
+	 "Generate a process documentation as a .md using the process.md template"
+	 ]
+
+}
