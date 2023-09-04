@@ -38,3 +38,19 @@ img {
 
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+#sidebar {
+    width: 33%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+    transform: translateX(-100%);
+}
+
+#sidebar.show {
+    transform: translateX(0);
+}

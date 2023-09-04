@@ -209,7 +209,20 @@ export class CopilotPanel {
                 <title>Miranum Copilot</title>
             </head>
             <body>
+            <button id="toggleSidebar">show Sidebar</button> 
                 <div id="app"></div>
+                <script nonce="${nonce}">
+                document.getElementById('toggleSidebar').addEventListener('click', function() {
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                    } else {
+                        sidebar.classList.add('show');
+                    }
+                });
+                
+            </script>
+
                 <script type="text/javascript" nonce="${nonce}">
                     const globalViewType = '${CopilotPanel.viewType}';
                 </script>
