@@ -210,6 +210,8 @@ export class CopilotPanel {
             </head>
             <body>
             <button id="toggleSidebar">show Sidebar</button> 
+            <div id="sidebar">
+            </div>
                 <div id="app"></div>
                 <script nonce="${nonce}">
                 document.getElementById('toggleSidebar').addEventListener('click', function() {
