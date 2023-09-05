@@ -82,7 +82,7 @@
     "@vscode/test-electron": "^2.3.4",
     "concurrently": "^8.2.0",
     "esbuild": "^0.19.2",
-    "eslint": "^8.46.0",
+    "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.17.0",
     "glob": "^10.3.3",
