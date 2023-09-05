@@ -14,8 +14,7 @@ import {
 } from "@/composables";
 
 import "./css/style.css";
-import Sidebar from './Sidebar.vue';
-
+import Sidebar from "./Sidebar.vue";
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
