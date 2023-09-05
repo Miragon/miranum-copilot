@@ -1,36 +1,50 @@
 <template>
     <div>
-      <!-- Button to toggle the visibility of the sidebar -->
-      <button @click="toggleSidebar">Show Sidebar</button>
-      
-      <!-- The sidebar itself -->
-      <div v-if="isSidebarVisible" id="sidebar">
+      <button @click="toggleSidebar">Toggle Sidebar</button>
+      <div id="sidebar" v-show="isSidebarVisible">
         <!-- Sidebar content -->
+        <p>Here is some sample content for the sidebar.</p>
       </div>
     </div>
   </template>
   
   <script lang="ts">
-  import { ref } from 'vue';
+  import { defineComponent, ref } from 'vue';
+  import "./css/style.css";
   
-  export default {
+  export default defineComponent({
     name: 'Sidebar',
     setup() {
-      // State to manage the visibility of the sidebar
       const isSidebarVisible = ref(false);
   
-      // Function to toggle the visibility of the sidebar
-      function toggleSidebar() {
+      const toggleSidebar = () => {
         isSidebarVisible.value = !isSidebarVisible.value;
-      }
+      };
   
       return {
         isSidebarVisible,
         toggleSidebar
       };
     }
-  };
+  });
   </script>
   
-  <style scoped src="./style.css"></style>
+  <style scoped>
+  #sidebar {
+      width: 33%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      background-color: #f9f9f9;
+      overflow-y: auto;
+      transition: transform 0.3s ease-in-out;
+      transform: translateX(-100%);
+      padding: 1rem;
+  }
+  
+  #sidebar.show {
+      transform: translateX(0);
+  }
+  </style>
   
