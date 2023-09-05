@@ -195,43 +195,28 @@ export class CopilotPanel {
         const nonce: string = this.getNonce();
 
         return `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" 
-                    content="default-src 'none'; 
-                            style-src ${webview.cspSource} 'unsafe-inline'; 
-                            img-src ${webview.cspSource} https:; 
-                            script-src 'nonce-${nonce}';">
-                <link href="${stylesResetUri}" rel="stylesheet">
-                <title>Miranum Copilot</title>
-            </head>
-            <body>
-            <button id="toggleSidebar">show Sidebar</button> 
-            <div id="sidebar">
-            </div>
-                <div id="app"></div>
-                <script nonce="${nonce}">
-                document.getElementById('toggleSidebar').addEventListener('click', function() {
-                    const sidebar = document.getElementById('sidebar');
-                    if (sidebar.classList.contains('show')) {
-                        sidebar.classList.remove('show');
-                    } else {
-                        sidebar.classList.add('show');
-                    }
-                });
-                
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Security-Policy" 
+                content="default-src 'none'; 
+                        style-src ${webview.cspSource} 'unsafe-inline'; 
+                        img-src ${webview.cspSource} https:; 
+                        script-src 'nonce-${nonce}';">
+            <link href="${stylesResetUri}" rel="stylesheet">
+            <title>Miranum Copilot</title>
+        </head>
+        <body>
+            <div id="app"></div>
+            <script type="text/javascript" nonce="${nonce}">
+                const globalViewType = '${CopilotPanel.viewType}';
             </script>
-
-                <script type="text/javascript" nonce="${nonce}">
-                    const globalViewType = '${CopilotPanel.viewType}';
-                </script>
-                <script nonce="${nonce}" src="${scriptUri}"></script>
-            </body>
-            </html>
-        `;
+            <script nonce="${nonce}" src="${scriptUri}"></script>
+        </body>
+        </html>
+    `;
     }
 
     private getNonce(): string {
