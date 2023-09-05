@@ -14,6 +14,8 @@ import {
 } from "@/composables";
 
 import "./css/style.css";
+import Sidebar from './Sidebar.vue';
+
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
@@ -172,6 +174,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </vscode-text-area>
         </div>
     </main>
+    <Sidebar />
 </template>
 
 <style scoped>
