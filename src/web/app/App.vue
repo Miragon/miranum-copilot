@@ -175,19 +175,3 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
     </main>
     <Sidebar />
 </template>
-
-<style scoped>
-vscode-text-area {
-    width: 100%;
-    margin-bottom: var(--margin);
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid var(--vscode-dropdown-background);
-}
-
-vscode-button {
-    width: 100%;
-    padding: 10px;
-    transition: background-color 0.3s ease;
-}
-</style>
