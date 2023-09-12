@@ -34,6 +34,14 @@ if (process.env.NODE_ENV === "development") {
 
 let inputText = ref("");
 let outputText = ref("");
+let shrunk = ref(false);
+const handleSidebarToggle = (isVisible: boolean) => {
+    shrunk.value = isVisible;
+};
+
+function toggleMainContent() {
+    shrunk.value = !shrunk.value;
+}
 
 //
 // Logic
@@ -140,7 +148,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
 </script>
 
 <template>
-    <main>
+    <main :class="{ shrunk: shrunk }">
         <div class="input-container">
             <vscode-text-area
                 id="inputText"
@@ -173,5 +181,5 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </vscode-text-area>
         </div>
     </main>
-    <Sidebar />
+    <Sidebar @sidebarToggled="handleSidebarToggle" />
 </template>

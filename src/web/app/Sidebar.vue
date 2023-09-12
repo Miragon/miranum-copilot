@@ -20,11 +20,12 @@ import "./css/style.css";
 
 export default defineComponent({
     name: "Sidebar",
-    setup() {
+    setup(props, { emit }) {
         const isSidebarVisible = ref(false);
 
         const toggleSidebar = () => {
             isSidebarVisible.value = !isSidebarVisible.value;
+            emit("sidebarToggled", isSidebarVisible.value);
         };
 
         const buttonStyle = computed(() => {
