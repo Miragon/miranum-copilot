@@ -106,3 +106,50 @@ main.shrunk {
     width: 70%;
     margin-left: auto;
 }
+
+#sidebar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#sidebar li {
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
+    background-color: #f7f9fc;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#sidebar li:hover {
+    background-color: #e5e8ed;
+    transform: scale(1.02);
+}
+
+#sidebar li ul li {
+    border: none;
+    margin: 20px 0;
+    padding: 20px;
+    cursor: default;
+    font-size: 22px;
+    text-align: left;
+    font-weight: normal;
+    line-height: 2;
+}
+
+.expand-icon {
+    float: right;
+    transition: transform 0.3s;
+}
+
+#sidebar li:hover .expand-icon {
+    transform: rotate(90deg);
+}
