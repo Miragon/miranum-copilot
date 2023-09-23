@@ -195,7 +195,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </div>
         </div>
     </main>
-    <Sidebar :key="key" :prompts="prompts" @sidebarToggled="handleSidebarToggle" />
+    <Sidebar :key="key" :prompts="prompts" @sidebar-toggled="handleSidebarToggle" />
 </template>
 
 <style scoped>
@@ -288,9 +288,9 @@ vscode-button {
 @keyframes animloader {
     0% {
         box-shadow:
-            2px 0px rgba(255, 255, 255, 0),
-            12px 0px rgba(255, 255, 255, 0.3),
-            20px 0px rgba(255, 255, 255, 0);
+            2px 0 rgba(255, 255, 255, 0),
+            12px 0 rgba(255, 255, 255, 0.3),
+            20px 0 rgba(255, 255, 255, 0);
     }
     50% {
         box-shadow:
