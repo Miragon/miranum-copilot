@@ -17,7 +17,7 @@ import {
 
 function getOpenAiConf(): Configuration {
     const apiKey = workspace
-        .getConfiguration("miranum.copilot")
+        .getConfiguration("miranum-ide.copilot")
         .get<string>("openaikey");
 
     return new Configuration({
