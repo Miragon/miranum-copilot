@@ -11,7 +11,7 @@
             <!-- Sidebar content -->
             <ul>
                 <li
-                    v-for="category in categories"
+                    v-for="category in categories.categories"
                     :key="category.name"
                     @click="selectCategory(category.name)"
                 >
@@ -30,61 +30,40 @@
     </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, computed } from "vue";
+<script lang="ts" setup>
 import "./css/style.css";
 
-export default defineComponent({
-    name: "Sidebar",
-    setup(props, { emit }) {
-        const isSidebarVisible = ref(false);
-        const selectedCategory = ref("");
-        const categories = ref([
-            {
-                name: "Category 1",
-                prompts: ["Prompt 1.1", "Prompt 1.2", "Prompt 1.3", "Prompt 1.4"],
-            },
-            {
-                name: "Category 2",
-                prompts: ["Prompt 2.1", "Prompt 2.2", "Prompt 2.3", "Prompt 2.4"],
-            },
-            {
-                name: "Category 3",
-                prompts: ["Prompt 3.1", "Prompt 3.2", "Prompt 3.3", "Prompt 3.4"],
-            },
-            {
-                name: "Category 4",
-                prompts: ["Prompt 4.1", "Prompt 4.2", "Prompt 4.3", "Prompt 4.4"],
-            },
-        ]);
+import { computed, defineProps, ref } from "vue";
+import { TemplatePrompts } from "@/composables/types";
 
-        const selectCategory = (categoryName: string) => {
-            if (selectedCategory.value === categoryName) {
-                selectedCategory.value = "";
-            } else {
-                selectedCategory.value = categoryName;
-            }
-        };
+interface Props {
+    prompts: TemplatePrompts;
+}
 
-        const toggleSidebar = () => {
-            isSidebarVisible.value = !isSidebarVisible.value;
-            emit("sidebarToggled", isSidebarVisible.value);
-        };
+const props = defineProps<Props>();
+const emit = defineEmits(["sidebarToggled"]);
 
-        const buttonStyle = computed(() => {
-            return {
-                left: isSidebarVisible.value ? "33%" : "0",
-            };
-        });
+const isSidebarVisible = ref(false);
+const selectedCategory = ref("");
 
-        return {
-            isSidebarVisible,
-            toggleSidebar,
-            buttonStyle,
-            categories,
-            selectedCategory,
-            selectCategory,
-        };
-    },
+const categories = props.prompts;
+
+const selectCategory = (categoryName: string) => {
+    if (selectedCategory.value === categoryName) {
+        selectedCategory.value = "";
+    } else {
+        selectedCategory.value = categoryName;
+    }
+};
+
+const toggleSidebar = () => {
+    isSidebarVisible.value = !isSidebarVisible.value;
+    emit("sidebarToggled", isSidebarVisible.value);
+};
+
+const buttonStyle = computed(() => {
+    return {
+        left: isSidebarVisible.value ? "33%" : "0",
+    };
 });
 </script>

@@ -6,15 +6,11 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 import { MessageType, VscMessage } from "../../shared/types";
-import {
-    createResolver,
-    MockedStateController,
-    StateController,
-    VsCode,
-} from "@/composables";
+import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
 
 import "./css/style.css";
 import Sidebar from "./Sidebar.vue";
+import { TemplatePrompts } from "@/composables/types";
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
@@ -25,12 +21,15 @@ provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 declare const globalViewType: string;
 declare const process: { env: { NODE_ENV: string } };
 
-let stateController: VsCode;
+let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
-    stateController = new MockedStateController();
+    vscode = new VsCodeMock();
 } else {
-    stateController = new StateController();
+    vscode = new VsCodeImpl();
 }
+
+const key = ref(0);
+const prompts = ref<TemplatePrompts>({ categories: [] });
 
 let inputText = ref("");
 let outputText = ref("");
@@ -60,7 +59,7 @@ onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
     try {
-        const state = stateController.getState();
+        const state = vscode.getState();
         if (state && state.data) {
             postMessage(
                 MessageType.restore,
@@ -69,7 +68,7 @@ onBeforeMount(async () => {
             );
             const newData = await resolver.wait(); // initialized(); // await the response form the backend
             if (newData) {
-                stateController.setState({ data: newData });
+                vscode.setState({ data: newData });
             }
         } else {
             postMessage(
@@ -79,7 +78,8 @@ onBeforeMount(async () => {
             );
             const data = await resolver.wait(); // initialized(); // await the response form the backend
             if (data) {
-                stateController.setState({ data });
+                prompts.value = JSON.parse(data);
+                key.value++;
             }
         }
     } catch (error) {
@@ -99,14 +99,14 @@ onBeforeMount(async () => {
 function postMessage(type: MessageType, data?: string, info?: string): void {
     switch (type) {
         case MessageType.msgFromWebview: {
-            stateController.postMessage({
+            vscode.postMessage({
                 type: `${globalViewType}.${type}`,
                 data: data ? data : "",
             });
             break;
         }
         default: {
-            stateController.postMessage({
+            vscode.postMessage({
                 type: `${globalViewType}.${type}`,
                 logger: info,
             });
@@ -124,7 +124,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
         const type = message.data.type;
         const data = message.data.data;
 
-        stateController.updateState({ data });
+        vscode.updateState({ data });
 
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -181,5 +181,5 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </vscode-text-area>
         </div>
     </main>
-    <Sidebar @sidebarToggled="handleSidebarToggle" />
+    <Sidebar :key="key" :prompts="prompts" @sidebarToggled="handleSidebarToggle" />
 </template>
