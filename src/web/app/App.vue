@@ -200,16 +200,16 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
 
 <style scoped>
 main {
-  display: grid;
-  grid-template-areas:
-      "input"
-      "output";
-  gap: 40px;
+    display: grid;
+    grid-template-areas:
+        "input"
+        "output";
+    gap: 40px;
 
-  width: 800px;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 800px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 vscode-text-area {
@@ -228,70 +228,81 @@ vscode-button {
 }
 
 .input {
-  grid-area: input;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    grid-area: input;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .output {
-  grid-area: output;
-  min-height: 400px;
+    grid-area: output;
+    min-height: 400px;
 }
 
 .output-loading {
-  display: grid;
-  min-height: inherit;
-  align-content: center;
-  justify-content: center;
+    display: grid;
+    min-height: inherit;
+    align-content: center;
+    justify-content: center;
 }
 
 .output-loaded {
-  min-height: inherit;
+    min-height: inherit;
 }
 
 /* Loader Animation*/
 .loader {
-  display: inline-block;
-  position: relative;
-  width: 48px;
-  height: 40px;
-  margin-top: 30px;
-  background: var(--vscode-button-background);
-  border-radius: 15% 15% 35% 35%;
+    display: inline-block;
+    position: relative;
+    width: 48px;
+    height: 40px;
+    margin-top: 30px;
+    background: var(--vscode-button-background);
+    border-radius: 15% 15% 35% 35%;
 }
+
 .loader::after {
-  content: '';
-  box-sizing: border-box;
-  position: absolute;
-  left: 45px;
-  top: 8px;
-  border: 4px solid var(--vscode-button-background);
-  width: 16px;
-  height: 20px;
-  border-radius: 0 4px 4px 0;
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    left: 45px;
+    top: 8px;
+    border: 4px solid var(--vscode-button-background);
+    width: 16px;
+    height: 20px;
+    border-radius: 0 4px 4px 0;
 }
+
 .loader::before {
-  content: '';
-  position: absolute;
-  width: 1px;
-  height: 10px;
-  color: var(--vscode-editor-foreground);
-  top: -15px;
-  left: 11px;
-  box-sizing: border-box;
-  animation: animloader 1s ease infinite;
+    content: "";
+    position: absolute;
+    width: 1px;
+    height: 10px;
+    color: var(--vscode-editor-foreground);
+    top: -15px;
+    left: 11px;
+    box-sizing: border-box;
+    animation: animloader 1s ease infinite;
 }
 
 @keyframes animloader {
-  0% {
-    box-shadow: 2px 0px rgba(255, 255, 255, 0), 12px 0px rgba(255, 255, 255, 0.3), 20px 0px rgba(255, 255, 255, 0);
-  }
-  50% {
-    box-shadow: 2px -5px rgba(255, 255, 255, 0.5), 12px -3px rgba(255, 255, 255, 0.5), 20px -2px rgba(255, 255, 255, 0.6);
-  }
-  100% {
-    box-shadow: 2px -8px rgba(255, 255, 255, 0), 12px -5px rgba(255, 255, 255, 0), 20px -5px rgba(255, 255, 255, 0);
-  }
+    0% {
+        box-shadow:
+            2px 0px rgba(255, 255, 255, 0),
+            12px 0px rgba(255, 255, 255, 0.3),
+            20px 0px rgba(255, 255, 255, 0);
+    }
+    50% {
+        box-shadow:
+            2px -5px rgba(255, 255, 255, 0.5),
+            12px -3px rgba(255, 255, 255, 0.5),
+            20px -2px rgba(255, 255, 255, 0.6);
+    }
+    100% {
+        box-shadow:
+            2px -8px rgba(255, 255, 255, 0),
+            12px -5px rgba(255, 255, 255, 0),
+            20px -5px rgba(255, 255, 255, 0);
+    }
 }
 </style>
