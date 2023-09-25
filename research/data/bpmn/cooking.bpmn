@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0d7alal" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="12.0.0">
-  <bpmn:process id="Process_1701f61" isExecutable="false">
+  <bpmn:process id="Process_1701f61" name="Cooking Process" isExecutable="false">
     <bpmn:startEvent id="Event_1huyz9d" name="Hunger noted">
       <bpmn:outgoing>Flow_09b83pq</bpmn:outgoing>
     </bpmn:startEvent>

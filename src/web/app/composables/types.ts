@@ -1,11 +1,8 @@
-import { VscMessage, VscState } from "../../../shared/types";
+export interface TemplatePrompts {
+    categories: Category[];
+}
 
-export interface VsCode {
-    getState(): VscState<string> | undefined;
-
-    setState(state: VscState<string>): void;
-
-    updateState(state: VscState<string>): void;
-
-    postMessage(message: VscMessage<string>): void;
+export interface Category {
+    name: string;
+    prompts: string[];
 }

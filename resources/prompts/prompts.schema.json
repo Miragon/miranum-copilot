@@ -1,0 +1,49 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "title": "Template Prompts",
+    "properties": {
+        "categories": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/category"
+            }
+        }
+    },
+    "$defs": {
+        "category": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "prompts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/prompt"
+                    }
+                }
+            },
+            "required": ["name", "prompts"]
+        },
+        "prompt": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "process": {
+                    "type": "boolean"
+                },
+                "form": {
+                    "type": "boolean"
+                },
+                "template": {
+                    "type": "boolean"
+                }
+            },
+            "required": ["prompt"]
+        }
+    },
+    "required": ["categories"]
+}

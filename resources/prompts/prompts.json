@@ -1,0 +1,103 @@
+{
+    "$schema": "./prompts.schema.json",
+    "categories": [
+        {
+            "name": "General Questions",
+            "prompts": [
+                {
+                    "prompt": "What is business process modeling, and why is it important for organizations?"
+                },
+                {
+                    "prompt": "What does this process do?",
+                    "process": true
+                },
+                {
+                    "prompt": "What are common mistakes to avoid when creating BPMN diagrams?"
+                },
+                {
+                    "prompt": "Can you create a basic bpmn diagram for the following process:"
+                }
+            ]
+        },
+        {
+            "name": "BPMN Help",
+            "prompts": [
+                {
+                    "prompt": "How can I represent decision points in a BPMN Diagram?"
+                },
+                {
+                    "prompt": "What's the best way to depict parallel activities in BPMN?"
+                },
+                {
+                    "prompt": "Explain the different types of gateways in BPMN and when to use each."
+                },
+                {
+                    "prompt": "Can you provide examples of inclusive and exclusive gateways?"
+                },
+                {
+                    "prompt": "Can you help me understand when to use manual tasks and automated tasks?"
+                },
+                {
+                    "prompt": "What are some best practices for naming tasks and activities in BPMN?"
+                }
+            ]
+        },
+        {
+            "name": "Specific Tasks",
+            "prompts": [
+                {
+                    "prompt": "Give me ideas on how to represent user tasks in BPMN."
+                },
+                {
+                    "prompt": "How do I model a service task that interacts with an external system?"
+                },
+                {
+                    "prompt": "How can I show that an error occurred during a process step?"
+                },
+                {
+                    "prompt": "Are there ways to improve this model?",
+                    "process": true
+                }
+            ]
+        },
+        {
+            "name": "forms",
+            "prompts": [
+                {
+                    "prompt": "What benefits does the creation and usage of forms have?"
+                },
+                {
+                    "prompt": "Generate a form for user tasks in the process.",
+                    "process": true
+                },
+                {
+                    "prompt": "Include a brief description for each form field in the form.",
+                    "form": true
+                },
+                {
+                    "prompt": "How can I optimize this existing form?",
+                    "form": true
+                },
+                {
+                    "prompt": "Design a visually appealing form layout for the process.",
+                    "process": true
+                }
+            ]
+        },
+        {
+            "name": "processDocumentation",
+            "prompts": [
+                {
+                    "prompt": "Generate a process documentation as a valid JSON Object file using the a template.",
+                    "process": true,
+                    "template": true
+                },
+                {
+                    "prompt": "Generate a process documentation as a valid Markdown file using the a template.",
+                    "process": true,
+                    "template": true
+                }
+            ]
+        }
+    ]
+}
