@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0d7alal" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="12.0.0">
-  <bpmn:process id="Process_1701f61" isExecutable="false">
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_0d7alal" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="12.0.0">
+  <bpmn:process id="Process_1701f61" name="Invoice Creation" isExecutable="false">
     <bpmn:startEvent id="Event_140mb0o" name="Item sold">
       <bpmn:outgoing>Flow_1px778j</bpmn:outgoing>
     </bpmn:startEvent>
@@ -14,23 +14,54 @@
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_1dcej3e" sourceRef="Activity_0zlx5ya" targetRef="Gateway_16w5r3m" />
     <bpmn:serviceTask id="Activity_0zlx5ya" name="Send invoice">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="invoice">${invoice}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1yc3h6k</bpmn:incoming>
       <bpmn:outgoing>Flow_1dcej3e</bpmn:outgoing>
+      <bpmn:property id="Property_1gwcv5o" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_1dq3upb">
+        <bpmn:sourceRef>DataObjectReference_19i8zyi</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1gwcv5o</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
     </bpmn:serviceTask>
     <bpmn:sequenceFlow id="Flow_09cpp6w" name="No" sourceRef="Gateway_16w5r3m" targetRef="Activity_0mgn8rb" />
     <bpmn:sequenceFlow id="Flow_10vlhhj" sourceRef="Activity_0mgn8rb" targetRef="Gateway_16w5r3m" />
     <bpmn:serviceTask id="Activity_0mgn8rb" name="Send reminder">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="invoiceId">${invoiceId}</camunda:inputParameter>
+          <camunda:inputParameter name="testInput">test</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_09cpp6w</bpmn:incoming>
       <bpmn:outgoing>Flow_10vlhhj</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="Activity_0rllx8f" name="Create invoice">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="delivery">${delivery}</camunda:inputParameter>
+          <camunda:outputParameter name="invoice">${invoice}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1px778j</bpmn:incoming>
       <bpmn:outgoing>Flow_1yc3h6k</bpmn:outgoing>
+      <bpmn:property id="Property_1y5eqdb" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_03wes39">
+        <bpmn:sourceRef>DataObjectReference_1g3x4pl</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1y5eqdb</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
     </bpmn:userTask>
     <bpmn:endEvent id="Event_0rp17pv" name="Invoice settled">
       <bpmn:incoming>Flow_1gcqri7</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1gcqri7" name="Yes" sourceRef="Gateway_16w5r3m" targetRef="Event_0rp17pv" />
+    <bpmn:dataObjectReference id="DataObjectReference_1g3x4pl" name="Delivery Bill" dataObjectRef="DataObject_1wllpn3" />
+    <bpmn:dataObject id="DataObject_1wllpn3" />
+    <bpmn:dataObjectReference id="DataObjectReference_19i8zyi" name="Invoice" dataObjectRef="DataObject_0pqvdih" />
+    <bpmn:dataObject id="DataObject_0pqvdih" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1701f61">
@@ -62,20 +93,29 @@
           <dc:Bounds x="935" y="145" width="71" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_1g3x4pl_di" bpmnElement="DataObjectReference_1g3x4pl">
+        <dc:Bounds x="292" y="235" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="281" y="292" width="58" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_19i8zyi_di" bpmnElement="DataObjectReference_19i8zyi">
+        <dc:Bounds x="452" y="235" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="453" y="292" width="35" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1px778j_di" bpmnElement="Flow_1px778j">
         <di:waypoint x="208" y="120" />
         <di:waypoint x="260" y="120" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1yc3h6k_di" bpmnElement="Flow_1yc3h6k">
+        <di:waypoint x="360" y="120" />
+        <di:waypoint x="420" y="120" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1dcej3e_di" bpmnElement="Flow_1dcej3e">
         <di:waypoint x="520" y="120" />
         <di:waypoint x="585" y="120" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_10vlhhj_di" bpmnElement="Flow_10vlhhj">
-        <di:waypoint x="830" y="230" />
-        <di:waypoint x="860" y="230" />
-        <di:waypoint x="860" y="300" />
-        <di:waypoint x="600" y="300" />
-        <di:waypoint x="600" y="135" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_09cpp6w_di" bpmnElement="Flow_09cpp6w">
         <di:waypoint x="620" y="135" />
@@ -85,6 +125,17 @@
           <dc:Bounds x="673" y="213" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10vlhhj_di" bpmnElement="Flow_10vlhhj">
+        <di:waypoint x="830" y="230" />
+        <di:waypoint x="860" y="230" />
+        <di:waypoint x="860" y="300" />
+        <di:waypoint x="600" y="300" />
+        <di:waypoint x="600" y="135" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_03wes39_di" bpmnElement="DataInputAssociation_03wes39">
+        <di:waypoint x="310" y="235" />
+        <di:waypoint x="310" y="160" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1gcqri7_di" bpmnElement="Flow_1gcqri7">
         <di:waypoint x="635" y="120" />
         <di:waypoint x="952" y="120" />
@@ -92,9 +143,9 @@
           <dc:Bounds x="672" y="102" width="18" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1yc3h6k_di" bpmnElement="Flow_1yc3h6k">
-        <di:waypoint x="360" y="120" />
-        <di:waypoint x="420" y="120" />
+      <bpmndi:BPMNEdge id="DataInputAssociation_1dq3upb_di" bpmnElement="DataInputAssociation_1dq3upb">
+        <di:waypoint x="470" y="235" />
+        <di:waypoint x="470" y="160" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

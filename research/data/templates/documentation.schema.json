@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Process Documentation",
+  "description": "A template for documenting a (business) process.",
+  "required": [
+    "process",
+    "processResponsibility",
+    "input",
+    "supplierOfInput",
+    "processSteps",
+    "output",
+    "customerOfOutput",
+    "itSystems",
+    "resources"
+  ],
+  "type": "object",
+  "properties": {
+	"process": {
+      "description": "Your task is to generate a name for the given process.",
+      "type": "string"
+    },
+	"processResponsibility": {
+      "description": "Your task is to describe the given process in maximal 3 sentences.",
+      "type": "string"
+    },
+	"input": {
+      "description": "Your task is to list all inputParameter in the given process.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"supplierOfInput": {
+      "description": "Your task is to define from where the inputs come from.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"processSteps": {
+      "description": "Your task is to list the process steps in their correct order.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+	"output": {
+      "description": "Your task is to list all outputParameter in the given process.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"customerOfOutput": {
+      "description": "Your task is to define who consumes the output.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"metrics": {
+      "description": "Your task is to define plausible metrics for the given process.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"itSystems": {
+      "description": "Your task is to define which different IT-Systems are involved in the given process.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+	"resources": {
+      "description": "Your task is to define which resources are needed from the given process.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}
