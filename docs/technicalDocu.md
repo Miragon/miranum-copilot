@@ -7,9 +7,9 @@ You can think of a Webview as the Frontend and the Extension as the Backend.
 The communication between the two components is implemented in VS Code and uses message passing.
 At the moment we are using the GPT model of OpenAI.
 
-![copilot](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/Copilot.puml?raw=true)
-
-![copilot-detailed](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/CopilotDetailed.puml?raw=true)
+| Overview                                                                                                                                                                                 | Detailed                                                                                                                                                                                                  |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ![copilot](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/Copilot.puml?raw=true) | ![copilot-detailed](https://www.plantuml.com/plantuml/proxy?cache=no&src=https://github.com/Miragon/miranum-copilot/blob/83136ba234c5087ed5cf9cf0ed671cb010617165/docs/uml/CopilotDetailed.puml?raw=true) |
 
 ### Communication
 Since the Extension and its Webview are in the same project we can share types between them.
