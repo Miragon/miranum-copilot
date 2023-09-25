@@ -1,13 +1,49 @@
-import { VsCode } from "@/composables/types";
+import { WebviewApi } from "vscode-webview";
 import { MessageType, VscMessage, VscState } from "../../../shared/types";
 
 declare const globalViewType: string;
+
+export interface VsCode {
+    getState(): VscState<string> | undefined;
+
+    setState(state: VscState<string>): void;
+
+    updateState(state: VscState<string>): void;
+
+    postMessage(message: VscMessage<string>): void;
+}
+
+export class VsCodeImpl implements VsCode {
+    private vscode: WebviewApi<VscState<string>>;
+
+    constructor() {
+        this.vscode = acquireVsCodeApi();
+    }
+
+    public getState(): VscState<string> | undefined {
+        return this.vscode.getState();
+    }
+
+    public setState(state: VscState<string>) {
+        this.vscode.setState(state);
+    }
+
+    public updateState(state: VscState<string>) {
+        this.setState({
+            ...state,
+        });
+    }
+
+    public postMessage(message: VscMessage<string>) {
+        this.vscode.postMessage(message);
+    }
+}
 
 /**
  * To simplify the development of the webview, we allow it to run in the browser.
  * For this purpose, the functionality of the extension/backend is mocked.
  */
-export class MockedStateController implements VsCode {
+export class VsCodeMock implements VsCode {
     getState(): VscState<string> | undefined {
         return undefined;
     }
@@ -21,6 +57,7 @@ export class MockedStateController implements VsCode {
                     new MessageEvent("message", {
                         data: {
                             type: `${globalViewType}.${MessageType.initialize}`,
+                            data: mockedInitData,
                         },
                     }),
                 );
@@ -62,3 +99,22 @@ export class MockedStateController implements VsCode {
         console.log("[Log] updateState()", state);
     }
 }
+
+const mockedInitData: string = JSON.stringify({
+    categories: [
+        {
+            name: "General Question",
+            prompts: [
+                "What is business process modeling, and why is it important for organizations?",
+                "What does this process do?",
+            ],
+        },
+        {
+            name: "BPMN Help",
+            prompts: [
+                "How can I represent decision points in a BPMN Diagram?",
+                "What's the best way to depict parallel activities in BPMN?",
+            ],
+        },
+    ],
+});

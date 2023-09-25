@@ -1,99 +1,99 @@
 {
-  "name": "miranum-copilot",
-  "displayName": "miranum-copilot",
-  "description": "A copilot that helps BPM-Developer.",
-  "license": "Apache-2.0",
-  "version": "0.1.0",
-  "publisher": "miragon-gmbh",
-  "preview": true,
-  "homepage": "https://www.miranum.io/",
-  "galleryBanner": {
-    "color": "#F0F8FF",
-    "theme": "light"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Miragon/miranum-copilot.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Miragon/miranum-copilot/issues"
-  },
-  "engines": {
-    "vscode": "^1.76.0"
-  },
-  "icon": "images/miranum_logo.png",
-  "categories": [
-    "Other"
-  ],
-  "keywords": [
-    "AI",
-    "BPM",
-    "BPMN",
-    "ChatGPT",
-    "Copilot"
-  ],
-  "extensionDependencies": [
-    "miragon-gmbh.vs-code-bpmn-modeler"
-  ],
-  "activationEvents": [
-    "onWebviewPanel:copilot"
-  ],
-  "main": "./dist/main.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "copilot.start",
-        "title": "Miranum Copilot",
-        "category": "Miranum Copilot"
-      }
+    "name": "miranum-copilot",
+    "displayName": "miranum-copilot",
+    "description": "A copilot that helps BPM-Developer.",
+    "license": "Apache-2.0",
+    "version": "0.1.0",
+    "publisher": "miragon-gmbh",
+    "preview": true,
+    "homepage": "https://www.miranum.io/",
+    "galleryBanner": {
+        "color": "#F0F8FF",
+        "theme": "light"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Miragon/miranum-copilot.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Miragon/miranum-copilot/issues"
+    },
+    "engines": {
+        "vscode": "^1.76.0"
+    },
+    "icon": "images/miranum_logo.png",
+    "categories": [
+        "Other"
     ],
-    "configuration": {
-      "title": "MiranumCopilot",
-      "properties": {
-        "miranum.copilot.openaikey": {
-          "scope": "application",
-          "type": "string",
-          "description": "Enter your Open AI API Key",
-          "pattern": "sk-.*"
+    "keywords": [
+        "AI",
+        "BPM",
+        "BPMN",
+        "ChatGPT",
+        "Copilot"
+    ],
+    "extensionDependencies": [
+        "miragon-gmbh.vs-code-bpmn-modeler"
+    ],
+    "activationEvents": [
+        "onWebviewPanel:copilot"
+    ],
+    "main": "./dist/main.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "copilot.start",
+                "title": "Miranum Copilot",
+                "category": "Miranum Copilot"
+            }
+        ],
+        "configuration": {
+            "title": "Miranum Copilot",
+            "properties": {
+                "miranum-ide.copilot.openaikey": {
+                    "scope": "application",
+                    "type": "string",
+                    "description": "Enter your Open AI API Key",
+                    "pattern": "sk-.*"
+                }
+            }
         }
-      }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./dist/test/runTest.js",
+        "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
+        "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
+        "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+        "vite": "vite build --config src/web/vite.config.js",
+        "vite:browser": "cd ./src/web && vite --open true"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "16.x",
+        "@types/vscode": "^1.76.0",
+        "@types/vscode-webview": "^1.57.2",
+        "@typescript-eslint/eslint-plugin": "^6.7.2",
+        "@typescript-eslint/parser": "^6.7.2",
+        "@vitejs/plugin-vue": "^4.3.4",
+        "@vscode/test-electron": "^2.3.4",
+        "concurrently": "^8.2.1",
+        "esbuild": "^0.19.3",
+        "eslint": "^8.50.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-vue": "^9.17.0",
+        "glob": "^10.3.6",
+        "mocha": "^10.2.0",
+        "prettier": "^3.0.3",
+        "typescript": "^5.2.2",
+        "vite": "^4.4.9"
+    },
+    "dependencies": {
+        "@vscode/webview-ui-toolkit": "^1.2.2",
+        "openai": "^3.3.0",
+        "vue": "^3.3.4"
     }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./dist/test/runTest.js",
-    "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
-    "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
-    "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
-    "vite": "vite build --config src/web/vite.config.js",
-    "vite:browser": "cd ./src/web && vite --open true"
-  },
-  "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
-    "@types/node": "20.x",
-    "@types/vscode": "^1.81.0",
-    "@types/vscode-webview": "^1.57.1",
-    "@typescript-eslint/eslint-plugin": "^6.4.0",
-    "@typescript-eslint/parser": "^6.4.0",
-    "@vitejs/plugin-vue": "^4.2.3",
-    "@vscode/test-electron": "^2.3.4",
-    "concurrently": "^8.2.0",
-    "esbuild": "^0.19.2",
-    "eslint": "^8.48.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-vue": "^9.17.0",
-    "glob": "^10.3.3",
-    "mocha": "^10.2.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.1.6",
-    "vite": "^4.4.9"
-  },
-  "dependencies": {
-    "@vscode/webview-ui-toolkit": "^1.2.2",
-    "openai": "^3.3.0",
-    "vue": "^3.3.4"
-  }
 }
