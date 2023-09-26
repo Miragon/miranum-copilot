@@ -1,36 +1,47 @@
 import { WebviewApi } from "vscode-webview";
+
 import { MessageType, VscMessage, VscState } from "../../../shared/types";
+import { Prompt, TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
 
 export interface VsCode {
-    getState(): VscState<string> | undefined;
+    getState(): VscState<CopilotState> | undefined;
 
-    setState(state: VscState<string>): void;
+    setState(state: VscState<CopilotState>): void;
 
-    updateState(state: VscState<string>): void;
+    updateState(state: VscState<CopilotState>): void;
 
     postMessage(message: VscMessage<string>): void;
 }
 
+interface CopilotState {
+    prompts?: TemplatePrompts;
+    currentPrompt?: Prompt;
+    response?: string;
+}
+
 export class VsCodeImpl implements VsCode {
-    private vscode: WebviewApi<VscState<string>>;
+    private vscode: WebviewApi<VscState<CopilotState>>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): VscState<string> | undefined {
+    public getState(): VscState<CopilotState> | undefined {
         return this.vscode.getState();
     }
 
-    public setState(state: VscState<string>) {
+    public setState(state: VscState<CopilotState>) {
         this.vscode.setState(state);
     }
 
-    public updateState(state: VscState<string>) {
+    public updateState(state: VscState<CopilotState>) {
         this.setState({
-            ...state,
+            data: {
+                ...this.getState()?.data,
+                ...state.data,
+            },
         });
     }
 
@@ -44,8 +55,10 @@ export class VsCodeImpl implements VsCode {
  * For this purpose, the functionality of the extension/backend is mocked.
  */
 export class VsCodeMock implements VsCode {
-    getState(): VscState<string> | undefined {
-        return undefined;
+    private state: VscState<CopilotState> | undefined;
+
+    getState(): VscState<CopilotState> | undefined {
+        return this.state;
     }
 
     async postMessage(message: VscMessage<string>): Promise<void> {
@@ -57,7 +70,7 @@ export class VsCodeMock implements VsCode {
                     new MessageEvent("message", {
                         data: {
                             type: `${globalViewType}.${MessageType.initialize}`,
-                            data: mockedInitData,
+                            data: JSON.stringify(mockedInitData),
                         },
                     }),
                 );
@@ -91,30 +104,47 @@ export class VsCodeMock implements VsCode {
         }
     }
 
-    setState(state: VscState<string>): void {
-        console.log("[Log] setState()", state);
+    setState(state: VscState<CopilotState>): void {
+        this.state = state;
+        console.log("[Log] setState()", this.getState());
     }
 
-    updateState(state: VscState<string>): void {
-        console.log("[Log] updateState()", state);
+    updateState(state: VscState<CopilotState>): void {
+        this.state = {
+            data: {
+                ...this.getState()?.data,
+                ...state.data,
+            },
+        };
+
+        console.log("[Log] updateState()", this.getState());
     }
 }
 
-const mockedInitData: string = JSON.stringify({
+const mockedInitData: TemplatePrompts = {
     categories: [
         {
             name: "General Question",
             prompts: [
-                "What is business process modeling, and why is it important for organizations?",
-                "What does this process do?",
+                {
+                    prompt: "What is business process modeling, and why is it important for organizations?",
+                },
+                {
+                    prompt: "What does this process do?",
+                    process: true,
+                },
             ],
         },
         {
             name: "BPMN Help",
             prompts: [
-                "How can I represent decision points in a BPMN Diagram?",
-                "What's the best way to depict parallel activities in BPMN?",
+                {
+                    prompt: "How can I represent decision points in a BPMN Diagram?",
+                },
+                {
+                    prompt: "What's the best way to depict parallel activities in BPMN?",
+                },
             ],
         },
     ],
-});
+};

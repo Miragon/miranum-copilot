@@ -2,7 +2,14 @@ export interface TemplatePrompts {
     categories: Category[];
 }
 
-export interface Category {
+interface Category {
     name: string;
-    prompts: string[];
+    prompts: Prompt[];
+}
+
+export interface Prompt {
+    prompt: string;
+    process?: boolean;
+    form?: boolean;
+    template?: boolean;
 }

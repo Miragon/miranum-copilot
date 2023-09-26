@@ -1,29 +1,10 @@
-import {
-    Disposable,
-    extensions,
-    Uri,
-    ViewColumn,
-    WebviewPanel,
-    window,
-    workspace,
-} from "vscode";
-import { Logger } from "./Logger";
+import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+
 import { MessageType, VscMessage } from "./shared/types";
-import { Configuration, OpenAIApi } from "openai";
-import {
-    ChatCompletionRequestMessage,
-    ChatCompletionRequestMessageRoleEnum,
-} from "openai/api";
+import { getCompletion } from "./modules/openai";
 
-function getOpenAiConf(): Configuration {
-    const apiKey = workspace
-        .getConfiguration("miranum-ide.copilot")
-        .get<string>("openaikey");
-
-    return new Configuration({
-        apiKey,
-    });
-}
+import { Logger } from "./Logger";
+import { readFile } from "./modules/reader";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -32,10 +13,6 @@ export class CopilotPanel {
     private readonly panel: WebviewPanel;
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
-
-    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")
-        ?.exports;
-    private openai = new OpenAIApi(getOpenAiConf());
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -47,11 +24,7 @@ export class CopilotPanel {
         this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
-        workspace.onDidChangeConfiguration((conf) => {
-            if (conf.affectsConfiguration("miranum.copilot.openaikey")) {
-                this.openai = new OpenAIApi(getOpenAiConf());
-            }
-        });
+        const initialData = this.init(extensionUri);
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
@@ -64,7 +37,8 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.logger ?? "",
                             );
-                            await this.postMessage(MessageType.initialize);
+                            const data = await Promise.resolve(initialData);
+                            await this.postMessage(MessageType.initialize, data);
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -165,6 +139,12 @@ export class CopilotPanel {
         }
     }
 
+    private async init(extensionUri: Uri): Promise<string> {
+        return readFile(
+            Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json"),
+        );
+    }
+
     private async postMessage(messageType: MessageType, data?: string) {
         const message: VscMessage<string> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
@@ -235,46 +215,10 @@ export class CopilotPanel {
         }
 
         try {
-            return await this.getCompletion(prompt);
+            return await getCompletion(prompt);
         } catch (error) {
             const errMsg = error instanceof Error ? error.message : `${error}`;
             throw Error(errMsg);
         }
-    }
-
-    private async getCompletion(
-        prompt: string,
-        model = "gpt-3.5-turbo",
-    ): Promise<string> {
-        const content = this.createCompletion(prompt);
-        const messages: ChatCompletionRequestMessage[] = [
-            {
-                role: ChatCompletionRequestMessageRoleEnum.User,
-                content,
-            },
-        ];
-        const response = await this.openai.createChatCompletion({
-            model,
-            messages,
-            temperature: 0,
-        });
-
-        if (
-            response.data.choices[0].message &&
-            response.data.choices[0].message.content
-        ) {
-            return response.data.choices[0].message.content;
-        } else {
-            return "";
-        }
-    }
-
-    private createCompletion(prompt: string): string {
-        return `
-${prompt}
-The BPMN Process is delimited by triple quotes.
-
-'''${this.bpmnModeler.getBpmn()}'''
-        `;
     }
 }

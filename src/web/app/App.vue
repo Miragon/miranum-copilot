@@ -9,17 +9,18 @@ import { MessageType, VscMessage } from "../../shared/types";
 import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
 
 import "./css/style.css";
-import Sidebar from "./Sidebar.vue";
-import { TemplatePrompts } from "@/composables/types";
+import SidebarMenu from "./SidebarMenu.vue";
+import { Prompt, TemplatePrompts } from "@/composables/types";
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
 
 //
-// Globals
+// Vars
 //
-declare const globalViewType: string;
+// eslint-disable-next-line @typescript-eslint/naming-convention
 declare const process: { env: { NODE_ENV: string } };
+declare const globalViewType: string;
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
@@ -28,27 +29,28 @@ if (process.env.NODE_ENV === "development") {
     vscode = new VsCodeImpl();
 }
 
-const key = ref(0);
+let inputText = ref("");
+let outputText = ref("");
+
+const sidebarMenuKey = ref(0);
 const prompts = ref<TemplatePrompts>({ categories: [] });
 
 const loading = ref(true);
-
-let inputText = ref("");
-let outputText = ref("");
 let shrunk = ref(false);
-const handleSidebarToggle = (isVisible: boolean) => {
-    shrunk.value = isVisible;
-};
-
-function toggleMainContent() {
-    shrunk.value = !shrunk.value;
-}
 
 //
 // Logic
 //
 
 const resolver = createResolver();
+
+const handleSidebarToggle = (isVisible: boolean) => {
+    shrunk.value = isVisible;
+};
+
+// function toggleMainContent() {
+//     shrunk.value = !shrunk.value;
+// }
 
 /**
  * The "main" method.
@@ -68,9 +70,9 @@ onBeforeMount(async () => {
                 undefined,
                 "State was restored successfully.",
             );
-            const newData = await resolver.wait(); // initialized(); // await the response form the backend
-            if (newData) {
-                vscode.setState({ data: newData });
+            const prompts = await resolver.wait(); // await the response form the backend
+            if (prompts) {
+                vscode.updateState({ data: { prompts: JSON.parse(prompts) } });
             }
         } else {
             postMessage(
@@ -78,10 +80,13 @@ onBeforeMount(async () => {
                 undefined,
                 "Webview was loaded successfully.",
             );
-            const data = await resolver.wait(); // initialized(); // await the response form the backend
+            const data = await resolver.wait(); // await the response form the backend
             if (data) {
-                prompts.value = JSON.parse(data);
-                key.value++;
+                const initPrompts: TemplatePrompts = JSON.parse(data);
+                prompts.value = initPrompts;
+                sidebarMenuKey.value++;
+
+                vscode.setState({ data: { prompts: initPrompts } });
             }
         }
     } catch (error) {
@@ -127,8 +132,6 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
         const type = message.data.type;
         const data = message.data.data;
 
-        vscode.updateState({ data });
-
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
                 loading.value = false;
@@ -142,6 +145,7 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
                 loading.value = false;
                 outputText.value = data ? data : "";
+                vscode.updateState({ data: { response: data } });
                 break;
             }
         }
@@ -149,6 +153,11 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
         const message = error instanceof Error ? error.message : `${error}`;
         postMessage(MessageType.error, undefined, message);
     }
+}
+
+function handleSelectedPrompt(prompt: Prompt) {
+    inputText.value = prompt.prompt;
+    vscode.updateState({ data: { currentPrompt: { ...prompt } } });
 }
 </script>
 
@@ -195,7 +204,12 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </div>
         </div>
     </main>
-    <Sidebar :key="key" :prompts="prompts" @sidebar-toggled="handleSidebarToggle" />
+    <SidebarMenu
+        :key="sidebarMenuKey"
+        :prompts="prompts"
+        @sidebar-toggled="handleSidebarToggle"
+        @prompt-selected="handleSelectedPrompt"
+    />
 </template>
 
 <style scoped>
