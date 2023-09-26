@@ -168,6 +168,17 @@ function handleSelectedPrompt(prompt: Prompt) {
     inputText.value = prompt.prompt;
     vscode.updateState({ data: { currentPrompt: { ...prompt } } });
 }
+
+function updatePrompt() {
+    vscode.updateState({ data: { currentPrompt: { prompt: inputText.value } } });
+}
+
+function sendPrompt() {
+    const currentPrompt = vscode.getState()?.data?.currentPrompt;
+    if (currentPrompt) {
+        postMessage(MessageType.msgFromWebview, JSON.stringify(currentPrompt));
+    }
+}
 </script>
 
 <template>
@@ -181,6 +192,7 @@ function handleSelectedPrompt(prompt: Prompt) {
                 placeholder="Enter your prompt here"
                 resize="vertical"
                 rows="10"
+                @input="updatePrompt"
             >
                 Your question:
             </vscode-text-area>
@@ -188,7 +200,7 @@ function handleSelectedPrompt(prompt: Prompt) {
                 id="submitButton"
                 appearance="primary"
                 aria-label="Send Request"
-                @click="postMessage(MessageType.msgFromWebview, inputText)"
+                @click="sendPrompt"
             >
                 Send Prompt
             </vscode-button>

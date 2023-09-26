@@ -70,7 +70,9 @@ export class VsCodeMock implements VsCode {
                     new MessageEvent("message", {
                         data: {
                             type: `${globalViewType}.${MessageType.initialize}`,
-                            data: JSON.stringify(mockedInitData),
+                            data: {
+                                prompts: JSON.stringify(mockedInitData),
+                            },
                         },
                     }),
                 );
