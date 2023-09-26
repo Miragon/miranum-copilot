@@ -5,7 +5,7 @@ import {
     vsCodeButton,
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
-import { MessageType, VscMessage } from "../../shared/types";
+import { CopilotMessageData, MessageType, VscMessage } from "../../shared/types";
 import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
 
 import "./css/style.css";
@@ -42,7 +42,7 @@ let shrunk = ref(false);
 // Logic
 //
 
-const resolver = createResolver();
+const resolver = createResolver<CopilotMessageData>();
 
 const handleSidebarToggle = (isVisible: boolean) => {
     shrunk.value = isVisible;
@@ -70,9 +70,16 @@ onBeforeMount(async () => {
                 undefined,
                 "State was restored successfully.",
             );
-            const prompts = await resolver.wait(); // await the response form the backend
-            if (prompts) {
-                vscode.updateState({ data: { prompts: JSON.parse(prompts) } });
+
+            inputText.value = state.data.currentPrompt
+                ? state.data.currentPrompt.prompt
+                : "";
+            outputText.value = state.data.response ? state.data.response : "";
+            prompts.value = state.data.prompts ? state.data.prompts : { categories: [] };
+
+            const data = await resolver.wait(); // await the response form the backend
+            if (data && data.prompts) {
+                vscode.updateState({ data: { prompts: JSON.parse(data.prompts) } });
             }
         } else {
             postMessage(
@@ -81,8 +88,8 @@ onBeforeMount(async () => {
                 "Webview was loaded successfully.",
             );
             const data = await resolver.wait(); // await the response form the backend
-            if (data) {
-                const initPrompts: TemplatePrompts = JSON.parse(data);
+            if (data && data.prompts) {
+                const initPrompts: TemplatePrompts = JSON.parse(data.prompts);
                 prompts.value = initPrompts;
                 sidebarMenuKey.value++;
 
@@ -127,7 +134,7 @@ function postMessage(type: MessageType, data?: string, info?: string): void {
  * Handle incoming messages.
  * @param message The incoming message
  */
-function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
+function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): void {
     try {
         const type = message.data.type;
         const data = message.data.data;
@@ -144,8 +151,10 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
                 loading.value = false;
-                outputText.value = data ? data : "";
-                vscode.updateState({ data: { response: data } });
+                if (data?.response) {
+                    outputText.value = data.response;
+                    vscode.updateState({ data: { response: data.response } });
+                }
                 break;
             }
         }

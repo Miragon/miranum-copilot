@@ -43,7 +43,12 @@
         "commands": [
             {
                 "command": "copilot.start",
-                "title": "Miranum Copilot",
+                "title": "Open Copilot",
+                "category": "Miranum Copilot"
+            },
+            {
+                "command": "copilot.editPrompts",
+                "title": "Edit Prompts",
                 "category": "Miranum Copilot"
             }
         ],

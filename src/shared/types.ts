@@ -16,3 +16,8 @@ export interface VscMessage<T> {
 export interface VscState<T> {
     data?: T;
 }
+
+export interface CopilotMessageData {
+    prompts?: string;
+    response?: string;
+}

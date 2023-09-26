@@ -1,10 +1,11 @@
 import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 
-import { MessageType, VscMessage } from "./shared/types";
+import { CopilotMessageData, MessageType, VscMessage } from "./shared/types";
 import { getCompletion } from "./modules/openai";
 
 import { Logger } from "./Logger";
 import { readFile } from "./modules/reader";
+import { createPromptsWatcher } from "./modules/watcher";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -37,8 +38,13 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.logger ?? "",
                             );
-                            const data = await Promise.resolve(initialData);
-                            await this.postMessage(MessageType.initialize, data);
+                            const copilotMessageData: CopilotMessageData = {
+                                prompts: await initialData.get("prompts"),
+                            };
+                            await this.postMessage(
+                                MessageType.initialize,
+                                copilotMessageData,
+                            );
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -52,10 +58,14 @@ export class CopilotPanel {
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             try {
-                                const res = await this.getResponseFromApi(message.data);
+                                const copilotMessageData: CopilotMessageData = {
+                                    response: await this.getResponseFromApi(
+                                        message.data,
+                                    ),
+                                };
                                 await this.postMessage(
                                     MessageType.msgFromExtension,
-                                    res,
+                                    copilotMessageData,
                                 );
                             } catch (err) {
                                 const errMsg =
@@ -93,12 +103,21 @@ export class CopilotPanel {
             null,
             this.disposables,
         );
-
         this.panel.webview.postMessage({});
-
         this.panel.onDidChangeViewState(() => {}, null, this.disposables);
 
-        this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
+        const promptsWatcher = createPromptsWatcher(extensionUri, (prompts: string) => {
+            this.postMessage(MessageType.msgFromExtension, { prompts });
+        });
+
+        this.panel.onDidDispose(
+            () => {
+                promptsWatcher.dispose();
+                this.dispose();
+            },
+            null,
+            this.disposables,
+        );
     }
 
     public static createOrShow(extensionUri: Uri) {
@@ -139,14 +158,17 @@ export class CopilotPanel {
         }
     }
 
-    private async init(extensionUri: Uri): Promise<string> {
-        return readFile(
-            Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json"),
+    private init(extensionUri: Uri): Map<string, Promise<string>> {
+        const promises: Map<string, Promise<string>> = new Map();
+        promises.set(
+            "prompts",
+            readFile(Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json")),
         );
+        return promises;
     }
 
-    private async postMessage(messageType: MessageType, data?: string) {
-        const message: VscMessage<string> = {
+    private async postMessage(messageType: MessageType, data?: CopilotMessageData) {
+        const message: VscMessage<CopilotMessageData> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
         };
