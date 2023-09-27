@@ -64,7 +64,7 @@ onBeforeMount(async () => {
 
     try {
         const state = vscode.getState();
-        if (state && state.data) {
+        if (state?.data) {
             postMessage(
                 MessageType.restore,
                 undefined,
@@ -77,9 +77,15 @@ onBeforeMount(async () => {
             outputText.value = state.data.response ? state.data.response : "";
             prompts.value = state.data.prompts ? state.data.prompts : { categories: [] };
 
+            loading.value = false;
+
             const data = await resolver.wait(); // await the response form the backend
-            if (data && data.prompts) {
-                vscode.updateState({ data: { prompts: JSON.parse(data.prompts) } });
+            if (data?.prompts) {
+                const restoredPrompts = JSON.parse(data.prompts);
+                prompts.value = restoredPrompts;
+                sidebarMenuKey.value++;
+
+                vscode.updateState({ data: { prompts: restoredPrompts } });
             }
         } else {
             postMessage(
@@ -154,6 +160,11 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                 if (data?.response) {
                     outputText.value = data.response;
                     vscode.updateState({ data: { response: data.response } });
+                } else if (data?.prompts) {
+                    const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
+                    prompts.value = receivedPrompts;
+                    sidebarMenuKey.value++;
+                    vscode.updateState({ data: { prompts: receivedPrompts } });
                 }
                 break;
             }

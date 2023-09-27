@@ -15,6 +15,8 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
+    private buffer: CopilotMessageData | undefined;
+
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
 
@@ -53,7 +55,11 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.logger ?? "",
                             );
-                            await this.postMessage(MessageType.restore);
+                            if (
+                                await this.postMessage(MessageType.restore, this.buffer)
+                            ) {
+                                this.buffer = undefined;
+                            }
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
@@ -167,7 +173,10 @@ export class CopilotPanel {
         return promises;
     }
 
-    private async postMessage(messageType: MessageType, data?: CopilotMessageData) {
+    private async postMessage(
+        messageType: MessageType,
+        data?: CopilotMessageData,
+    ): Promise<boolean> {
         const message: VscMessage<CopilotMessageData> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
@@ -176,12 +185,17 @@ export class CopilotPanel {
         const res: boolean = await this.panel.webview.postMessage(message);
 
         if (!res) {
+            if (!this.panel.visible) {
+                this.buffer = data;
+            }
             Logger.error(
                 "[Miranum.Copilot]",
                 `(Webview: ${this.panel.title})`,
-                `Could not post message (Viewtype: ${this.panel.visible})`,
+                "Could not post message!",
             );
         }
+
+        return res;
     }
 
     private getHtml(): string {
