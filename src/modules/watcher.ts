@@ -1,10 +1,13 @@
 import { FileSystemWatcher, RelativePattern, Uri, workspace } from "vscode";
+import { debounce } from "lodash";
+
 import { readFile } from "./reader";
 
 export function createPromptsWatcher(
     extensionUri: Uri,
     cb: (prompts: string) => void,
 ): FileSystemWatcher {
+    const debounced = debounce(eventListener, 100);
     const uri = Uri.joinPath(extensionUri, "resources", "prompts");
 
     const watcher = workspace.createFileSystemWatcher(
@@ -12,8 +15,8 @@ export function createPromptsWatcher(
         true,
     );
 
-    watcher.onDidChange(eventListener);
-    watcher.onDidChange(eventListener);
+    watcher.onDidChange(debounced);
+    watcher.onDidChange(debounced);
 
     return watcher;
 
