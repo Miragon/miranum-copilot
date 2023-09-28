@@ -5,12 +5,12 @@ import {
     vsCodeButton,
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
-import { CopilotMessageData, MessageType, VscMessage } from "../../shared/types";
+import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
 import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
 
 import "./css/style.css";
 import SidebarMenu from "./SidebarMenu.vue";
-import { Prompt, TemplatePrompts } from "@/composables/types";
+import { TemplatePrompts } from "@/composables/types";
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
@@ -72,7 +72,7 @@ onBeforeMount(async () => {
             );
 
             inputText.value = state.data.currentPrompt
-                ? state.data.currentPrompt.prompt
+                ? state.data.currentPrompt.text
                 : "";
             outputText.value = state.data.response ? state.data.response : "";
             prompts.value = state.data.prompts ? state.data.prompts : { categories: [] };
@@ -176,7 +176,7 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
 }
 
 function handleSelectedPrompt(prompt: Prompt) {
-    inputText.value = prompt.prompt;
+    inputText.value = prompt.text;
     vscode.updateState({ data: { currentPrompt: { ...prompt } } });
 }
 

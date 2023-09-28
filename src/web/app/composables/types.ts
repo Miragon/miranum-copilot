@@ -1,3 +1,5 @@
+import { Prompt } from "../../../shared/types";
+
 export interface TemplatePrompts {
     categories: Category[];
 }
@@ -5,11 +7,4 @@ export interface TemplatePrompts {
 interface Category {
     name: string;
     prompts: Prompt[];
-}
-
-export interface Prompt {
-    prompt: string;
-    process?: boolean;
-    form?: boolean;
-    template?: boolean;
 }

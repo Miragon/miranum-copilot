@@ -11,7 +11,7 @@
             <!-- Sidebar content -->
             <ul>
                 <li
-                    v-for="category in categories.categories"
+                    v-for="category in categories"
                     :key="category.name"
                     @click="selectCategory(category.name)"
                 >
@@ -22,10 +22,10 @@
                     <ul v-if="selectedCategory === category.name">
                         <li
                             v-for="prompt in category.prompts"
-                            :key="prompt.prompt"
+                            :key="prompt.text"
                             @click="selectPrompt(prompt)"
                         >
-                            {{ prompt.prompt }}
+                            {{ prompt.text }}
                         </li>
                     </ul>
                 </li>
@@ -37,8 +37,10 @@
 <script lang="ts" setup>
 import "./css/style.css";
 
+import { Prompt } from "../../shared/types";
+
 import { computed, ref } from "vue";
-import { Prompt, TemplatePrompts } from "@/composables/types";
+import { TemplatePrompts } from "@/composables/types";
 
 interface Props {
     prompts: TemplatePrompts;
@@ -50,7 +52,7 @@ const emits = defineEmits(["sidebarToggled", "promptSelected"]);
 const isSidebarVisible = ref(false);
 const selectedCategory = ref("");
 
-const categories = props.prompts;
+const categories = props.prompts.categories;
 
 const selectCategory = (categoryName: string) => {
     if (selectedCategory.value === categoryName) {

@@ -77,6 +77,7 @@ export class CopilotPanel {
                                 const errMsg =
                                     err instanceof Error ? err.message : `${err}`;
                                 Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
+                                window.showErrorMessage("Miranum Copilot: " + errMsg);
                             }
                             break;
                         }
@@ -250,11 +251,6 @@ export class CopilotPanel {
             throw Error("No prompt given!");
         }
 
-        try {
-            return await getCompletion(prompt);
-        } catch (error) {
-            const errMsg = error instanceof Error ? error.message : `${error}`;
-            throw Error(errMsg);
-        }
+        return await getCompletion(this.extensionUri, prompt);
     }
 }

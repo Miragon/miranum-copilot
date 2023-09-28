@@ -129,10 +129,10 @@ const mockedInitData: TemplatePrompts = {
             name: "General Question",
             prompts: [
                 {
-                    prompt: "What is business process modeling, and why is it important for organizations?",
+                    text: "What is business process modeling, and why is it important for organizations?",
                 },
                 {
-                    prompt: "What does this process do?",
+                    text: "What does this process do?",
                     process: true,
                 },
             ],
@@ -141,10 +141,10 @@ const mockedInitData: TemplatePrompts = {
             name: "BPMN Help",
             prompts: [
                 {
-                    prompt: "How can I represent decision points in a BPMN Diagram?",
+                    text: "How can I represent decision points in a BPMN Diagram?",
                 },
                 {
-                    prompt: "What's the best way to depict parallel activities in BPMN?",
+                    text: "What's the best way to depict parallel activities in BPMN?",
                 },
             ],
         },

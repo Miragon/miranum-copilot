@@ -21,3 +21,16 @@ export interface CopilotMessageData {
     prompts?: string;
     response?: string;
 }
+
+export interface Prompt {
+    text: string;
+    process?: boolean;
+    form?: boolean;
+    template?: boolean | string;
+    outputFormat?: OutputFormat;
+}
+
+export enum OutputFormat {
+    json = "json",
+    md = "md",
+}
