@@ -25,3 +25,35 @@ export function createPromptsWatcher(
         cb(prompts);
     }
 }
+
+export function createWatcher(
+    extension: string,
+    cb: (fileNames: string[]) => void,
+): FileSystemWatcher {
+    const watcher = workspace.createFileSystemWatcher(
+        new RelativePattern("**", "*.bpmn"),
+        false,
+        true,
+        false,
+    );
+
+    watcher.onDidCreate(eventListener);
+    watcher.onDidDelete(eventListener);
+
+    return watcher;
+
+    async function eventListener(event: Uri) {
+        if (!event.fsPath.endsWith(extension)) {
+            return;
+        }
+
+        const uris = await workspace.findFiles("**/*.bpmn");
+        const fileNames: string[] = [];
+
+        for (const uri of uris) {
+            fileNames.push(uri.fsPath.toString());
+        }
+
+        cb(fileNames);
+    }
+}

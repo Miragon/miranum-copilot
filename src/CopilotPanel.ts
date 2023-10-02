@@ -1,11 +1,11 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window, workspace } from "vscode";
+import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 
 import { CopilotMessageData, MessageType, Prompt, VscMessage } from "./shared/types";
 import { getCompletion } from "./modules/openai";
 
 import { Logger } from "./Logger";
 import { readFile, readFilesFromDirectory } from "./modules/reader";
-import { createPromptsWatcher } from "./modules/watcher";
+import { createPromptsWatcher, createWatcher } from "./modules/watcher";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -119,10 +119,14 @@ export class CopilotPanel {
         const promptsWatcher = createPromptsWatcher(extensionUri, (prompts: string) => {
             this.postMessage(MessageType.msgFromExtension, { prompts });
         });
+        const bpmnWatcher = createWatcher(".bpmn", (bpmnFiles: string[]) => {
+            this.postMessage(MessageType.msgFromExtension, { bpmnFiles });
+        });
 
         this.panel.onDidDispose(
             () => {
                 promptsWatcher.dispose();
+                bpmnWatcher.dispose();
                 this.dispose();
             },
             null,
@@ -174,19 +178,7 @@ export class CopilotPanel {
             "prompts",
             readFile(Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json")),
         );
-
-        const workspaceFolders = workspace.workspaceFolders;
-        const bpmnPromises: Promise<string[]>[] = [];
-        for (const folder of workspaceFolders ?? []) {
-            bpmnPromises.push(readFilesFromDirectory(folder.uri, ".bpmn"));
-        }
-
-        promises.set(
-            "bpmnFiles",
-            Promise.all(bpmnPromises).then((bpmnFiles) => {
-                return bpmnFiles.flat();
-            }),
-        );
+        promises.set("bpmnFiles", readFilesFromDirectory("bpmn"));
 
         return promises;
     }

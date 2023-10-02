@@ -1,4 +1,4 @@
-import { extensions, Uri, workspace } from "vscode";
+import { Uri, workspace } from "vscode";
 import { Configuration, OpenAIApi } from "openai";
 import {
     ChatCompletionRequestMessage,
@@ -8,9 +8,6 @@ import { OutputFormat, Prompt } from "../shared/types";
 import { readBpmnFile, readFile } from "./reader";
 
 export let openAiApi = new OpenAIApi(getOpenAiConf());
-
-const bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")
-    ?.exports;
 
 workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration("miranum-ide.copilot.openaikey")) {
