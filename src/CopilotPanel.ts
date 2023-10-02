@@ -1,10 +1,10 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import { Disposable, Uri, ViewColumn, WebviewPanel, window, workspace } from "vscode";
 
 import { CopilotMessageData, MessageType, VscMessage } from "./shared/types";
 import { getCompletion } from "./modules/openai";
 
 import { Logger } from "./Logger";
-import { readFile } from "./modules/reader";
+import { readFile, readFilesFromDirectory } from "./modules/reader";
 import { createPromptsWatcher } from "./modules/watcher";
 
 export class CopilotPanel {
@@ -41,7 +41,10 @@ export class CopilotPanel {
                                 message.logger ?? "",
                             );
                             const copilotMessageData: CopilotMessageData = {
-                                prompts: await initialData.get("prompts"),
+                                prompts: (await initialData.get("prompts")) as string,
+                                bpmnFiles: (await initialData.get(
+                                    "bpmnFiles",
+                                )) as string[],
                             };
                             await this.postMessage(
                                 MessageType.initialize,
@@ -165,12 +168,26 @@ export class CopilotPanel {
         }
     }
 
-    private init(extensionUri: Uri): Map<string, Promise<string>> {
-        const promises: Map<string, Promise<string>> = new Map();
+    private init(extensionUri: Uri): Map<string, Promise<string | string[]>> {
+        const promises: Map<string, Promise<string | string[]>> = new Map();
         promises.set(
             "prompts",
             readFile(Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json")),
         );
+
+        const workspaceFolders = workspace.workspaceFolders;
+        const bpmnPromises: Promise<string[]>[] = [];
+        for (const folder of workspaceFolders ?? []) {
+            bpmnPromises.push(readFilesFromDirectory(folder.uri, ".bpmn"));
+        }
+
+        promises.set(
+            "bpmnFiles",
+            Promise.all(bpmnPromises).then((bpmnFiles) => {
+                return bpmnFiles.flat();
+            }),
+        );
+
         return promises;
     }
 

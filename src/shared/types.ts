@@ -19,6 +19,7 @@ export interface VscState<T> {
 
 export interface CopilotMessageData {
     prompts?: string;
+    bpmnFiles?: string[];
     response?: string;
 }
 
