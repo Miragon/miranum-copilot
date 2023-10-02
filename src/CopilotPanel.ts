@@ -1,6 +1,6 @@
 import { Disposable, Uri, ViewColumn, WebviewPanel, window, workspace } from "vscode";
 
-import { CopilotMessageData, MessageType, VscMessage } from "./shared/types";
+import { CopilotMessageData, MessageType, Prompt, VscMessage } from "./shared/types";
 import { getCompletion } from "./modules/openai";
 
 import { Logger } from "./Logger";
@@ -268,6 +268,7 @@ export class CopilotPanel {
             throw Error("No prompt given!");
         }
 
-        return await getCompletion(this.extensionUri, prompt);
+        const promptObject: Prompt = JSON.parse(prompt);
+        return await getCompletion(this.extensionUri, promptObject);
     }
 }

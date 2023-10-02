@@ -5,7 +5,7 @@ import {
     ChatCompletionRequestMessageRoleEnum,
 } from "openai/api";
 import { OutputFormat, Prompt } from "../shared/types";
-import { readFile } from "./reader";
+import { readBpmnFile, readFile } from "./reader";
 
 export let openAiApi = new OpenAIApi(getOpenAiConf());
 
@@ -30,11 +30,10 @@ function getOpenAiConf(): Configuration {
 
 export async function getCompletion(
     extensionUri: Uri,
-    prompt: string,
+    prompt: Prompt,
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const promptObject = JSON.parse(prompt);
-    const content = await createCompletion(promptObject, extensionUri);
+    const content = await createCompletion(prompt, extensionUri);
     const messages: ChatCompletionRequestMessage[] = [
         {
             role: ChatCompletionRequestMessageRoleEnum.User,
@@ -57,14 +56,14 @@ export async function getCompletion(
 async function createCompletion(prompt: Prompt, extensionUri: Uri): Promise<string> {
     let returnValue = prompt.text;
 
-    if (prompt.process) {
+    if (typeof prompt.process === "string") {
         returnValue =
             returnValue +
             "\n\n" +
             "The BPMN Process is delimited by triple quotes." +
             "\n\n" +
             "'''" +
-            bpmnModeler.getBpmn() +
+            (await readBpmnFile(Uri.file(prompt.process))) +
             "'''";
     }
     if (prompt.form) {

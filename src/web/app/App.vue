@@ -3,6 +3,8 @@ import { onBeforeMount, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
+    vsCodeDropdown,
+    vsCodeOption,
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
@@ -13,7 +15,12 @@ import SidebarMenu from "./SidebarMenu.vue";
 import { TemplatePrompts } from "@/composables/types";
 
 // provideVSCodeDesignSystem().register(allComponents);
-provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
+provideVSCodeDesignSystem().register(
+    vsCodeButton(),
+    vsCodeTextArea(),
+    vsCodeDropdown(),
+    vsCodeOption(),
+);
 
 //
 // Vars
@@ -31,9 +38,11 @@ if (process.env.NODE_ENV === "development") {
 
 let inputText = ref("");
 let outputText = ref("");
+let processDropdown = ref<string[]>([]);
 
 const sidebarMenuKey = ref(0);
 const prompts = ref<TemplatePrompts>({ categories: [] });
+const bpmnFiles = ref<string[]>([]);
 
 const loading = ref(true);
 let shrunk = ref(false);
@@ -96,7 +105,9 @@ onBeforeMount(async () => {
             const data = await resolver.wait(); // await the response form the backend
             if (data && data.prompts) {
                 const initPrompts: TemplatePrompts = JSON.parse(data.prompts);
+                const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
+                bpmnFiles.value = initBpmnFiles;
                 sidebarMenuKey.value++;
 
                 vscode.setState({ data: { prompts: initPrompts } });
@@ -177,11 +188,48 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
 
 function handleSelectedPrompt(prompt: Prompt) {
     inputText.value = prompt.text;
-    vscode.updateState({ data: { currentPrompt: { ...prompt } } });
+    if (prompt.process as boolean) {
+        processDropdown.value = bpmnFiles.value;
+    } else {
+        processDropdown.value = [];
+    }
+    vscode.updateState({
+        data: {
+            currentPrompt: {
+                ...prompt,
+                text: prompt.text,
+                process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
+            },
+        },
+    });
+}
+
+function handleSelectedBpmn(bpmnName: string) {
+    const currentPrompt = vscode.getState()?.data?.currentPrompt;
+
+    if (currentPrompt) {
+        currentPrompt.process = bpmnName;
+        vscode.updateState({
+            data: {
+                currentPrompt: {
+                    ...currentPrompt,
+                },
+            },
+        });
+    } else {
+        vscode.updateState({
+            data: {
+                currentPrompt: {
+                    text: inputText.value,
+                    process: bpmnName,
+                },
+            },
+        });
+    }
 }
 
 function updatePrompt() {
-    vscode.updateState({ data: { currentPrompt: { prompt: inputText.value } } });
+    vscode.updateState({ data: { currentPrompt: { text: inputText.value } } });
 }
 
 function sendPrompt() {
@@ -207,6 +255,15 @@ function sendPrompt() {
             >
                 Your question:
             </vscode-text-area>
+            <vscode-dropdown v-if="processDropdown?.length > 0">
+                <vscode-option
+                    v-for="processName in processDropdown"
+                    :key="processName"
+                    @click="handleSelectedBpmn(processName)"
+                >
+                    {{ processName }}
+                </vscode-option>
+            </vscode-dropdown>
             <vscode-button
                 id="submitButton"
                 appearance="primary"

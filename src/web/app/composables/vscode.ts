@@ -1,7 +1,7 @@
 import { WebviewApi } from "vscode-webview";
 
-import { MessageType, VscMessage, VscState } from "../../../shared/types";
-import { Prompt, TemplatePrompts } from "@/composables/types";
+import { MessageType, Prompt, VscMessage, VscState } from "../../../shared/types";
+import { TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
 
@@ -72,6 +72,7 @@ export class VsCodeMock implements VsCode {
                             type: `${globalViewType}.${MessageType.initialize}`,
                             data: {
                                 prompts: JSON.stringify(mockedInitData),
+                                bpmnFiles: ["file1.bpmn", "file2.bpmn"],
                             },
                         },
                     }),

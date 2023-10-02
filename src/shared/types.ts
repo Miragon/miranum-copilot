@@ -25,7 +25,7 @@ export interface CopilotMessageData {
 
 export interface Prompt {
     text: string;
-    process?: boolean;
+    process?: boolean | string;
     form?: boolean;
     template?: boolean | string;
     outputFormat?: OutputFormat;
