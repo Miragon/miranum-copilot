@@ -1,47 +1,51 @@
 import { WebviewApi } from "vscode-webview";
 
-import { MessageType, Prompt, VscMessage, VscState } from "../../../shared/types";
+import { MessageType, Prompt, VscMessage } from "../../../shared/types";
 import { TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
 
 export interface VsCode {
-    getState(): VscState<CopilotState> | undefined;
+    getState(): CopilotState | undefined;
 
-    setState(state: VscState<CopilotState>): void;
+    setState(state: Partial<CopilotState>): void;
 
-    updateState(state: VscState<CopilotState>): void;
+    updateState(state: Partial<CopilotState>): void;
 
     postMessage(message: VscMessage<string>): void;
 }
 
 interface CopilotState {
-    prompts?: TemplatePrompts;
-    currentPrompt?: Prompt;
-    response?: string;
+    prompts: TemplatePrompts;
+    bpmnFiles: string[];
+    currentPrompt: Prompt;
+    response: string;
 }
 
 export class VsCodeImpl implements VsCode {
-    private vscode: WebviewApi<VscState<CopilotState>>;
+    private vscode: WebviewApi<CopilotState>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): VscState<CopilotState> | undefined {
+    public getState(): CopilotState | undefined {
         return this.vscode.getState();
     }
 
-    public setState(state: VscState<CopilotState>) {
-        this.vscode.setState(state);
+    public setState(state: Partial<CopilotState>) {
+        this.vscode.setState({
+            prompts: state.prompts ? state.prompts : { categories: [] },
+            bpmnFiles: state.bpmnFiles ? state.bpmnFiles : [],
+            currentPrompt: state.currentPrompt ? state.currentPrompt : { text: "" },
+            response: state.response ? state.response : "",
+        });
     }
 
-    public updateState(state: VscState<CopilotState>) {
+    public updateState(state: Partial<CopilotState>) {
         this.setState({
-            data: {
-                ...this.getState()?.data,
-                ...state.data,
-            },
+            ...this.getState(),
+            ...state,
         });
     }
 
@@ -55,9 +59,9 @@ export class VsCodeImpl implements VsCode {
  * For this purpose, the functionality of the extension/backend is mocked.
  */
 export class VsCodeMock implements VsCode {
-    private state: VscState<CopilotState> | undefined;
+    private state: CopilotState | undefined;
 
-    getState(): VscState<CopilotState> | undefined {
+    getState(): CopilotState | undefined {
         return this.state;
     }
 
@@ -107,17 +111,43 @@ export class VsCodeMock implements VsCode {
         }
     }
 
-    setState(state: VscState<CopilotState>): void {
+    setState(state: CopilotState): void {
         this.state = state;
         console.log("[Log] setState()", this.getState());
     }
 
-    updateState(state: VscState<CopilotState>): void {
+    updateState(state: Partial<CopilotState>): void {
+        const currentState = this.getState();
+        let prompts: TemplatePrompts = { categories: [] };
+        if (currentState?.prompts) {
+            prompts = currentState.prompts;
+        } else if (state?.prompts) {
+            prompts = state.prompts;
+        }
+        let bpmnFiles: string[] = [];
+        if (currentState?.bpmnFiles) {
+            bpmnFiles = currentState.bpmnFiles;
+        } else if (state?.bpmnFiles) {
+            bpmnFiles = state.bpmnFiles;
+        }
+        let currentPrompt: Prompt = { text: "" };
+        if (currentState?.currentPrompt) {
+            currentPrompt = currentState.currentPrompt;
+        } else if (state?.currentPrompt) {
+            currentPrompt = state.currentPrompt;
+        }
+        let response: string = "";
+        if (currentState?.response) {
+            response = currentState.response;
+        } else if (state?.response) {
+            response = state.response;
+        }
+
         this.state = {
-            data: {
-                ...this.getState()?.data,
-                ...state.data,
-            },
+            prompts,
+            bpmnFiles,
+            currentPrompt,
+            response,
         };
 
         console.log("[Log] updateState()", this.getState());

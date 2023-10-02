@@ -73,29 +73,43 @@ onBeforeMount(async () => {
 
     try {
         const state = vscode.getState();
-        if (state?.data) {
+        if (state) {
             postMessage(
                 MessageType.restore,
                 undefined,
                 "State was restored successfully.",
             );
 
-            inputText.value = state.data.currentPrompt
-                ? state.data.currentPrompt.text
-                : "";
-            outputText.value = state.data.response ? state.data.response : "";
-            prompts.value = state.data.prompts ? state.data.prompts : { categories: [] };
+            const data = await resolver.wait(); // await the response form the backend
+            let restoredPrompts: TemplatePrompts = { categories: [] };
+            let restoredBpmnFiles: string[] = [];
+            if (data) {
+                restoredPrompts = data.prompts
+                    ? JSON.parse(data.prompts)
+                    : { categories: [] };
+                restoredBpmnFiles = data.bpmnFiles ? data.bpmnFiles : [];
+                prompts.value = restoredPrompts;
+                bpmnFiles.value = restoredBpmnFiles;
+
+                vscode.updateState({
+                    prompts: restoredPrompts,
+                    bpmnFiles: restoredBpmnFiles,
+                });
+            }
+
+            inputText.value = state.currentPrompt ? state.currentPrompt.text : "";
+            outputText.value = state.response ? state.response : "";
+
+            prompts.value = restoredPrompts ? restoredPrompts : state.prompts;
+
+            if (typeof state.currentPrompt?.process === "string") {
+                processDropdown.value = restoredBpmnFiles
+                    ? restoredBpmnFiles
+                    : state.bpmnFiles;
+            }
 
             loading.value = false;
-
-            const data = await resolver.wait(); // await the response form the backend
-            if (data?.prompts) {
-                const restoredPrompts = JSON.parse(data.prompts);
-                prompts.value = restoredPrompts;
-                sidebarMenuKey.value++;
-
-                vscode.updateState({ data: { prompts: restoredPrompts } });
-            }
+            sidebarMenuKey.value++;
         } else {
             postMessage(
                 MessageType.initialize,
@@ -103,14 +117,19 @@ onBeforeMount(async () => {
                 "Webview was loaded successfully.",
             );
             const data = await resolver.wait(); // await the response form the backend
-            if (data && data.prompts) {
-                const initPrompts: TemplatePrompts = JSON.parse(data.prompts);
+            if (data) {
+                const initPrompts: TemplatePrompts = data.prompts
+                    ? JSON.parse(data.prompts)
+                    : "";
                 const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
                 bpmnFiles.value = initBpmnFiles;
                 sidebarMenuKey.value++;
 
-                vscode.setState({ data: { prompts: initPrompts } });
+                vscode.setState({
+                    prompts: initPrompts,
+                    bpmnFiles: initBpmnFiles,
+                });
             }
         }
     } catch (error) {
@@ -170,12 +189,16 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                 loading.value = false;
                 if (data?.response) {
                     outputText.value = data.response;
-                    vscode.updateState({ data: { response: data.response } });
+                    vscode.updateState({ response: data.response });
                 } else if (data?.prompts) {
                     const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
                     prompts.value = receivedPrompts;
                     sidebarMenuKey.value++;
-                    vscode.updateState({ data: { prompts: receivedPrompts } });
+                    vscode.updateState({ prompts: receivedPrompts });
+                } else if (data?.bpmnFiles) {
+                    const receivedBpmnFiles: string[] = data.bpmnFiles;
+                    bpmnFiles.value = receivedBpmnFiles;
+                    vscode.updateState({ bpmnFiles: receivedBpmnFiles });
                 }
                 break;
             }
@@ -194,46 +217,40 @@ function handleSelectedPrompt(prompt: Prompt) {
         processDropdown.value = [];
     }
     vscode.updateState({
-        data: {
-            currentPrompt: {
-                ...prompt,
-                text: prompt.text,
-                process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
-            },
+        currentPrompt: {
+            ...prompt,
+            text: prompt.text,
+            process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
         },
     });
 }
 
 function handleSelectedBpmn(bpmnName: string) {
-    const currentPrompt = vscode.getState()?.data?.currentPrompt;
+    const currentPrompt = vscode.getState()?.currentPrompt;
 
     if (currentPrompt) {
         currentPrompt.process = bpmnName;
         vscode.updateState({
-            data: {
-                currentPrompt: {
-                    ...currentPrompt,
-                },
+            currentPrompt: {
+                ...currentPrompt,
             },
         });
     } else {
         vscode.updateState({
-            data: {
-                currentPrompt: {
-                    text: inputText.value,
-                    process: bpmnName,
-                },
+            currentPrompt: {
+                text: inputText.value,
+                process: bpmnName,
             },
         });
     }
 }
 
 function updatePrompt() {
-    vscode.updateState({ data: { currentPrompt: { text: inputText.value } } });
+    vscode.updateState({ currentPrompt: { text: inputText.value } });
 }
 
 function sendPrompt() {
-    const currentPrompt = vscode.getState()?.data?.currentPrompt;
+    const currentPrompt = vscode.getState()?.currentPrompt;
     if (currentPrompt) {
         postMessage(MessageType.msgFromWebview, JSON.stringify(currentPrompt));
     }

@@ -13,10 +13,6 @@ export interface VscMessage<T> {
     logger?: string;
 }
 
-export interface VscState<T> {
-    data?: T;
-}
-
 export interface CopilotMessageData {
     prompts?: string;
     bpmnFiles?: string[];
