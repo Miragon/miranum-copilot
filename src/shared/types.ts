@@ -23,11 +23,14 @@ export interface Prompt {
     text: string;
     process?: boolean | string;
     form?: boolean;
-    template?: boolean | string;
-    outputFormat?: OutputFormat;
+}
+
+export interface DocumentationPrompt {
+    template: string;
+    format: OutputFormat;
 }
 
 export enum OutputFormat {
-    json = "json",
-    md = "md",
+    json = "JSON",
+    md = "Markdown",
 }

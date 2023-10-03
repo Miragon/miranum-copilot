@@ -30,14 +30,17 @@
                     </ul>
                 </li>
             </ul>
+            <vscode-button @click="$emit('documentationSelected')">
+                Process Documentation
+            </vscode-button>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import "./css/style.css";
+import "../css/style.css";
 
-import { Prompt } from "../../shared/types";
+import { Prompt } from "../../../shared/types";
 
 import { computed, ref } from "vue";
 import { TemplatePrompts } from "@/composables/types";
@@ -47,7 +50,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emits = defineEmits(["sidebarToggled", "promptSelected"]);
+const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSelected"]);
 
 const isSidebarVisible = ref(false);
 const selectedCategory = ref("");

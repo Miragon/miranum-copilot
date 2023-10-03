@@ -263,6 +263,6 @@ export class CopilotPanel {
         }
 
         const promptObject: Prompt = JSON.parse(prompt);
-        return await getCompletion(this.extensionUri, promptObject);
+        return await getCompletion(promptObject);
     }
 }

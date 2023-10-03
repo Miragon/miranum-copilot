@@ -1,9 +1,36 @@
 import { WebviewApi } from "vscode-webview";
 
-import { MessageType, Prompt, VscMessage } from "../../../shared/types";
+import {
+    DocumentationPrompt,
+    MessageType,
+    Prompt,
+    VscMessage,
+} from "../../../shared/types";
 import { TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
+
+let vscode: VsCode | undefined;
+
+export function createVsCode(env: string): VsCode {
+    if (vscode) {
+        return vscode;
+    }
+
+    if (env === "production") {
+        return new VsCodeImpl();
+    } else {
+        return new VsCodeMock();
+    }
+}
+
+export function getVsCode(): VsCode {
+    if (!vscode) {
+        throw new Error("VsCode not initialized.");
+    }
+
+    return vscode;
+}
 
 export interface VsCode {
     getState(): CopilotState;
@@ -21,14 +48,15 @@ export class MissingStateError extends Error {
     }
 }
 
-interface CopilotState {
+export interface CopilotState {
+    viewState: string;
     prompts: TemplatePrompts;
     bpmnFiles: string[];
-    currentPrompt: Partial<Prompt>;
+    currentPrompt: Partial<Prompt> | Partial<DocumentationPrompt>;
     response: string;
 }
 
-export class VsCodeImpl implements VsCode {
+class VsCodeImpl implements VsCode {
     private vscode: WebviewApi<CopilotState>;
 
     constructor() {
@@ -45,13 +73,7 @@ export class VsCodeImpl implements VsCode {
     }
 
     public setState(state: CopilotState) {
-        this.vscode.setState({
-            prompts: state.prompts,
-            bpmnFiles: state.bpmnFiles,
-            currentPrompt: state.currentPrompt,
-            response: state.response,
-        });
-        console.log("[Log] setState()", this.getState());
+        this.vscode.setState(state);
     }
 
     public updateState(state: Partial<CopilotState>) {
@@ -74,7 +96,7 @@ export class VsCodeImpl implements VsCode {
  * To simplify the development of the webview, we allow it to run in the browser.
  * For this purpose, the functionality of the extension/backend is mocked.
  */
-export class VsCodeMock implements VsCode {
+class VsCodeMock implements VsCode {
     private state: CopilotState | undefined;
 
     getState(): CopilotState {
@@ -138,25 +160,31 @@ export class VsCodeMock implements VsCode {
 
     updateState(state: Partial<CopilotState>): void {
         const currentState = this.getState();
-        let prompts: TemplatePrompts = { categories: [] };
+        let viewState: string;
+        if (state?.viewState) {
+            viewState = state.viewState;
+        } else {
+            viewState = currentState.viewState;
+        }
+        let prompts: TemplatePrompts;
         if (state?.prompts) {
             prompts = state.prompts;
         } else {
             prompts = currentState.prompts;
         }
-        let bpmnFiles: string[] = [];
+        let bpmnFiles: string[];
         if (state?.bpmnFiles) {
             bpmnFiles = state.bpmnFiles;
         } else {
             bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Partial<Prompt> = {};
+        let currentPrompt: Partial<Prompt> | Partial<DocumentationPrompt>;
         if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
         } else {
             currentPrompt = currentState.currentPrompt;
         }
-        let response: string = "";
+        let response: string;
         if (state?.response) {
             response = state.response;
         } else {
@@ -164,6 +192,7 @@ export class VsCodeMock implements VsCode {
         }
 
         this.state = {
+            viewState,
             prompts,
             bpmnFiles,
             currentPrompt,

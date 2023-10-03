@@ -6,26 +6,26 @@ import {
     vsCodeDropdown,
     vsCodeOption,
     vsCodeTextArea,
+    vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
+
 import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
-import {
-    createResolver,
-    MissingStateError,
-    VsCode,
-    VsCodeImpl,
-    VsCodeMock,
-} from "@/composables";
+import { createResolver, createVsCode, MissingStateError, VsCode } from "@/composables";
 
 import "./css/style.css";
-import SidebarMenu from "./SidebarMenu.vue";
+import SidebarMenu from "./components/SidebarMenu.vue";
 import { TemplatePrompts } from "@/composables/types";
+import DefaultView from "@/views/DefaultView.vue";
+import DocumentationView from "@/views/DocumentationView.vue";
+import { isInstanceOfPrompt } from "../../shared/utils";
 
 // provideVSCodeDesignSystem().register(allComponents);
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
-    vsCodeTextArea(),
     vsCodeDropdown(),
     vsCodeOption(),
+    vsCodeTextArea(),
+    vsCodeTextField(),
 );
 
 //
@@ -37,9 +37,9 @@ declare const globalViewType: string;
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
-    vscode = new VsCodeMock();
+    vscode = createVsCode("development");
 } else {
-    vscode = new VsCodeImpl();
+    vscode = createVsCode("production");
 }
 
 let inputText = ref("");
@@ -99,12 +99,14 @@ onBeforeMount(async () => {
             }
         }
 
-        inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
-        outputText.value = state.response ? state.response : "";
-        if (typeof state.currentPrompt?.process === "string") {
-            processDropdown.value = isBpmnFilesChanged
-                ? restoredBpmnFiles
-                : state.bpmnFiles;
+        if (isInstanceOfPrompt(state.currentPrompt)) {
+            inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
+            outputText.value = state.response ? state.response : "";
+            if (typeof state.currentPrompt?.process === "string") {
+                processDropdown.value = isBpmnFilesChanged
+                    ? restoredBpmnFiles
+                    : state.bpmnFiles;
+            }
         }
 
         prompts.value = isPromptsChanged ? restoredPrompts : state.prompts;
@@ -131,6 +133,7 @@ onBeforeMount(async () => {
                 sidebarMenuKey.value++;
 
                 vscode.setState({
+                    viewState: "DefaultView",
                     prompts: initPrompts,
                     bpmnFiles: initBpmnFiles,
                     currentPrompt: {},
@@ -192,19 +195,27 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
-                loading.value = false;
                 if (data?.response) {
-                    outputText.value = data.response;
-                    vscode.updateState({ response: data.response });
-                } else if (data?.prompts) {
+                    loading.value = false;
+                    if (isInstanceOfPrompt(vscode.getState().currentPrompt)) {
+                        outputText.value = data.response;
+                        vscode.updateState({ response: data.response });
+                    }
+                }
+                if (data?.prompts) {
                     const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
                     prompts.value = receivedPrompts;
                     sidebarMenuKey.value++;
                     vscode.updateState({ prompts: receivedPrompts });
-                } else if (data?.bpmnFiles) {
+                }
+                if (data?.bpmnFiles) {
+                    const currentPrompt = vscode.getState().currentPrompt;
                     const receivedBpmnFiles: string[] = data.bpmnFiles;
                     bpmnFiles.value = receivedBpmnFiles;
-                    if (typeof vscode.getState().currentPrompt.process === "string") {
+                    if (
+                        isInstanceOfPrompt(currentPrompt) &&
+                        typeof currentPrompt.process === "string"
+                    ) {
                         processDropdown.value = receivedBpmnFiles;
                     }
                     vscode.updateState({ bpmnFiles: receivedBpmnFiles });
@@ -237,17 +248,21 @@ function handleSelectedPrompt(prompt: Prompt) {
     });
 }
 
-function handleSelectedBpmn(bpmnName: string) {
-    vscode.updateState({
-        currentPrompt: {
-            process: bpmnName,
-        },
-    });
+function handleSelectedDocumentation() {
+    vscode.updateState({ viewState: "DocumentationView" });
 }
 
-function updatePrompt() {
-    vscode.updateState({ currentPrompt: { text: inputText.value } });
-}
+// function handleSelectedBpmn(bpmnName: string) {
+//     vscode.updateState({
+//         currentPrompt: {
+//             process: bpmnName,
+//         },
+//     });
+// }
+//
+// function updatePrompt() {
+//     vscode.updateState({ currentPrompt: { text: inputText.value } });
+// }
 
 function sendPrompt() {
     const currentPrompt = vscode.getState().currentPrompt;
@@ -259,7 +274,19 @@ function sendPrompt() {
 
 <template>
     <main :class="{ shrunk: shrunk }">
-        <div class="input">
+        <DefaultView
+            v-if="vscode.getState().viewState === 'DefaultView'"
+            :input-text="inputText"
+            :loading="loading"
+            :process-dropdown="processDropdown"
+            @send-prompt="sendPrompt"
+        />
+        <DocumentationView
+            v-if="vscode.getState().viewState === 'DocumentationView'"
+            :loading="loading"
+            @send-prompt="sendPrompt"
+        />
+        <!--<div class="input">
             <vscode-text-area
                 id="inputText"
                 v-model="inputText"
@@ -308,13 +335,14 @@ function sendPrompt() {
                     Response from ChatGPT
                 </vscode-text-area>
             </div>
-        </div>
+        </div>-->
     </main>
     <SidebarMenu
         :key="sidebarMenuKey"
         :prompts="prompts"
         @sidebar-toggled="handleSidebarToggle"
         @prompt-selected="handleSelectedPrompt"
+        @documentation-selected="handleSelectedDocumentation"
     />
 </template>
 
@@ -332,97 +360,97 @@ main {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-vscode-text-area {
-    min-height: inherit;
-    width: 100%;
-    margin-bottom: var(--margin);
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid var(--vscode-dropdown-background);
-}
-
-vscode-button {
-    width: 100%;
-    padding: 10px;
-    transition: background-color 0.3s ease;
-}
-
-.input {
-    grid-area: input;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.output {
-    grid-area: output;
-    min-height: 400px;
-}
-
-.output-loading {
-    display: grid;
-    min-height: inherit;
-    align-content: center;
-    justify-content: center;
-}
-
-.output-loaded {
-    min-height: inherit;
-}
-
-/* Loader Animation*/
-.loader {
-    display: inline-block;
-    position: relative;
-    width: 48px;
-    height: 40px;
-    margin-top: 30px;
-    background: var(--vscode-button-background);
-    border-radius: 15% 15% 35% 35%;
-}
-
-.loader::after {
-    content: "";
-    box-sizing: border-box;
-    position: absolute;
-    left: 45px;
-    top: 8px;
-    border: 4px solid var(--vscode-button-background);
-    width: 16px;
-    height: 20px;
-    border-radius: 0 4px 4px 0;
-}
-
-.loader::before {
-    content: "";
-    position: absolute;
-    width: 1px;
-    height: 10px;
-    color: var(--vscode-editor-foreground);
-    top: -15px;
-    left: 11px;
-    box-sizing: border-box;
-    animation: animloader 1s ease infinite;
-}
-
-@keyframes animloader {
-    0% {
-        box-shadow:
-            2px 0 rgba(255, 255, 255, 0),
-            12px 0 rgba(255, 255, 255, 0.3),
-            20px 0 rgba(255, 255, 255, 0);
-    }
-    50% {
-        box-shadow:
-            2px -5px rgba(255, 255, 255, 0.5),
-            12px -3px rgba(255, 255, 255, 0.5),
-            20px -2px rgba(255, 255, 255, 0.6);
-    }
-    100% {
-        box-shadow:
-            2px -8px rgba(255, 255, 255, 0),
-            12px -5px rgba(255, 255, 255, 0),
-            20px -5px rgba(255, 255, 255, 0);
-    }
-}
+// vscode-text-area {
+//     min-height: inherit;
+//     width: 100%;
+//     margin-bottom: var(--margin);
+//     padding: 10px;
+//     border-radius: 4px;
+//     border: 1px solid var(--vscode-dropdown-background);
+// }
+//
+// vscode-button {
+//     width: 100%;
+//     padding: 10px;
+//     transition: background-color 0.3s ease;
+// }
+//
+// .input {
+//     grid-area: input;
+//     display: flex;
+//     flex-direction: column;
+//     gap: 12px;
+// }
+//
+// .output {
+//     grid-area: output;
+//     min-height: 400px;
+// }
+//
+// .output-loading {
+//     display: grid;
+//     min-height: inherit;
+//     align-content: center;
+//     justify-content: center;
+// }
+//
+// .output-loaded {
+//     min-height: inherit;
+// }
+//
+// /* Loader Animation*/
+// .loader {
+//     display: inline-block;
+//     position: relative;
+//     width: 48px;
+//     height: 40px;
+//     margin-top: 30px;
+//     background: var(--vscode-button-background);
+//     border-radius: 15% 15% 35% 35%;
+// }
+//
+// .loader::after {
+//     content: "";
+//     box-sizing: border-box;
+//     position: absolute;
+//     left: 45px;
+//     top: 8px;
+//     border: 4px solid var(--vscode-button-background);
+//     width: 16px;
+//     height: 20px;
+//     border-radius: 0 4px 4px 0;
+// }
+//
+// .loader::before {
+//     content: "";
+//     position: absolute;
+//     width: 1px;
+//     height: 10px;
+//     color: var(--vscode-editor-foreground);
+//     top: -15px;
+//     left: 11px;
+//     box-sizing: border-box;
+//     animation: animloader 1s ease infinite;
+// }
+//
+// @keyframes animloader {
+//     0% {
+//         box-shadow:
+//             2px 0 rgba(255, 255, 255, 0),
+//             12px 0 rgba(255, 255, 255, 0.3),
+//             20px 0 rgba(255, 255, 255, 0);
+//     }
+//     50% {
+//         box-shadow:
+//             2px -5px rgba(255, 255, 255, 0.5),
+//             12px -3px rgba(255, 255, 255, 0.5),
+//             20px -2px rgba(255, 255, 255, 0.6);
+//     }
+//     100% {
+//         box-shadow:
+//             2px -8px rgba(255, 255, 255, 0),
+//             12px -5px rgba(255, 255, 255, 0),
+//             20px -5px rgba(255, 255, 255, 0);
+//     }
+// }
 </style>

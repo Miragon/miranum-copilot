@@ -4,8 +4,8 @@ import {
     ChatCompletionRequestMessage,
     ChatCompletionRequestMessageRoleEnum,
 } from "openai/api";
-import { OutputFormat, Prompt } from "../shared/types";
-import { readBpmnFile, readFile } from "./reader";
+import { Prompt } from "../shared/types";
+import { readBpmnFile } from "./reader";
 
 export let openAiApi = new OpenAIApi(getOpenAiConf());
 
@@ -26,11 +26,10 @@ function getOpenAiConf(): Configuration {
 }
 
 export async function getCompletion(
-    extensionUri: Uri,
     prompt: Prompt,
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const content = await createCompletion(prompt, extensionUri);
+    const content = await createCompletion(prompt);
     const messages: ChatCompletionRequestMessage[] = [
         {
             role: ChatCompletionRequestMessageRoleEnum.User,
@@ -50,7 +49,7 @@ export async function getCompletion(
     }
 }
 
-async function createCompletion(prompt: Prompt, extensionUri: Uri): Promise<string> {
+async function createCompletion(prompt: Prompt): Promise<string> {
     let returnValue = prompt.text;
 
     if (typeof prompt.process === "string") {
@@ -73,53 +72,53 @@ async function createCompletion(prompt: Prompt, extensionUri: Uri): Promise<stri
         //     formBuilder.getForm() +
         //     "===";
     }
-    if (prompt.template) {
-        returnValue =
-            returnValue +
-            "\n\n" +
-            "The Template is delimited by triple asterisks." +
-            "\n\n" +
-            "***" +
-            (await getTemplate(prompt, extensionUri)) +
-            "***";
-    }
+    // if (prompt.template) {
+    //     returnValue =
+    //         returnValue +
+    //         "\n\n" +
+    //         "The Template is delimited by triple asterisks." +
+    //         "\n\n" +
+    //         "***" +
+    //         (await getTemplate(prompt, extensionUri)) +
+    //         "***";
+    // }
 
     return returnValue;
 }
 
-async function getTemplate(prompt: Prompt, extensionUri: Uri): Promise<string> {
-    if (!prompt.template) {
-        throw new Error("No template specified");
-    }
-
-    let uri;
-    if (typeof prompt.template === "boolean") {
-        switch (prompt.outputFormat) {
-            case OutputFormat.json:
-                uri = Uri.joinPath(
-                    extensionUri,
-                    "resources",
-                    "templates",
-                    "documentation.schema.json",
-                );
-                break;
-            case OutputFormat.md:
-            default:
-                uri = Uri.joinPath(
-                    extensionUri,
-                    "resources",
-                    "templates",
-                    "documentation.md",
-                );
-                break;
-        }
-    } else {
-        uri = Uri.file(prompt.template);
-    }
-
-    if (!uri) {
-        throw new Error("Something went wrong while creating the uri!");
-    }
-
-    return await readFile(uri);
-}
+// async function getTemplate(prompt: Prompt, extensionUri: Uri): Promise<string> {
+//     if (!prompt.template) {
+//         throw new Error("No template specified");
+//     }
+//
+//     let uri;
+//     if (typeof prompt.template === "boolean") {
+//         switch (prompt.outputFormat) {
+//             case OutputFormat.json:
+//                 uri = Uri.joinPath(
+//                     extensionUri,
+//                     "resources",
+//                     "templates",
+//                     "documentation.schema.json",
+//                 );
+//                 break;
+//             case OutputFormat.md:
+//             default:
+//                 uri = Uri.joinPath(
+//                     extensionUri,
+//                     "resources",
+//                     "templates",
+//                     "documentation.md",
+//                 );
+//                 break;
+//         }
+//     } else {
+//         uri = Uri.file(prompt.template);
+//     }
+//
+//     if (!uri) {
+//         throw new Error("Something went wrong while creating the uri!");
+//     }
+//
+//     return await readFile(uri);
+// }
