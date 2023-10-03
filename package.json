@@ -50,12 +50,12 @@
             }
         ],
         "configuration": {
-            "title": "Miranum Copilot",
+            "title": "MiranumCopilot",
             "properties": {
-                "miranum-ide.copilot.openaikey": {
+                "miranumIDE.copilot.openaiApiKey": {
                     "scope": "application",
                     "type": "string",
-                    "description": "Enter your Open AI API Key",
+                    "description": "Enter your OpenAI API Key",
                     "pattern": "sk-.*"
                 }
             }
