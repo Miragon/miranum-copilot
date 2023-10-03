@@ -61,7 +61,7 @@
             ]
         },
         {
-            "name": "forms",
+            "name": "Forms",
             "prompts": [
                 {
                     "text": "What benefits does the creation and usage of forms have?"
@@ -85,17 +85,23 @@
             ]
         },
         {
-            "name": "processDocumentation",
+            "name": "Process Documentation",
             "prompts": [
                 {
-                    "text": "Generate a process documentation as a valid JSON Object file using the a template.",
+                    "text": "Generate a process documentation as a valid JSON Object file using a template.",
                     "process": true,
-                    "template": true
+                    "template": {
+                        "path": true,
+                        "format": "json"
+                    }
                 },
                 {
-                    "text": "Generate a process documentation as a valid Markdown file using the a template.",
+                    "text": "Generate a process documentation as a valid Markdown file using a template.",
                     "process": true,
-                    "template": true
+                    "template": {
+                        "path": true,
+                        "format": "markdown"
+                    }
                 }
             ]
         }

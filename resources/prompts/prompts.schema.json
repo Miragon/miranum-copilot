@@ -39,16 +39,20 @@
                     "type": "boolean"
                 },
                 "template": {
-                    "type": [
-                        "string",
-                        "boolean"
-                    ],
-                    "description": "You can define the absolute path to your template as a string or use the default template by setting this to true."
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": ["string", "boolean"],
+                            "description": "You can define the absolute path to your template as a string or use the default template by setting this to true."
+                        },
+                        "format": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["path", "format"]
                 }
             },
-            "required": [
-                "text"
-            ]
+            "required": ["text"]
         }
     },
     "required": ["categories"]
