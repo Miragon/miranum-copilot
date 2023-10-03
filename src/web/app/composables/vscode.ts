@@ -6,19 +6,25 @@ import { TemplatePrompts } from "@/composables/types";
 declare const globalViewType: string;
 
 export interface VsCode {
-    getState(): CopilotState | undefined;
+    getState(): CopilotState;
 
-    setState(state: Partial<CopilotState>): void;
+    setState(state: CopilotState): void;
 
     updateState(state: Partial<CopilotState>): void;
 
     postMessage(message: VscMessage<string>): void;
 }
 
+export class MissingStateError extends Error {
+    constructor() {
+        super("State is missing.");
+    }
+}
+
 interface CopilotState {
     prompts: TemplatePrompts;
     bpmnFiles: string[];
-    currentPrompt: Prompt;
+    currentPrompt: Partial<Prompt>;
     response: string;
 }
 
@@ -29,23 +35,33 @@ export class VsCodeImpl implements VsCode {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): CopilotState | undefined {
-        return this.vscode.getState();
+    public getState(): CopilotState {
+        const state = this.vscode.getState();
+        if (!state) {
+            throw new MissingStateError();
+        }
+
+        return state;
     }
 
-    public setState(state: Partial<CopilotState>) {
+    public setState(state: CopilotState) {
         this.vscode.setState({
-            prompts: state.prompts ? state.prompts : { categories: [] },
-            bpmnFiles: state.bpmnFiles ? state.bpmnFiles : [],
-            currentPrompt: state.currentPrompt ? state.currentPrompt : { text: "" },
-            response: state.response ? state.response : "",
+            prompts: state.prompts,
+            bpmnFiles: state.bpmnFiles,
+            currentPrompt: state.currentPrompt,
+            response: state.response,
         });
+        console.log("[Log] setState()", this.getState());
     }
 
     public updateState(state: Partial<CopilotState>) {
         this.setState({
             ...this.getState(),
             ...state,
+            currentPrompt: {
+                ...this.getState().currentPrompt,
+                ...state.currentPrompt,
+            },
         });
     }
 
@@ -61,7 +77,11 @@ export class VsCodeImpl implements VsCode {
 export class VsCodeMock implements VsCode {
     private state: CopilotState | undefined;
 
-    getState(): CopilotState | undefined {
+    getState(): CopilotState {
+        if (!this.state) {
+            throw new MissingStateError();
+        }
+
         return this.state;
     }
 
@@ -119,28 +139,28 @@ export class VsCodeMock implements VsCode {
     updateState(state: Partial<CopilotState>): void {
         const currentState = this.getState();
         let prompts: TemplatePrompts = { categories: [] };
-        if (currentState?.prompts) {
-            prompts = currentState.prompts;
-        } else if (state?.prompts) {
+        if (state?.prompts) {
             prompts = state.prompts;
+        } else {
+            prompts = currentState.prompts;
         }
         let bpmnFiles: string[] = [];
-        if (currentState?.bpmnFiles) {
-            bpmnFiles = currentState.bpmnFiles;
-        } else if (state?.bpmnFiles) {
+        if (state?.bpmnFiles) {
             bpmnFiles = state.bpmnFiles;
+        } else {
+            bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Prompt = { text: "" };
-        if (currentState?.currentPrompt) {
-            currentPrompt = currentState.currentPrompt;
-        } else if (state?.currentPrompt) {
+        let currentPrompt: Partial<Prompt> = {};
+        if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
+        } else {
+            currentPrompt = currentState.currentPrompt;
         }
         let response: string = "";
-        if (currentState?.response) {
-            response = currentState.response;
-        } else if (state?.response) {
+        if (state?.response) {
             response = state.response;
+        } else {
+            response = currentState.response;
         }
 
         this.state = {

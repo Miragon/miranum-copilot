@@ -7,6 +7,7 @@ export function createPromptsWatcher(
     extensionUri: Uri,
     cb: (prompts: string) => void,
 ): FileSystemWatcher {
+    // need to debounce the event listener because it gets called for every letter typed or removed
     const debounced = debounce(eventListener, 100);
     const uri = Uri.joinPath(extensionUri, "resources", "prompts");
 
@@ -26,12 +27,17 @@ export function createPromptsWatcher(
     }
 }
 
+/**
+ * Creates a watcher for given extension.
+ * @param extension The extension to watch for (e.g. ".bpmn").
+ * @param cb The callback function to call when a file is created or deleted.
+ */
 export function createWatcher(
     extension: string,
     cb: (fileNames: string[]) => void,
 ): FileSystemWatcher {
     const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern("**", "*.bpmn"),
+        `**/*${extension}`,
         false,
         true,
         false,
@@ -47,7 +53,7 @@ export function createWatcher(
             return;
         }
 
-        const uris = await workspace.findFiles("**/*.bpmn");
+        const uris = await workspace.findFiles(`**/*${extension}`);
         const fileNames: string[] = [];
 
         for (const uri of uris) {

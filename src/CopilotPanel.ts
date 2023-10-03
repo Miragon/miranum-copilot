@@ -15,7 +15,7 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
-    private buffer: CopilotMessageData | undefined;
+    private buffer: Partial<CopilotMessageData> | undefined;
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -196,7 +196,9 @@ export class CopilotPanel {
 
         if (!res) {
             if (!this.panel.visible) {
-                this.buffer = data;
+                this.buffer = {
+                    ...data,
+                };
             }
             Logger.error(
                 "[Miranum.Copilot]",

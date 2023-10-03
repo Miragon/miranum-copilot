@@ -8,7 +8,13 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
-import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
+import {
+    createResolver,
+    MissingStateError,
+    VsCode,
+    VsCodeImpl,
+    VsCodeMock,
+} from "@/composables";
 
 import "./css/style.css";
 import SidebarMenu from "./SidebarMenu.vue";
@@ -53,14 +59,6 @@ let shrunk = ref(false);
 
 const resolver = createResolver<CopilotMessageData>();
 
-const handleSidebarToggle = (isVisible: boolean) => {
-    shrunk.value = isVisible;
-};
-
-// function toggleMainContent() {
-//     shrunk.value = !shrunk.value;
-// }
-
 /**
  * The "main" method.
  * We wait until the webview is fully loaded.
@@ -72,55 +70,61 @@ onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
     try {
-        const state = vscode.getState();
-        if (state) {
-            postMessage(
-                MessageType.restore,
-                undefined,
-                "State was restored successfully.",
-            );
+        const state = vscode.getState(); // Throws MissingStateError if no state is available
+        postMessage(MessageType.restore, undefined, "State was restored successfully.");
 
-            const data = await resolver.wait(); // await the response form the backend
-            let restoredPrompts: TemplatePrompts = { categories: [] };
-            let restoredBpmnFiles: string[] = [];
-            if (data) {
-                restoredPrompts = data.prompts
-                    ? JSON.parse(data.prompts)
-                    : { categories: [] };
-                restoredBpmnFiles = data.bpmnFiles ? data.bpmnFiles : [];
+        // We will only get data if the user made changes while the webview was in background.
+        const data = await resolver.wait();
+
+        let restoredPrompts: TemplatePrompts = { categories: [] };
+        let isPromptsChanged = false;
+        let restoredBpmnFiles: string[] = [];
+        let isBpmnFilesChanged = false;
+        if (data) {
+            if (data.prompts) {
+                restoredPrompts = JSON.parse(data.prompts);
+                isPromptsChanged = true;
                 prompts.value = restoredPrompts;
-                bpmnFiles.value = restoredBpmnFiles;
-
                 vscode.updateState({
                     prompts: restoredPrompts,
+                });
+            }
+            if (data.bpmnFiles) {
+                restoredBpmnFiles = data.bpmnFiles;
+                isBpmnFilesChanged = true;
+                bpmnFiles.value = restoredBpmnFiles;
+                vscode.updateState({
                     bpmnFiles: restoredBpmnFiles,
                 });
             }
+        }
 
-            inputText.value = state.currentPrompt ? state.currentPrompt.text : "";
-            outputText.value = state.response ? state.response : "";
+        inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
+        outputText.value = state.response ? state.response : "";
+        if (typeof state.currentPrompt?.process === "string") {
+            processDropdown.value = isBpmnFilesChanged
+                ? restoredBpmnFiles
+                : state.bpmnFiles;
+        }
 
-            prompts.value = restoredPrompts ? restoredPrompts : state.prompts;
+        prompts.value = isPromptsChanged ? restoredPrompts : state.prompts;
+        bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
 
-            if (typeof state.currentPrompt?.process === "string") {
-                processDropdown.value = restoredBpmnFiles
-                    ? restoredBpmnFiles
-                    : state.bpmnFiles;
-            }
-
-            loading.value = false;
-            sidebarMenuKey.value++;
-        } else {
+        loading.value = false;
+        sidebarMenuKey.value++;
+    } catch (error) {
+        if (error instanceof MissingStateError) {
             postMessage(
                 MessageType.initialize,
                 undefined,
                 "Webview was loaded successfully.",
             );
-            const data = await resolver.wait(); // await the response form the backend
+            const data = await resolver.wait();
+
             if (data) {
                 const initPrompts: TemplatePrompts = data.prompts
                     ? JSON.parse(data.prompts)
-                    : "";
+                    : { categories: [] };
                 const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
                 bpmnFiles.value = initBpmnFiles;
@@ -129,15 +133,17 @@ onBeforeMount(async () => {
                 vscode.setState({
                     prompts: initPrompts,
                     bpmnFiles: initBpmnFiles,
+                    currentPrompt: {},
+                    response: "",
                 });
             }
-        }
-    } catch (error) {
-        const message = error instanceof Error ? error.message : `${error}`;
-        postMessage(MessageType.error, undefined, message);
-    }
 
-    postMessage(MessageType.info, undefined, "Webview was initialized.");
+            postMessage(MessageType.info, undefined, "Webview was initialized.");
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            postMessage(MessageType.error, undefined, message);
+        }
+    }
 });
 
 /**
@@ -198,6 +204,9 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                 } else if (data?.bpmnFiles) {
                     const receivedBpmnFiles: string[] = data.bpmnFiles;
                     bpmnFiles.value = receivedBpmnFiles;
+                    if (typeof vscode.getState().currentPrompt.process === "string") {
+                        processDropdown.value = receivedBpmnFiles;
+                    }
                     vscode.updateState({ bpmnFiles: receivedBpmnFiles });
                 }
                 break;
@@ -209,6 +218,10 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
     }
 }
 
+function handleSidebarToggle(isVisible: boolean) {
+    shrunk.value = isVisible;
+}
+
 function handleSelectedPrompt(prompt: Prompt) {
     inputText.value = prompt.text;
     if (prompt.process as boolean) {
@@ -218,7 +231,6 @@ function handleSelectedPrompt(prompt: Prompt) {
     }
     vscode.updateState({
         currentPrompt: {
-            ...prompt,
             text: prompt.text,
             process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
         },
@@ -226,23 +238,11 @@ function handleSelectedPrompt(prompt: Prompt) {
 }
 
 function handleSelectedBpmn(bpmnName: string) {
-    const currentPrompt = vscode.getState()?.currentPrompt;
-
-    if (currentPrompt) {
-        currentPrompt.process = bpmnName;
-        vscode.updateState({
-            currentPrompt: {
-                ...currentPrompt,
-            },
-        });
-    } else {
-        vscode.updateState({
-            currentPrompt: {
-                text: inputText.value,
-                process: bpmnName,
-            },
-        });
-    }
+    vscode.updateState({
+        currentPrompt: {
+            process: bpmnName,
+        },
+    });
 }
 
 function updatePrompt() {
@@ -250,7 +250,7 @@ function updatePrompt() {
 }
 
 function sendPrompt() {
-    const currentPrompt = vscode.getState()?.currentPrompt;
+    const currentPrompt = vscode.getState().currentPrompt;
     if (currentPrompt) {
         postMessage(MessageType.msgFromWebview, JSON.stringify(currentPrompt));
     }
