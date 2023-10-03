@@ -3,23 +3,37 @@ import { onBeforeMount, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
+    vsCodeDropdown,
+    vsCodeOption,
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
-import { MessageType, VscMessage } from "../../shared/types";
-import { createResolver, VsCode, VsCodeImpl, VsCodeMock } from "@/composables";
+import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
+import {
+    createResolver,
+    MissingStateError,
+    VsCode,
+    VsCodeImpl,
+    VsCodeMock,
+} from "@/composables";
 
 import "./css/style.css";
-import Sidebar from "./Sidebar.vue";
+import SidebarMenu from "./SidebarMenu.vue";
 import { TemplatePrompts } from "@/composables/types";
 
 // provideVSCodeDesignSystem().register(allComponents);
-provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeTextArea());
+provideVSCodeDesignSystem().register(
+    vsCodeButton(),
+    vsCodeTextArea(),
+    vsCodeDropdown(),
+    vsCodeOption(),
+);
 
 //
-// Globals
+// Vars
 //
-declare const globalViewType: string;
+// eslint-disable-next-line @typescript-eslint/naming-convention
 declare const process: { env: { NODE_ENV: string } };
+declare const globalViewType: string;
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
@@ -28,27 +42,22 @@ if (process.env.NODE_ENV === "development") {
     vscode = new VsCodeImpl();
 }
 
-const key = ref(0);
-const prompts = ref<TemplatePrompts>({ categories: [] });
-
-const loading = ref(true);
-
 let inputText = ref("");
 let outputText = ref("");
-let shrunk = ref(false);
-const handleSidebarToggle = (isVisible: boolean) => {
-    shrunk.value = isVisible;
-};
+let processDropdown = ref<string[]>([]);
 
-function toggleMainContent() {
-    shrunk.value = !shrunk.value;
-}
+const sidebarMenuKey = ref(0);
+const prompts = ref<TemplatePrompts>({ categories: [] });
+const bpmnFiles = ref<string[]>([]);
+
+const loading = ref(true);
+let shrunk = ref(false);
 
 //
 // Logic
 //
 
-const resolver = createResolver();
+const resolver = createResolver<CopilotMessageData>();
 
 /**
  * The "main" method.
@@ -61,35 +70,80 @@ onBeforeMount(async () => {
     window.addEventListener("message", receiveMessage);
 
     try {
-        const state = vscode.getState();
-        if (state && state.data) {
-            postMessage(
-                MessageType.restore,
-                undefined,
-                "State was restored successfully.",
-            );
-            const newData = await resolver.wait(); // initialized(); // await the response form the backend
-            if (newData) {
-                vscode.setState({ data: newData });
+        const state = vscode.getState(); // Throws MissingStateError if no state is available
+        postMessage(MessageType.restore, undefined, "State was restored successfully.");
+
+        // We will only get data if the user made changes while the webview was in background.
+        const data = await resolver.wait();
+
+        let restoredPrompts: TemplatePrompts = { categories: [] };
+        let isPromptsChanged = false;
+        let restoredBpmnFiles: string[] = [];
+        let isBpmnFilesChanged = false;
+        if (data) {
+            if (data.prompts) {
+                restoredPrompts = JSON.parse(data.prompts);
+                isPromptsChanged = true;
+                prompts.value = restoredPrompts;
+                vscode.updateState({
+                    prompts: restoredPrompts,
+                });
             }
-        } else {
+            if (data.bpmnFiles) {
+                restoredBpmnFiles = data.bpmnFiles;
+                isBpmnFilesChanged = true;
+                bpmnFiles.value = restoredBpmnFiles;
+                vscode.updateState({
+                    bpmnFiles: restoredBpmnFiles,
+                });
+            }
+        }
+
+        inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
+        outputText.value = state.response ? state.response : "";
+        if (typeof state.currentPrompt?.process === "string") {
+            processDropdown.value = isBpmnFilesChanged
+                ? restoredBpmnFiles
+                : state.bpmnFiles;
+        }
+
+        prompts.value = isPromptsChanged ? restoredPrompts : state.prompts;
+        bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
+
+        loading.value = false;
+        sidebarMenuKey.value++;
+    } catch (error) {
+        if (error instanceof MissingStateError) {
             postMessage(
                 MessageType.initialize,
                 undefined,
                 "Webview was loaded successfully.",
             );
-            const data = await resolver.wait(); // initialized(); // await the response form the backend
-            if (data) {
-                prompts.value = JSON.parse(data);
-                key.value++;
-            }
-        }
-    } catch (error) {
-        const message = error instanceof Error ? error.message : `${error}`;
-        postMessage(MessageType.error, undefined, message);
-    }
+            const data = await resolver.wait();
 
-    postMessage(MessageType.info, undefined, "Webview was initialized.");
+            if (data) {
+                const initPrompts: TemplatePrompts = data.prompts
+                    ? JSON.parse(data.prompts)
+                    : { categories: [] };
+                const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
+                prompts.value = initPrompts;
+                bpmnFiles.value = initBpmnFiles;
+                sidebarMenuKey.value++;
+
+                vscode.setState({
+                    prompts: initPrompts,
+                    bpmnFiles: initBpmnFiles,
+                    currentPrompt: {},
+                    response: "",
+                });
+            }
+
+            postMessage(MessageType.info, undefined, "Webview was initialized.");
+        } else {
+            const message = error instanceof Error ? error.message : `${error}`;
+            postMessage(MessageType.error, undefined, message);
+        }
+    }
 });
 
 /**
@@ -122,12 +176,10 @@ function postMessage(type: MessageType, data?: string, info?: string): void {
  * Handle incoming messages.
  * @param message The incoming message
  */
-function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
+function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): void {
     try {
         const type = message.data.type;
         const data = message.data.data;
-
-        vscode.updateState({ data });
 
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -141,13 +193,66 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
                 loading.value = false;
-                outputText.value = data ? data : "";
+                if (data?.response) {
+                    outputText.value = data.response;
+                    vscode.updateState({ response: data.response });
+                } else if (data?.prompts) {
+                    const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
+                    prompts.value = receivedPrompts;
+                    sidebarMenuKey.value++;
+                    vscode.updateState({ prompts: receivedPrompts });
+                } else if (data?.bpmnFiles) {
+                    const receivedBpmnFiles: string[] = data.bpmnFiles;
+                    bpmnFiles.value = receivedBpmnFiles;
+                    if (typeof vscode.getState().currentPrompt.process === "string") {
+                        processDropdown.value = receivedBpmnFiles;
+                    }
+                    vscode.updateState({ bpmnFiles: receivedBpmnFiles });
+                }
                 break;
             }
         }
     } catch (error) {
         const message = error instanceof Error ? error.message : `${error}`;
         postMessage(MessageType.error, undefined, message);
+    }
+}
+
+function handleSidebarToggle(isVisible: boolean) {
+    shrunk.value = isVisible;
+}
+
+function handleSelectedPrompt(prompt: Prompt) {
+    inputText.value = prompt.text;
+    if (prompt.process as boolean) {
+        processDropdown.value = bpmnFiles.value;
+    } else {
+        processDropdown.value = [];
+    }
+    vscode.updateState({
+        currentPrompt: {
+            text: prompt.text,
+            process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
+        },
+    });
+}
+
+function handleSelectedBpmn(bpmnName: string) {
+    vscode.updateState({
+        currentPrompt: {
+            process: bpmnName,
+        },
+    });
+}
+
+function updatePrompt() {
+    vscode.updateState({ currentPrompt: { text: inputText.value } });
+}
+
+function sendPrompt() {
+    const currentPrompt = vscode.getState().currentPrompt;
+    if (currentPrompt) {
+        postMessage(MessageType.msgFromWebview, JSON.stringify(currentPrompt));
     }
 }
 </script>
@@ -163,14 +268,24 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
                 placeholder="Enter your prompt here"
                 resize="vertical"
                 rows="10"
+                @input="updatePrompt"
             >
                 Your question:
             </vscode-text-area>
+            <vscode-dropdown v-if="processDropdown?.length > 0">
+                <vscode-option
+                    v-for="processName in processDropdown"
+                    :key="processName"
+                    @click="handleSelectedBpmn(processName)"
+                >
+                    {{ processName }}
+                </vscode-option>
+            </vscode-dropdown>
             <vscode-button
                 id="submitButton"
                 appearance="primary"
                 aria-label="Send Request"
-                @click="postMessage(MessageType.msgFromWebview, inputText)"
+                @click="sendPrompt"
             >
                 Send Prompt
             </vscode-button>
@@ -195,7 +310,12 @@ function receiveMessage(message: MessageEvent<VscMessage<string>>): void {
             </div>
         </div>
     </main>
-    <Sidebar :key="key" :prompts="prompts" @sidebar-toggled="handleSidebarToggle" />
+    <SidebarMenu
+        :key="sidebarMenuKey"
+        :prompts="prompts"
+        @sidebar-toggled="handleSidebarToggle"
+        @prompt-selected="handleSelectedPrompt"
+    />
 </template>
 
 <style scoped>
