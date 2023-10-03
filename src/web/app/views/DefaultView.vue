@@ -1,7 +1,22 @@
 <script lang="ts" setup>
 import { ref } from "vue";
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeDropdown,
+    vsCodeOption,
+    vsCodeTextArea,
+} from "@vscode/webview-ui-toolkit";
+
 import { getVsCode, VsCode } from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
+
+provideVSCodeDesignSystem().register(
+    vsCodeButton(),
+    vsCodeDropdown(),
+    vsCodeOption(),
+    vsCodeTextArea(),
+);
 
 interface Props {
     loading: boolean;

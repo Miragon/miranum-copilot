@@ -1,3 +1,50 @@
+<script lang="ts" setup>
+import { computed, ref } from "vue";
+import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
+
+import { Prompt } from "../../../shared";
+import { TemplatePrompts } from "@/composables/types";
+
+import "../css/style.css";
+
+provideVSCodeDesignSystem().register(vsCodeButton());
+
+interface Props {
+    prompts: TemplatePrompts;
+}
+
+const props = defineProps<Props>();
+const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSelected"]);
+
+const isSidebarVisible = ref(false);
+const selectedCategory = ref("");
+
+const categories = props.prompts.categories;
+
+const selectCategory = (categoryName: string) => {
+    if (selectedCategory.value === categoryName) {
+        selectedCategory.value = "";
+    } else {
+        selectedCategory.value = categoryName;
+    }
+};
+
+const selectPrompt = (prompt: Prompt) => {
+    emits("promptSelected", prompt);
+};
+
+const toggleSidebar = () => {
+    isSidebarVisible.value = !isSidebarVisible.value;
+    emits("sidebarToggled", isSidebarVisible.value);
+};
+
+const buttonStyle = computed(() => {
+    return {
+        left: isSidebarVisible.value ? "33%" : "0",
+    };
+});
+</script>
+
 <template>
     <div class="sidebar-container">
         <button :style="buttonStyle" @click="toggleSidebar">
@@ -36,50 +83,6 @@
         </div>
     </div>
 </template>
-
-<script lang="ts" setup>
-import "../css/style.css";
-
-import { Prompt } from "../../../shared/types";
-
-import { computed, ref } from "vue";
-import { TemplatePrompts } from "@/composables/types";
-
-interface Props {
-    prompts: TemplatePrompts;
-}
-
-const props = defineProps<Props>();
-const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSelected"]);
-
-const isSidebarVisible = ref(false);
-const selectedCategory = ref("");
-
-const categories = props.prompts.categories;
-
-const selectCategory = (categoryName: string) => {
-    if (selectedCategory.value === categoryName) {
-        selectedCategory.value = "";
-    } else {
-        selectedCategory.value = categoryName;
-    }
-};
-
-const selectPrompt = (prompt: Prompt) => {
-    emits("promptSelected", prompt);
-};
-
-const toggleSidebar = () => {
-    isSidebarVisible.value = !isSidebarVisible.value;
-    emits("sidebarToggled", isSidebarVisible.value);
-};
-
-const buttonStyle = computed(() => {
-    return {
-        left: isSidebarVisible.value ? "33%" : "0",
-    };
-});
-</script>
 
 <style scoped>
 #sidebar {

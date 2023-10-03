@@ -1,11 +1,6 @@
 import { WebviewApi } from "vscode-webview";
 
-import {
-    DocumentationPrompt,
-    MessageType,
-    Prompt,
-    VscMessage,
-} from "../../../shared/types";
+import { DocumentationPrompt, MessageType, Prompt, VscMessage } from "../../../shared";
 import { TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
@@ -18,10 +13,12 @@ export function createVsCode(env: string): VsCode {
     }
 
     if (env === "production") {
-        return new VsCodeImpl();
+        vscode = new VsCodeImpl();
     } else {
-        return new VsCodeMock();
+        vscode = new VsCodeMock();
     }
+
+    return vscode;
 }
 
 export function getVsCode(): VsCode {

@@ -1,9 +1,23 @@
 <script lang="ts" setup>
 import { ref } from "vue";
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeDropdown,
+    vsCodeOption,
+    vsCodeTextField,
+} from "@vscode/webview-ui-toolkit";
 
+import { DocumentationPrompt, OutputFormat } from "../../../shared";
 import { getVsCode, VsCode } from "@/composables";
-import { DocumentationPrompt, OutputFormat } from "../../../shared/types";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
+
+provideVSCodeDesignSystem().register(
+    vsCodeButton(),
+    vsCodeDropdown(),
+    vsCodeOption(),
+    vsCodeTextField(),
+);
 
 interface Props {
     loading: boolean;
@@ -58,4 +72,25 @@ function handleSelectedFormat(format: OutputFormat) {
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+vscode-text-field {
+    min-height: inherit;
+    width: 100%;
+    margin-bottom: var(--margin);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-dropdown-background);
+}
+
+vscode-dropdown {
+    min-height: inherit;
+    width: 100%;
+    margin-bottom: var(--margin);
+}
+
+vscode-button {
+    width: 100%;
+    padding: 10px;
+    transition: background-color 0.3s ease;
+}
+</style>

@@ -1,32 +1,26 @@
 <script lang="ts" setup>
 import { onBeforeMount, ref } from "vue";
+
 import {
-    provideVSCodeDesignSystem,
-    vsCodeButton,
-    vsCodeDropdown,
-    vsCodeOption,
-    vsCodeTextArea,
-    vsCodeTextField,
-} from "@vscode/webview-ui-toolkit";
+    CopilotMessageData,
+    isInstanceOfPrompt,
+    MessageType,
+    Prompt,
+    VscMessage,
+} from "../../shared";
+import {
+    createResolver,
+    createVsCode,
+    MissingStateError,
+    TemplatePrompts,
+    VsCode,
+} from "@/composables";
 
-import { CopilotMessageData, MessageType, Prompt, VscMessage } from "../../shared/types";
-import { createResolver, createVsCode, MissingStateError, VsCode } from "@/composables";
-
-import "./css/style.css";
 import SidebarMenu from "./components/SidebarMenu.vue";
-import { TemplatePrompts } from "@/composables/types";
 import DefaultView from "@/views/DefaultView.vue";
 import DocumentationView from "@/views/DocumentationView.vue";
-import { isInstanceOfPrompt } from "../../shared/utils";
 
-// provideVSCodeDesignSystem().register(allComponents);
-provideVSCodeDesignSystem().register(
-    vsCodeButton(),
-    vsCodeDropdown(),
-    vsCodeOption(),
-    vsCodeTextArea(),
-    vsCodeTextField(),
-);
+import "./css/style.css";
 
 //
 // Vars
@@ -50,6 +44,7 @@ const sidebarMenuKey = ref(0);
 const prompts = ref<TemplatePrompts>({ categories: [] });
 const bpmnFiles = ref<string[]>([]);
 
+const viewState = ref("DefaultView");
 const loading = ref(true);
 let shrunk = ref(false);
 
@@ -195,8 +190,8 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
+                loading.value = false;
                 if (data?.response) {
-                    loading.value = false;
                     if (isInstanceOfPrompt(vscode.getState().currentPrompt)) {
                         outputText.value = data.response;
                         vscode.updateState({ response: data.response });
@@ -234,6 +229,7 @@ function handleSidebarToggle(isVisible: boolean) {
 }
 
 function handleSelectedPrompt(prompt: Prompt) {
+    viewState.value = "DefaultView";
     inputText.value = prompt.text;
     if (prompt.process as boolean) {
         processDropdown.value = bpmnFiles.value;
@@ -241,6 +237,7 @@ function handleSelectedPrompt(prompt: Prompt) {
         processDropdown.value = [];
     }
     vscode.updateState({
+        viewState: "DefaultView",
         currentPrompt: {
             text: prompt.text,
             process: (prompt.process as boolean) ? bpmnFiles.value[0] : undefined,
@@ -249,6 +246,7 @@ function handleSelectedPrompt(prompt: Prompt) {
 }
 
 function handleSelectedDocumentation() {
+    viewState.value = "DocumentationView";
     vscode.updateState({ viewState: "DocumentationView" });
 }
 
@@ -275,14 +273,14 @@ function sendPrompt() {
 <template>
     <main :class="{ shrunk: shrunk }">
         <DefaultView
-            v-if="vscode.getState().viewState === 'DefaultView'"
+            v-if="viewState === 'DefaultView'"
             :input-text="inputText"
             :loading="loading"
             :process-dropdown="processDropdown"
             @send-prompt="sendPrompt"
         />
         <DocumentationView
-            v-if="vscode.getState().viewState === 'DocumentationView'"
+            v-if="viewState === 'DocumentationView'"
             :loading="loading"
             @send-prompt="sendPrompt"
         />
@@ -359,98 +357,4 @@ main {
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-
-// vscode-text-area {
-//     min-height: inherit;
-//     width: 100%;
-//     margin-bottom: var(--margin);
-//     padding: 10px;
-//     border-radius: 4px;
-//     border: 1px solid var(--vscode-dropdown-background);
-// }
-//
-// vscode-button {
-//     width: 100%;
-//     padding: 10px;
-//     transition: background-color 0.3s ease;
-// }
-//
-// .input {
-//     grid-area: input;
-//     display: flex;
-//     flex-direction: column;
-//     gap: 12px;
-// }
-//
-// .output {
-//     grid-area: output;
-//     min-height: 400px;
-// }
-//
-// .output-loading {
-//     display: grid;
-//     min-height: inherit;
-//     align-content: center;
-//     justify-content: center;
-// }
-//
-// .output-loaded {
-//     min-height: inherit;
-// }
-//
-// /* Loader Animation*/
-// .loader {
-//     display: inline-block;
-//     position: relative;
-//     width: 48px;
-//     height: 40px;
-//     margin-top: 30px;
-//     background: var(--vscode-button-background);
-//     border-radius: 15% 15% 35% 35%;
-// }
-//
-// .loader::after {
-//     content: "";
-//     box-sizing: border-box;
-//     position: absolute;
-//     left: 45px;
-//     top: 8px;
-//     border: 4px solid var(--vscode-button-background);
-//     width: 16px;
-//     height: 20px;
-//     border-radius: 0 4px 4px 0;
-// }
-//
-// .loader::before {
-//     content: "";
-//     position: absolute;
-//     width: 1px;
-//     height: 10px;
-//     color: var(--vscode-editor-foreground);
-//     top: -15px;
-//     left: 11px;
-//     box-sizing: border-box;
-//     animation: animloader 1s ease infinite;
-// }
-//
-// @keyframes animloader {
-//     0% {
-//         box-shadow:
-//             2px 0 rgba(255, 255, 255, 0),
-//             12px 0 rgba(255, 255, 255, 0.3),
-//             20px 0 rgba(255, 255, 255, 0);
-//     }
-//     50% {
-//         box-shadow:
-//             2px -5px rgba(255, 255, 255, 0.5),
-//             12px -3px rgba(255, 255, 255, 0.5),
-//             20px -2px rgba(255, 255, 255, 0.6);
-//     }
-//     100% {
-//         box-shadow:
-//             2px -8px rgba(255, 255, 255, 0),
-//             12px -5px rgba(255, 255, 255, 0),
-//             20px -5px rgba(255, 255, 255, 0);
-//     }
-// }
 </style>
