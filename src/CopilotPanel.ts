@@ -1,29 +1,11 @@
-import {
-    Disposable,
-    extensions,
-    Uri,
-    ViewColumn,
-    WebviewPanel,
-    window,
-    workspace,
-} from "vscode";
+import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+
+import { CopilotMessageData, MessageType, Prompt, VscMessage } from "./shared/types";
+import { getCompletion } from "./modules/openai";
+
 import { Logger } from "./Logger";
-import { MessageType, VscMessage } from "./shared/types";
-import { Configuration, OpenAIApi } from "openai";
-import {
-    ChatCompletionRequestMessage,
-    ChatCompletionRequestMessageRoleEnum,
-} from "openai/api";
-
-function getOpenAiConf(): Configuration {
-    const apiKey = workspace
-        .getConfiguration("miranum-ide.copilot")
-        .get<string>("openaikey");
-
-    return new Configuration({
-        apiKey,
-    });
-}
+import { readFile, readFilesFromDirectory } from "./modules/reader";
+import { createPromptsWatcher, createWatcher } from "./modules/watcher";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -33,9 +15,7 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
-    private bpmnModeler = extensions.getExtension("miragon-gmbh.vs-code-bpmn-modeler")
-        ?.exports;
-    private openai = new OpenAIApi(getOpenAiConf());
+    private buffer: Partial<CopilotMessageData> | undefined;
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -47,11 +27,7 @@ export class CopilotPanel {
         this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
-        workspace.onDidChangeConfiguration((conf) => {
-            if (conf.affectsConfiguration("miranum.copilot.openaikey")) {
-                this.openai = new OpenAIApi(getOpenAiConf());
-            }
-        });
+        const initialData = this.init(extensionUri);
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
@@ -64,7 +40,16 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.logger ?? "",
                             );
-                            await this.postMessage(MessageType.initialize);
+                            const copilotMessageData: CopilotMessageData = {
+                                prompts: (await initialData.get("prompts")) as string,
+                                bpmnFiles: (await initialData.get(
+                                    "bpmnFiles",
+                                )) as string[],
+                            };
+                            await this.postMessage(
+                                MessageType.initialize,
+                                copilotMessageData,
+                            );
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -73,20 +58,29 @@ export class CopilotPanel {
                                 `(Webview: ${this.panel.title})`,
                                 message.logger ?? "",
                             );
-                            await this.postMessage(MessageType.restore);
+                            if (
+                                await this.postMessage(MessageType.restore, this.buffer)
+                            ) {
+                                this.buffer = undefined;
+                            }
                             break;
                         }
                         case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                             try {
-                                const res = await this.getResponseFromApi(message.data);
+                                const copilotMessageData: CopilotMessageData = {
+                                    response: await this.getResponseFromApi(
+                                        message.data,
+                                    ),
+                                };
                                 await this.postMessage(
                                     MessageType.msgFromExtension,
-                                    res,
+                                    copilotMessageData,
                                 );
                             } catch (err) {
                                 const errMsg =
                                     err instanceof Error ? err.message : `${err}`;
                                 Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
+                                window.showErrorMessage("Miranum Copilot: " + errMsg);
                             }
                             break;
                         }
@@ -119,12 +113,25 @@ export class CopilotPanel {
             null,
             this.disposables,
         );
-
         this.panel.webview.postMessage({});
-
         this.panel.onDidChangeViewState(() => {}, null, this.disposables);
 
-        this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
+        const promptsWatcher = createPromptsWatcher(extensionUri, (prompts: string) => {
+            this.postMessage(MessageType.msgFromExtension, { prompts });
+        });
+        const bpmnWatcher = createWatcher(".bpmn", (bpmnFiles: string[]) => {
+            this.postMessage(MessageType.msgFromExtension, { bpmnFiles });
+        });
+
+        this.panel.onDidDispose(
+            () => {
+                promptsWatcher.dispose();
+                bpmnWatcher.dispose();
+                this.dispose();
+            },
+            null,
+            this.disposables,
+        );
     }
 
     public static createOrShow(extensionUri: Uri) {
@@ -165,8 +172,22 @@ export class CopilotPanel {
         }
     }
 
-    private async postMessage(messageType: MessageType, data?: string) {
-        const message: VscMessage<string> = {
+    private init(extensionUri: Uri): Map<string, Promise<string | string[]>> {
+        const promises: Map<string, Promise<string | string[]>> = new Map();
+        promises.set(
+            "prompts",
+            readFile(Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json")),
+        );
+        promises.set("bpmnFiles", readFilesFromDirectory("bpmn"));
+
+        return promises;
+    }
+
+    private async postMessage(
+        messageType: MessageType,
+        data?: CopilotMessageData,
+    ): Promise<boolean> {
+        const message: VscMessage<CopilotMessageData> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
         };
@@ -174,12 +195,19 @@ export class CopilotPanel {
         const res: boolean = await this.panel.webview.postMessage(message);
 
         if (!res) {
+            if (!this.panel.visible) {
+                this.buffer = {
+                    ...data,
+                };
+            }
             Logger.error(
                 "[Miranum.Copilot]",
                 `(Webview: ${this.panel.title})`,
-                `Could not post message (Viewtype: ${this.panel.visible})`,
+                "Could not post message!",
             );
         }
+
+        return res;
     }
 
     private getHtml(): string {
@@ -234,47 +262,7 @@ export class CopilotPanel {
             throw Error("No prompt given!");
         }
 
-        try {
-            return await this.getCompletion(prompt);
-        } catch (error) {
-            const errMsg = error instanceof Error ? error.message : `${error}`;
-            throw Error(errMsg);
-        }
-    }
-
-    private async getCompletion(
-        prompt: string,
-        model = "gpt-3.5-turbo",
-    ): Promise<string> {
-        const content = this.createCompletion(prompt);
-        const messages: ChatCompletionRequestMessage[] = [
-            {
-                role: ChatCompletionRequestMessageRoleEnum.User,
-                content,
-            },
-        ];
-        const response = await this.openai.createChatCompletion({
-            model,
-            messages,
-            temperature: 0,
-        });
-
-        if (
-            response.data.choices[0].message &&
-            response.data.choices[0].message.content
-        ) {
-            return response.data.choices[0].message.content;
-        } else {
-            return "";
-        }
-    }
-
-    private createCompletion(prompt: string): string {
-        return `
-${prompt}
-The BPMN Process is delimited by triple quotes.
-
-'''${this.bpmnModeler.getBpmn()}'''
-        `;
+        const promptObject: Prompt = JSON.parse(prompt);
+        return await getCompletion(this.extensionUri, promptObject);
     }
 }

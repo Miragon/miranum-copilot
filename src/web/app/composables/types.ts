@@ -1,8 +1,14 @@
+import { Prompt } from "../../../shared/types";
+
+export interface VscState<T> {
+    data: T;
+}
+
 export interface TemplatePrompts {
     categories: Category[];
 }
 
-export interface Category {
+interface Category {
     name: string;
-    prompts: string[];
+    prompts: Prompt[];
 }

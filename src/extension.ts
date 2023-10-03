@@ -1,14 +1,13 @@
-import { commands, ExtensionContext } from "vscode";
-import { CopilotPanel } from "./CopilotPanel";
+import { ExtensionContext } from "vscode";
+
+import { registerCommands } from "./modules/commands";
 import { Logger } from "./Logger";
 
 export function activate(context: ExtensionContext) {
-    let disposable = commands.registerCommand("copilot.start", () => {
-        CopilotPanel.createOrShow(context.extensionUri);
-    });
+    const disposables = registerCommands(context.extensionUri);
 
     context.subscriptions.push(Logger.get("Miranum: Copilot"));
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(...disposables);
 }
 
 export function deactivate() {}

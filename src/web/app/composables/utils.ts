@@ -5,10 +5,10 @@
  *     done - Resolves the Promise returned by wait
  * }
  */
-export function createResolver() {
-    let resolver: (r: string | undefined) => void;
-    let promise = new Promise<string | undefined>((resolve) => {
-        resolver = (response: string | undefined) => {
+export function createResolver<T>() {
+    let resolver: (r: T | undefined) => void;
+    let promise = new Promise<T | undefined>((resolve) => {
+        resolver = (response: T | undefined) => {
             resolve(response);
         };
     });
@@ -17,7 +17,7 @@ export function createResolver() {
         return promise;
     }
 
-    function done(data: string | undefined) {
+    function done(data: T | undefined) {
         resolver(data);
     }
 
