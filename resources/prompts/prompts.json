@@ -5,17 +5,17 @@
             "name": "General Questions",
             "prompts": [
                 {
-                    "prompt": "What is business process modeling, and why is it important for organizations?"
+                    "text": "What is business process modeling, and why is it important for organizations?"
                 },
                 {
-                    "prompt": "What does this process do?",
+                    "text": "What does this process do?",
                     "process": true
                 },
                 {
-                    "prompt": "What are common mistakes to avoid when creating BPMN diagrams?"
+                    "text": "What are common mistakes to avoid when creating BPMN diagrams?"
                 },
                 {
-                    "prompt": "Can you create a basic bpmn diagram for the following process:"
+                    "text": "Can you create a basic bpmn diagram for the following process:"
                 }
             ]
         },
@@ -23,22 +23,22 @@
             "name": "BPMN Help",
             "prompts": [
                 {
-                    "prompt": "How can I represent decision points in a BPMN Diagram?"
+                    "text": "How can I represent decision points in a BPMN Diagram?"
                 },
                 {
-                    "prompt": "What's the best way to depict parallel activities in BPMN?"
+                    "text": "What's the best way to depict parallel activities in BPMN?"
                 },
                 {
-                    "prompt": "Explain the different types of gateways in BPMN and when to use each."
+                    "text": "Explain the different types of gateways in BPMN and when to use each."
                 },
                 {
-                    "prompt": "Can you provide examples of inclusive and exclusive gateways?"
+                    "text": "Can you provide examples of inclusive and exclusive gateways?"
                 },
                 {
-                    "prompt": "Can you help me understand when to use manual tasks and automated tasks?"
+                    "text": "Can you help me understand when to use manual tasks and automated tasks?"
                 },
                 {
-                    "prompt": "What are some best practices for naming tasks and activities in BPMN?"
+                    "text": "What are some best practices for naming tasks and activities in BPMN?"
                 }
             ]
         },
@@ -46,16 +46,16 @@
             "name": "Specific Tasks",
             "prompts": [
                 {
-                    "prompt": "Give me ideas on how to represent user tasks in BPMN."
+                    "text": "Give me ideas on how to represent user tasks in BPMN."
                 },
                 {
-                    "prompt": "How do I model a service task that interacts with an external system?"
+                    "text": "How do I model a service task that interacts with an external system?"
                 },
                 {
-                    "prompt": "How can I show that an error occurred during a process step?"
+                    "text": "How can I show that an error occurred during a process step?"
                 },
                 {
-                    "prompt": "Are there ways to improve this model?",
+                    "text": "Are there ways to improve this model?",
                     "process": true
                 }
             ]
@@ -64,22 +64,22 @@
             "name": "forms",
             "prompts": [
                 {
-                    "prompt": "What benefits does the creation and usage of forms have?"
+                    "text": "What benefits does the creation and usage of forms have?"
                 },
                 {
-                    "prompt": "Generate a form for user tasks in the process.",
+                    "text": "Generate a form for user tasks in the process.",
                     "process": true
                 },
                 {
-                    "prompt": "Include a brief description for each form field in the form.",
+                    "text": "Include a brief description for each form field in the form.",
                     "form": true
                 },
                 {
-                    "prompt": "How can I optimize this existing form?",
+                    "text": "How can I optimize this existing form?",
                     "form": true
                 },
                 {
-                    "prompt": "Design a visually appealing form layout for the process.",
+                    "text": "Design a visually appealing form layout for the process.",
                     "process": true
                 }
             ]
@@ -88,12 +88,12 @@
             "name": "processDocumentation",
             "prompts": [
                 {
-                    "prompt": "Generate a process documentation as a valid JSON Object file using the a template.",
+                    "text": "Generate a process documentation as a valid JSON Object file using the a template.",
                     "process": true,
                     "template": true
                 },
                 {
-                    "prompt": "Generate a process documentation as a valid Markdown file using the a template.",
+                    "text": "Generate a process documentation as a valid Markdown file using the a template.",
                     "process": true,
                     "template": true
                 }
