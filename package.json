@@ -84,7 +84,7 @@
         "@vitejs/plugin-vue": "^4.3.4",
         "@vscode/test-electron": "^2.3.4",
         "concurrently": "^8.2.1",
-        "esbuild": "^0.19.3",
+        "esbuild": "^0.19.4",
         "eslint": "^8.50.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-vue": "^9.17.0",
