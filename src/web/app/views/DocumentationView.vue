@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onBeforeMount, ref} from "vue";
+import { onBeforeMount, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,8 @@ import {
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
 
-import {OutputFormat} from "../../../shared";
-import {getVsCode, VsCode} from "@/composables";
+import { OutputFormat } from "../../../shared";
+import { getVsCode, VsCode } from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -44,9 +44,9 @@ onBeforeMount(() => {
             process: props.processDropdown[0],
             template: "",
             format: outputFormats.value[0] as OutputFormat,
-        }
+        },
     });
-})
+});
 
 function generateDocumentation() {
     loading.value = true;
@@ -57,8 +57,8 @@ function updatePath() {
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            template: templatePath.value
-        }
+            template: templatePath.value,
+        },
     });
 }
 
@@ -66,8 +66,8 @@ function handleSelectedBpmn(bpmnName: string) {
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            process: bpmnName
-        }
+            process: bpmnName,
+        },
     });
 }
 
@@ -75,8 +75,8 @@ function handleSelectedFormat(format: OutputFormat) {
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            format: format
-        }
+            format: format,
+        },
     });
 }
 </script>
@@ -107,7 +107,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-button @click="generateDocumentation">Generate</vscode-button>
     </div>
     <div v-else class="loading">
-        <LoadingAnimation/>
+        <LoadingAnimation />
     </div>
 </template>
 

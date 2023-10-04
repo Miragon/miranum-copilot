@@ -1,4 +1,4 @@
-import {DefaultPrompt, DocumentationPrompt, Prompt} from "./types";
+import { DefaultPrompt, DocumentationPrompt, Prompt } from "./types";
 
 export function isInstanceOfDefaultPrompt(object: Prompt): object is DefaultPrompt {
     return "text" in object;

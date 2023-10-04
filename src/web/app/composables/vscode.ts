@@ -1,13 +1,13 @@
-import {WebviewApi} from "vscode-webview";
+import { WebviewApi } from "vscode-webview";
 
 import {
     isInstanceOfDefaultPrompt,
     isInstanceOfDocumentationPrompt,
     MessageType,
     Prompt,
-    VscMessage
+    VscMessage,
 } from "../../../shared";
-import {TemplatePrompts} from "@/composables/types";
+import { TemplatePrompts } from "@/composables/types";
 
 declare const globalViewType: string;
 
@@ -107,7 +107,7 @@ class VsCodeMock implements VsCode {
     }
 
     async postMessage(message: VscMessage<Prompt>): Promise<void> {
-        const {type, data, logger} = message;
+        const { type, data, logger } = message;
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
                 console.log("[Log]", logger);
@@ -128,7 +128,7 @@ class VsCodeMock implements VsCode {
                 console.log("[Log]", data);
 
                 if (!data) {
-                    console.error("No data to send.")
+                    console.error("No data to send.");
                     return;
                 }
 
@@ -144,7 +144,7 @@ class VsCodeMock implements VsCode {
                             data: {
                                 type: `${globalViewType}.${MessageType.msgFromExtension}`,
                                 data: {
-                                    response: json.data
+                                    response: json.data,
                                 },
                             },
                         }),
@@ -155,7 +155,7 @@ class VsCodeMock implements VsCode {
                             data: {
                                 type: `${globalViewType}.${MessageType.msgFromExtension}`,
                                 data: {
-                                    response: true
+                                    response: true,
                                 },
                             },
                         }),

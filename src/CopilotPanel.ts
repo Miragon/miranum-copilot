@@ -1,4 +1,4 @@
-import {commands, Disposable, Uri, ViewColumn, WebviewPanel, window, workspace} from "vscode";
+import {commands, Disposable, Uri, ViewColumn, WebviewPanel, window, workspace,} from "vscode";
 
 import {
     DocumentationPrompt,
@@ -8,7 +8,7 @@ import {
     MessageType,
     OutputFormat,
     Prompt,
-    VscMessage
+    VscMessage,
 } from "./shared";
 import {getCompletion, getCompletionWithSchema} from "./modules/openai";
 
@@ -165,14 +165,9 @@ export class CopilotPanel {
                     );
                     const copilotMessageData: MessageToWebview = {
                         prompts: (await this.initialData.get("prompts")) as string,
-                        bpmnFiles: (await this.initialData.get(
-                            "bpmnFiles",
-                        )) as string[],
+                        bpmnFiles: (await this.initialData.get("bpmnFiles")) as string[],
                     };
-                    await this.postMessage(
-                        MessageType.initialize,
-                        copilotMessageData,
-                    );
+                    await this.postMessage(MessageType.initialize, copilotMessageData);
                     break;
                 }
                 case `${CopilotPanel.viewType}.${MessageType.restore}`: {
@@ -181,9 +176,7 @@ export class CopilotPanel {
                         `(Webview: ${this.panel.title})`,
                         message.logger ?? "",
                     );
-                    if (
-                        await this.postMessage(MessageType.restore, this.buffer)
-                    ) {
+                    if (await this.postMessage(MessageType.restore, this.buffer)) {
                         this.buffer = undefined;
                     }
                     break;
@@ -201,8 +194,7 @@ export class CopilotPanel {
                             copilotMessageData,
                         );
                     } catch (err) {
-                        const errMsg =
-                            err instanceof Error ? err.message : `${err}`;
+                        const errMsg = err instanceof Error ? err.message : `${err}`;
                         Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
                         window.showErrorMessage("Miranum Copilot: " + errMsg);
                     }
@@ -227,11 +219,7 @@ export class CopilotPanel {
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : `${error}`;
-            Logger.error(
-                "[Miranum.Copilot]",
-                `(Webview: ${this.panel.title})`,
-                message,
-            );
+            Logger.error("[Miranum.Copilot]", `(Webview: ${this.panel.title})`, message);
         }
     }
 
@@ -271,29 +259,32 @@ export class CopilotPanel {
         </html>
     `;
     }
-
 }
 
 function getNonce(): string {
     let text = "";
-    const possible =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     for (let i = 0; i < 32; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
     return text;
 }
 
-async function handleReceivedMessage(extensionUri: Uri, prompt?: Prompt): Promise<string | boolean> {
+async function handleReceivedMessage(
+    extensionUri: Uri,
+    prompt?: Prompt,
+): Promise<string | boolean> {
     if (!prompt) {
         throw Error("No prompt given!");
     }
 
     if (isInstanceOfDefaultPrompt(prompt)) {
-        return await getCompletion(await createPrompt(
-            prompt.text,
-            await readBpmnFile(Uri.file(prompt.process as string))
-        ));
+        return await getCompletion(
+            await createPrompt(
+                prompt.text,
+                await readBpmnFile(Uri.file(prompt.process as string)),
+            ),
+        );
     } else if (isInstanceOfDocumentationPrompt(prompt)) {
         if (await createProcessDocumentation(extensionUri, prompt)) {
             window.showInformationMessage("Process documentation created!");
@@ -303,7 +294,10 @@ async function handleReceivedMessage(extensionUri: Uri, prompt?: Prompt): Promis
     return false;
 }
 
-export async function createProcessDocumentation(extensionUri: Uri, documentationPrompt: DocumentationPrompt): Promise<boolean> {
+export async function createProcessDocumentation(
+    extensionUri: Uri,
+    documentationPrompt: DocumentationPrompt,
+): Promise<boolean> {
     const process = readBpmnFile(Uri.file(documentationPrompt.process));
 
     let res: string;
@@ -311,17 +305,26 @@ export async function createProcessDocumentation(extensionUri: Uri, documentatio
 
     switch (documentationPrompt.format) {
         case OutputFormat.json: {
-            const templateUri = documentationPrompt.template ?
-                Uri.file(documentationPrompt.template) :
-                Uri.joinPath(extensionUri, "resources", "templates", "documentation.schema.json");
-            const template = documentationPrompt.template ?
-                readFile(templateUri) :
-                readFile(templateUri);
+            const templateUri = documentationPrompt.template
+                ? Uri.file(documentationPrompt.template)
+                : Uri.joinPath(
+                    extensionUri,
+                    "resources",
+                    "templates",
+                    "documentation.schema.json",
+                );
+            const template = documentationPrompt.template
+                ? readFile(templateUri)
+                : readFile(templateUri);
 
             const prompt = await createPrompt(jsonPrompt, await process);
 
             fileName = "documentation.json";
-            res = await getCompletionWithSchema(prompt, JSON.parse(await template), "gpt-4");
+            res = await getCompletionWithSchema(
+                prompt,
+                JSON.parse(await template),
+                "gpt-4",
+            );
 
             const json = JSON.parse(res);
             if (!json.$schema) {
@@ -335,10 +338,22 @@ export async function createProcessDocumentation(extensionUri: Uri, documentatio
         }
         case OutputFormat.md:
         default: {
-            const template = documentationPrompt.template ?
-                readFile(Uri.file(documentationPrompt.template)) :
-                readFile(Uri.joinPath(extensionUri, "resources", "templates", "documentation.md"));
-            const prompt = await createPrompt(markdownPrompt, await process, undefined, await template);
+            const template = documentationPrompt.template
+                ? readFile(Uri.file(documentationPrompt.template))
+                : readFile(
+                    Uri.joinPath(
+                        extensionUri,
+                        "resources",
+                        "templates",
+                        "documentation.md",
+                    ),
+                );
+            const prompt = await createPrompt(
+                markdownPrompt,
+                await process,
+                undefined,
+                await template,
+            );
 
             fileName = "documentation.md";
             res = await getCompletion(prompt, "gpt-4");
@@ -361,7 +376,12 @@ export async function createProcessDocumentation(extensionUri: Uri, documentatio
     return false;
 }
 
-async function createPrompt(base: string, process?: string, form?: string, template?: string): Promise<string> {
+async function createPrompt(
+    base: string,
+    process?: string,
+    form?: string,
+    template?: string,
+): Promise<string> {
     let returnValue = base;
 
     if (process) {

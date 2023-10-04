@@ -1,6 +1,14 @@
-import {workspace} from "vscode";
-import {ChatCompletionFunctions, Configuration, CreateChatCompletionRequestFunctionCall, OpenAIApi} from "openai";
-import {ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum,} from "openai/api";
+import { workspace } from "vscode";
+import {
+    ChatCompletionFunctions,
+    Configuration,
+    CreateChatCompletionRequestFunctionCall,
+    OpenAIApi,
+} from "openai";
+import {
+    ChatCompletionRequestMessage,
+    ChatCompletionRequestMessageRoleEnum,
+} from "openai/api";
 
 export let openAiApi = new OpenAIApi(getOpenAiConf());
 
@@ -47,31 +55,33 @@ export async function getCompletion(
 export async function getCompletionWithSchema(
     prompt: string,
     schema: JSON,
-    model = "gpt-3.5-turbo"
+    model = "gpt-3.5-turbo",
 ): Promise<string> {
     const messages: ChatCompletionRequestMessage[] = [
         {
             role: ChatCompletionRequestMessageRoleEnum.System,
-            content: "You are a helpful process documentation assistant."
+            content: "You are a helpful process documentation assistant.",
         },
         {
             role: ChatCompletionRequestMessageRoleEnum.User,
-            content: prompt
-        }
+            content: prompt,
+        },
     ];
-    const functions: ChatCompletionFunctions[] = [{
-        name: "set_documentation",
-        parameters: schema
-    }];
+    const functions: ChatCompletionFunctions[] = [
+        {
+            name: "set_documentation",
+            parameters: schema,
+        },
+    ];
     const function_call: CreateChatCompletionRequestFunctionCall = {
-        name: "set_documentation"
+        name: "set_documentation",
     };
 
     const response = await openAiApi.createChatCompletion({
         model,
         messages,
         functions,
-        function_call
+        function_call,
     });
 
     const returnVal = response.data.choices[0].message?.function_call?.arguments;

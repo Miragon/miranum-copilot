@@ -3,7 +3,7 @@
 import * as vscode from "vscode";
 import * as assert from "assert";
 import * as path from "path";
-import {readFilesFromDirectory} from "../../modules/reader";
+import { readFilesFromDirectory } from "../../modules/reader";
 // import * as myExtension from '../../extension';
 
 suite("Extension Test Suite", () => {

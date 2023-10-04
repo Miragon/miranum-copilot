@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue";
-import {provideVSCodeDesignSystem, vsCodeButton} from "@vscode/webview-ui-toolkit";
+import { computed, ref } from "vue";
+import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
 
-import {DefaultPrompt} from "../../../shared";
-import {TemplatePrompts} from "@/composables/types";
+import { DefaultPrompt } from "../../../shared";
+import { TemplatePrompts } from "@/composables/types";
 
 import "../css/style.css";
 
@@ -64,8 +64,8 @@ const buttonStyle = computed(() => {
                 >
                     {{ category.name }}
                     <span class="expand-icon">{{
-                            selectedCategory === category.name ? "▼" : "▶"
-                        }}</span>
+                        selectedCategory === category.name ? "▼" : "▶"
+                    }}</span>
                     <ul v-if="selectedCategory === category.name">
                         <li
                             v-for="prompt in category.prompts"
@@ -141,8 +141,9 @@ button {
     border: 1px solid #444;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s,
-    transform 0.2s;
+    transition:
+        background-color 0.3s,
+        transform 0.2s;
     background-color: #303030;
     text-align: center;
     font-size: 20px;

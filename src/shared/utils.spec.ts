@@ -1,5 +1,5 @@
-import {isInstanceOfDefaultPrompt, isInstanceOfDocumentationPrompt} from "./utils";
-import {OutputFormat} from "./types";
+import { isInstanceOfDefaultPrompt, isInstanceOfDocumentationPrompt } from "./utils";
+import { OutputFormat } from "./types";
 
 describe("isInstanceOfDefaultPrompt", () => {
     it("should return true", () => {

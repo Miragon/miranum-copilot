@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onBeforeMount, ref} from "vue";
+import { onBeforeMount, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,7 +8,7 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import {getVsCode, MissingStateError, VsCode} from "@/composables";
+import { getVsCode, MissingStateError, VsCode } from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -46,21 +46,23 @@ onBeforeMount(() => {
                 text: props.inputText,
                 process: props.processDropdown[0],
             },
-            response: props.outputText
-        })
+            response: props.outputText,
+        });
     } catch (error) {
         if (!vscode) {
             // This is ok because we set the state in the App.vue on initialization.
             console.log("[Default View]: onBeforeMount() -> vscode is undefined");
         } else if (error instanceof MissingStateError) {
             // This is ok because we set the state in the App.vue on initialization.
-            console.log("[Default View]: onBeforeMount() -> Component was mounted before the initial state was set.");
+            console.log(
+                "[Default View]: onBeforeMount() -> Component was mounted before the initial state was set.",
+            );
         }
     }
-})
+});
 
 function updatePrompt() {
-    vscode.updateState({currentPrompt: {text: inputText.value}});
+    vscode.updateState({ currentPrompt: { text: inputText.value } });
 }
 
 function sendPrompt() {
@@ -72,8 +74,8 @@ function handleSelectedBpmn(bpmnName: string) {
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            process: bpmnName
-        }
+            process: bpmnName,
+        },
     });
 }
 </script>
@@ -113,7 +115,7 @@ function handleSelectedBpmn(bpmnName: string) {
 
     <div class="output">
         <div v-if="loading" class="output-loading">
-            <LoadingAnimation/>
+            <LoadingAnimation />
         </div>
 
         <div v-if="!loading" class="output-loaded">

@@ -1,5 +1,5 @@
-import {commands, Disposable, Uri, window} from "vscode";
-import {CopilotPanel} from "../CopilotPanel";
+import { commands, Disposable, Uri, window } from "vscode";
+import { CopilotPanel } from "../CopilotPanel";
 
 export function registerCommands(extensionUri: Uri): Disposable[] {
     const disposables: Disposable[] = [];

@@ -1,5 +1,5 @@
-import {Uri, workspace} from "vscode";
-import {Buffer} from "node:buffer";
+import { Uri, workspace } from "vscode";
+import { Buffer } from "node:buffer";
 
 const fs = workspace.fs;
 
@@ -32,10 +32,7 @@ export async function readBpmnFile(uri: Uri): Promise<string> {
 /**
  * Extract all files with a given extension from a directory recursively.
  */
-export async function readFilesFromDirectory(
-    extension: string,
-): Promise<string[]> {
-
+export async function readFilesFromDirectory(extension: string): Promise<string[]> {
     const uris = await workspace.findFiles(`**/*.${extension}`);
     const fileNames: string[] = [];
 

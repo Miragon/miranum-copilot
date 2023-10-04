@@ -30,9 +30,7 @@ export interface MessageToWebview {
     response?: string | boolean;
 }
 
-export type Prompt =
-    DefaultPrompt |
-    DocumentationPrompt;
+export type Prompt = DefaultPrompt | DocumentationPrompt;
 
 /**
  * The default prompt type.

@@ -1,4 +1,4 @@
-import {DefaultPrompt} from "../../../shared";
+import { DefaultPrompt } from "../../../shared";
 
 export interface VscState<T> {
     data: T;
