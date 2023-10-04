@@ -1,11 +1,6 @@
-import { Uri, workspace } from "vscode";
-import { Configuration, OpenAIApi } from "openai";
-import {
-    ChatCompletionRequestMessage,
-    ChatCompletionRequestMessageRoleEnum,
-} from "openai/api";
-import { Prompt } from "../shared/types";
-import { readBpmnFile } from "./reader";
+import {workspace} from "vscode";
+import {ChatCompletionFunctions, Configuration, CreateChatCompletionRequestFunctionCall, OpenAIApi} from "openai";
+import {ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum,} from "openai/api";
 
 export let openAiApi = new OpenAIApi(getOpenAiConf());
 
@@ -26,14 +21,13 @@ function getOpenAiConf(): Configuration {
 }
 
 export async function getCompletion(
-    prompt: Prompt,
+    prompt: string,
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const content = await createCompletion(prompt);
     const messages: ChatCompletionRequestMessage[] = [
         {
             role: ChatCompletionRequestMessageRoleEnum.User,
-            content,
+            content: prompt,
         },
     ];
     const response = await openAiApi.createChatCompletion({
@@ -42,83 +36,48 @@ export async function getCompletion(
         temperature: 0,
     });
 
-    if (response.data.choices[0].message && response.data.choices[0].message.content) {
-        return response.data.choices[0].message.content;
+    const returnVal = response.data.choices[0].message?.content;
+    if (returnVal) {
+        return returnVal;
     } else {
         return "";
     }
 }
 
-async function createCompletion(prompt: Prompt): Promise<string> {
-    let returnValue = prompt.text;
+export async function getCompletionWithSchema(
+    prompt: string,
+    schema: JSON,
+    model = "gpt-3.5-turbo"
+): Promise<string> {
+    const messages: ChatCompletionRequestMessage[] = [
+        {
+            role: ChatCompletionRequestMessageRoleEnum.System,
+            content: "You are a helpful process documentation assistant."
+        },
+        {
+            role: ChatCompletionRequestMessageRoleEnum.User,
+            content: prompt
+        }
+    ];
+    const functions: ChatCompletionFunctions[] = [{
+        name: "set_documentation",
+        parameters: schema
+    }];
+    const function_call: CreateChatCompletionRequestFunctionCall = {
+        name: "set_documentation"
+    };
 
-    if (typeof prompt.process === "string") {
-        returnValue =
-            returnValue +
-            "\n\n" +
-            "The BPMN Process is delimited by triple quotes." +
-            "\n\n" +
-            "'''" +
-            (await readBpmnFile(Uri.file(prompt.process))) +
-            "'''";
-    }
-    if (prompt.form) {
-        // returnValue =
-        //     returnValue +
-        //     "\n\n" +
-        //     "The Form is delimited by triple equal signs." +
-        //     "\n\n" +
-        //     "===" +
-        //     formBuilder.getForm() +
-        //     "===";
-    }
-    // if (prompt.template) {
-    //     returnValue =
-    //         returnValue +
-    //         "\n\n" +
-    //         "The Template is delimited by triple asterisks." +
-    //         "\n\n" +
-    //         "***" +
-    //         (await getTemplate(prompt, extensionUri)) +
-    //         "***";
-    // }
+    const response = await openAiApi.createChatCompletion({
+        model,
+        messages,
+        functions,
+        function_call
+    });
 
-    return returnValue;
+    const returnVal = response.data.choices[0].message?.function_call?.arguments;
+    if (returnVal) {
+        return returnVal;
+    } else {
+        return "{}";
+    }
 }
-
-// async function getTemplate(prompt: Prompt, extensionUri: Uri): Promise<string> {
-//     if (!prompt.template) {
-//         throw new Error("No template specified");
-//     }
-//
-//     let uri;
-//     if (typeof prompt.template === "boolean") {
-//         switch (prompt.outputFormat) {
-//             case OutputFormat.json:
-//                 uri = Uri.joinPath(
-//                     extensionUri,
-//                     "resources",
-//                     "templates",
-//                     "documentation.schema.json",
-//                 );
-//                 break;
-//             case OutputFormat.md:
-//             default:
-//                 uri = Uri.joinPath(
-//                     extensionUri,
-//                     "resources",
-//                     "templates",
-//                     "documentation.md",
-//                 );
-//                 break;
-//         }
-//     } else {
-//         uri = Uri.file(prompt.template);
-//     }
-//
-//     if (!uri) {
-//         throw new Error("Something went wrong while creating the uri!");
-//     }
-//
-//     return await readFile(uri);
-// }

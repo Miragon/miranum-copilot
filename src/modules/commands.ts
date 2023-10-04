@@ -1,5 +1,5 @@
-import { commands, Disposable, Uri, window } from "vscode";
-import { CopilotPanel } from "../CopilotPanel";
+import {commands, Disposable, Uri, window} from "vscode";
+import {CopilotPanel} from "../CopilotPanel";
 
 export function registerCommands(extensionUri: Uri): Disposable[] {
     const disposables: Disposable[] = [];
@@ -11,13 +11,13 @@ export function registerCommands(extensionUri: Uri): Disposable[] {
 }
 
 function startCopilot(extensionUri: Uri): Disposable {
-    return commands.registerCommand("copilot.start", () => {
+    return commands.registerCommand("miranum.copilot.start", () => {
         CopilotPanel.createOrShow(extensionUri);
     });
 }
 
 function editPrompts(extensionUri: Uri): Disposable {
-    return commands.registerCommand("copilot.editPrompts", () => {
+    return commands.registerCommand("miranum.copilot.editPrompts", () => {
         const uri = Uri.joinPath(extensionUri, "resources", "prompts", "prompts.json");
         window.showTextDocument(uri);
     });

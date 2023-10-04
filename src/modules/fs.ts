@@ -1,11 +1,16 @@
-import { Uri, workspace } from "vscode";
-import { Buffer } from "node:buffer";
+import {Uri, workspace} from "vscode";
+import {Buffer} from "node:buffer";
 
 const fs = workspace.fs;
 
 export async function readFile(uri: Uri): Promise<string> {
     const uint8Array = await fs.readFile(uri);
     return Buffer.from(uint8Array).toString();
+}
+
+export async function writeFile(uri: Uri, content: string): Promise<void> {
+    const uint8Array = Buffer.from(content);
+    await fs.writeFile(uri, uint8Array);
 }
 
 /**

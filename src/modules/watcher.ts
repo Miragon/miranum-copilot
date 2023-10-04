@@ -1,7 +1,7 @@
-import { FileSystemWatcher, RelativePattern, Uri, workspace } from "vscode";
-import { debounce } from "lodash";
+import {FileSystemWatcher, RelativePattern, Uri, workspace} from "vscode";
+import {debounce} from "lodash";
 
-import { readFile } from "./reader";
+import {readFile} from "./fs";
 
 export function createPromptsWatcher(
     extensionUri: Uri,
