@@ -1,7 +1,14 @@
-import { WebviewApi } from "vscode-webview";
+import {WebviewApi} from "vscode-webview";
 
-import { DocumentationPrompt, MessageType, Prompt, VscMessage } from "../../../shared";
-import { TemplatePrompts } from "@/composables/types";
+import {
+    DocumentationPrompt,
+    isInstanceOfDocumentationPrompt,
+    isInstanceOfPrompt,
+    MessageType,
+    Prompt,
+    VscMessage
+} from "../../../shared";
+import {TemplatePrompts} from "@/composables/types";
 
 declare const globalViewType: string;
 
@@ -36,21 +43,21 @@ export interface VsCode {
 
     updateState(state: Partial<CopilotState>): void;
 
-    postMessage(message: VscMessage<string>): void;
-}
-
-export class MissingStateError extends Error {
-    constructor() {
-        super("State is missing.");
-    }
+    postMessage(message: VscMessage<Prompt | DocumentationPrompt>): void;
 }
 
 export interface CopilotState {
     viewState: string;
     prompts: TemplatePrompts;
     bpmnFiles: string[];
-    currentPrompt: Partial<Prompt> | Partial<DocumentationPrompt>;
+    currentPrompt: Prompt | DocumentationPrompt;
     response: string;
+}
+
+export class MissingStateError extends Error {
+    constructor() {
+        super("State is missing.");
+    }
 }
 
 class VsCodeImpl implements VsCode {
@@ -77,14 +84,10 @@ class VsCodeImpl implements VsCode {
         this.setState({
             ...this.getState(),
             ...state,
-            currentPrompt: {
-                ...this.getState().currentPrompt,
-                ...state.currentPrompt,
-            },
         });
     }
 
-    public postMessage(message: VscMessage<string>) {
+    public postMessage(message: VscMessage<Prompt | DocumentationPrompt>) {
         this.vscode.postMessage(message);
     }
 }
@@ -104,8 +107,8 @@ class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(message: VscMessage<string>): Promise<void> {
-        const { type, data, logger } = message;
+    async postMessage(message: VscMessage<Prompt | DocumentationPrompt>): Promise<void> {
+        const {type, data, logger} = message;
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
                 console.log("[Log]", logger);
@@ -123,20 +126,38 @@ class VsCodeMock implements VsCode {
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromWebview}`: {
-                // We use a Postman Mock Server to mock the OpenAI API Call.
-                // The server simulates a fixed network delay of 1000 seconds.
-                const url: string =
-                    "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
-                const res = await fetch(url);
-                const json = await res.json();
-                window.dispatchEvent(
-                    new MessageEvent("message", {
-                        data: {
-                            type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                            data: json.data,
-                        },
-                    }),
-                );
+                console.log("[Log]", data);
+
+                if (isInstanceOfPrompt(data)) {
+                    // We use a Postman Mock Server to mock the OpenAI API Call.
+                    // The server simulates a fixed network delay of 1000 seconds.
+                    const url: string =
+                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    window.dispatchEvent(
+                        new MessageEvent("message", {
+                            data: {
+                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
+                                data: {
+                                    response: json.data
+                                },
+                            },
+                        }),
+                    );
+                } else if (isInstanceOfDocumentationPrompt(data)) {
+                    window.dispatchEvent(
+                        new MessageEvent("message", {
+                            data: {
+                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
+                                data: {
+                                    response: true
+                                },
+                            },
+                        }),
+                    );
+                }
+
                 break;
             }
             case `${globalViewType}.${MessageType.error}`: {
@@ -175,7 +196,7 @@ class VsCodeMock implements VsCode {
         } else {
             bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Partial<Prompt> | Partial<DocumentationPrompt>;
+        let currentPrompt: Prompt | DocumentationPrompt;
         if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
         } else {

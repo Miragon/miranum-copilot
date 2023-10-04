@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from "vue";
+import {onBeforeMount, ref} from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,8 @@ import {
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
 
-import { DocumentationPrompt, OutputFormat } from "../../../shared";
-import { getVsCode, VsCode } from "@/composables";
+import {OutputFormat} from "../../../shared";
+import {getVsCode, VsCode} from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -21,54 +21,93 @@ provideVSCodeDesignSystem().register(
 
 interface Props {
     loading: boolean;
+    processDropdown: string[];
 }
 
 const vscode: VsCode = getVsCode();
 const props = defineProps<Props>();
 const emits = defineEmits(["sendPrompt"]);
 
-let prompt: DocumentationPrompt = {
-    template: "",
-    format: OutputFormat.md as OutputFormat,
-};
-
+const processDropdown = ref<string[]>(props.processDropdown);
 let templatePath = ref("");
-const outputFormats = ref<OutputFormat[]>([OutputFormat.json, OutputFormat.md]);
+const outputFormats = ref<OutputFormat[]>([OutputFormat.md, OutputFormat.json]);
 const loading = ref(props.loading);
 
+//
+// Lifecycle hooks
+//
+onBeforeMount(() => {
+    // set an initial prompt
+    vscode.updateState({
+        viewState: "DocumentationView",
+        currentPrompt: {
+            process: props.processDropdown[0],
+            template: "",
+            format: outputFormats.value[0] as OutputFormat,
+        }
+    });
+})
+
 function generateDocumentation() {
-    emits("sendPrompt", prompt);
+    loading.value = true;
+    emits("sendPrompt");
 }
 
 function updatePath() {
-    prompt.template = templatePath.value;
-    vscode.updateState({ currentPrompt: { template: templatePath.value } });
+    vscode.updateState({
+        currentPrompt: {
+            ...vscode.getState().currentPrompt,
+            template: templatePath.value
+        }
+    });
+}
+
+function handleSelectedBpmn(bpmnName: string) {
+    vscode.updateState({
+        currentPrompt: {
+            ...vscode.getState().currentPrompt,
+            process: bpmnName
+        }
+    });
 }
 
 function handleSelectedFormat(format: OutputFormat) {
-    prompt.format = format;
-    vscode.updateState({ currentPrompt: { format: format } });
+    vscode.updateState({
+        currentPrompt: {
+            ...vscode.getState().currentPrompt,
+            format: format
+        }
+    });
 }
 </script>
 
 <template>
+    <vscode-dropdown v-if="processDropdown?.length > 0">
+        <vscode-option
+            v-for="processName in processDropdown"
+            :key="processName"
+            @click="handleSelectedBpmn(processName)"
+        >
+            {{ processName }}
+        </vscode-option>
+    </vscode-dropdown>
+    <vscode-text-field v-model="templatePath" @input="updatePath">
+        Path to the template (keep empty to use the default)
+    </vscode-text-field>
+    <vscode-dropdown>
+        <vscode-option
+            v-for="format in outputFormats"
+            :key="format"
+            @click="handleSelectedFormat(format)"
+        >
+            {{ format }}
+        </vscode-option>
+    </vscode-dropdown>
     <div v-if="!loading">
-        <vscode-text-field v-model="templatePath" @input="updatePath">
-            Path to the template (keep empty to use the default)
-        </vscode-text-field>
-        <vscode-dropdown>
-            <vscode-option
-                v-for="format in outputFormats"
-                :key="format"
-                @click="handleSelectedFormat(format)"
-            >
-                {{ format }}
-            </vscode-option>
-        </vscode-dropdown>
         <vscode-button @click="generateDocumentation">Generate</vscode-button>
     </div>
-    <div v-else>
-        <LoadingAnimation />
+    <div v-else class="loading">
+        <LoadingAnimation/>
     </div>
 </template>
 
@@ -92,5 +131,12 @@ vscode-button {
     width: 100%;
     padding: 10px;
     transition: background-color 0.3s ease;
+}
+
+.loading {
+    display: grid;
+    min-height: inherit;
+    align-content: center;
+    justify-content: center;
 }
 </style>
