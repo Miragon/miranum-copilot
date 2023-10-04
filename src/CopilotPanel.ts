@@ -183,7 +183,7 @@ export class CopilotPanel {
                 }
                 case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
                     try {
-                        const copilotMessageData: MessageToWebview = {
+                        const messageToWebview: MessageToWebview = {
                             response: await handleReceivedMessage(
                                 this.extensionUri,
                                 message.data,
@@ -191,12 +191,14 @@ export class CopilotPanel {
                         };
                         await this.postMessage(
                             MessageType.msgFromExtension,
-                            copilotMessageData,
+                            messageToWebview,
                         );
                     } catch (err) {
                         const errMsg = err instanceof Error ? err.message : `${err}`;
                         Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
                         window.showErrorMessage("Miranum Copilot: " + errMsg);
+                        // End loading animation
+                        this.postMessage(MessageType.msgFromExtension, {response: false});
                     }
                     break;
                 }

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, ref } from "vue";
+import {onBeforeMount, ref} from "vue";
 
 import {
     DefaultPrompt,
@@ -9,13 +9,7 @@ import {
     Prompt,
     VscMessage,
 } from "../../shared";
-import {
-    createResolver,
-    createVsCode,
-    MissingStateError,
-    TemplatePrompts,
-    VsCode,
-} from "@/composables";
+import {createResolver, createVsCode, MissingStateError, TemplatePrompts, VsCode,} from "@/composables";
 
 import SidebarMenu from "./components/SidebarMenu.vue";
 import DefaultView from "@/views/DefaultView.vue";
@@ -41,7 +35,7 @@ let inputText = ref("");
 let outputText = ref("");
 let processDropdown = ref<string[]>([]);
 
-const prompts = ref<TemplatePrompts>({ categories: [] });
+const prompts = ref<TemplatePrompts>({categories: []});
 const bpmnFiles = ref<string[]>([]);
 
 const defaultViewKey = ref(0);
@@ -75,7 +69,7 @@ onBeforeMount(async () => {
         // We will only get data if the user made changes while the webview was in the background.
         const data = await resolver.wait();
 
-        let restoredPrompts: TemplatePrompts = { categories: [] };
+        let restoredPrompts: TemplatePrompts = {categories: []};
         let isPromptsChanged = false;
         let restoredBpmnFiles: string[] = [];
         let isBpmnFilesChanged = false;
@@ -129,7 +123,7 @@ onBeforeMount(async () => {
             if (data) {
                 const initPrompts: TemplatePrompts = data.prompts
                     ? JSON.parse(data.prompts)
-                    : { categories: [] };
+                    : {categories: []};
                 const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
                 bpmnFiles.value = initBpmnFiles;
@@ -208,7 +202,9 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                 loading.value = false;
                 if (data?.response) {
                     if (viewState.value === "DefaultView") {
-                        outputText.value = data.response as string;
+                        if (typeof data.response === "string") {
+                            outputText.value = data.response;
+                        }
                         defaultViewKey.value++;
                     } else if (viewState.value === "DocumentationView") {
                         documentViewKey.value++;
@@ -218,7 +214,7 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                     const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
                     prompts.value = receivedPrompts;
                     sidebarMenuKey.value++;
-                    vscode.updateState({ prompts: receivedPrompts });
+                    vscode.updateState({prompts: receivedPrompts});
                 }
                 if (data?.bpmnFiles) {
                     const currentPrompt = vscode.getState().currentPrompt;
@@ -232,7 +228,7 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                         processDropdown.value = receivedBpmnFiles;
                         defaultViewKey.value++;
                     }
-                    vscode.updateState({ bpmnFiles: receivedBpmnFiles });
+                    vscode.updateState({bpmnFiles: receivedBpmnFiles});
                 }
                 break;
             }
