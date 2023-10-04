@@ -1,5 +1,5 @@
-import {Uri, workspace} from "vscode";
-import {Buffer} from "node:buffer";
+import { Uri, workspace } from "vscode";
+import { Buffer } from "node:buffer";
 
 const fs = workspace.fs;
 
