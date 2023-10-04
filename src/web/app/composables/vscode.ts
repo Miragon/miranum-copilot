@@ -1,9 +1,8 @@
 import {WebviewApi} from "vscode-webview";
 
 import {
-    DocumentationPrompt,
+    isInstanceOfDefaultPrompt,
     isInstanceOfDocumentationPrompt,
-    isInstanceOfPrompt,
     MessageType,
     Prompt,
     VscMessage
@@ -43,14 +42,14 @@ export interface VsCode {
 
     updateState(state: Partial<CopilotState>): void;
 
-    postMessage(message: VscMessage<Prompt | DocumentationPrompt>): void;
+    postMessage(message: VscMessage<Prompt>): void;
 }
 
 export interface CopilotState {
     viewState: string;
     prompts: TemplatePrompts;
     bpmnFiles: string[];
-    currentPrompt: Prompt | DocumentationPrompt;
+    currentPrompt: Prompt;
     response: string;
 }
 
@@ -87,7 +86,7 @@ class VsCodeImpl implements VsCode {
         });
     }
 
-    public postMessage(message: VscMessage<Prompt | DocumentationPrompt>) {
+    public postMessage(message: VscMessage<Prompt>) {
         this.vscode.postMessage(message);
     }
 }
@@ -107,7 +106,7 @@ class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(message: VscMessage<Prompt | DocumentationPrompt>): Promise<void> {
+    async postMessage(message: VscMessage<Prompt>): Promise<void> {
         const {type, data, logger} = message;
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -128,7 +127,12 @@ class VsCodeMock implements VsCode {
             case `${globalViewType}.${MessageType.msgFromWebview}`: {
                 console.log("[Log]", data);
 
-                if (isInstanceOfPrompt(data)) {
+                if (!data) {
+                    console.error("No data to send.")
+                    return;
+                }
+
+                if (isInstanceOfDefaultPrompt(data)) {
                     // We use a Postman Mock Server to mock the OpenAI API Call.
                     // The server simulates a fixed network delay of 1000 seconds.
                     const url: string =
@@ -196,7 +200,7 @@ class VsCodeMock implements VsCode {
         } else {
             bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Prompt | DocumentationPrompt;
+        let currentPrompt: Prompt;
         if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
         } else {

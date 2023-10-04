@@ -2,9 +2,9 @@
 import {onBeforeMount, ref} from "vue";
 
 import {
-    CopilotMessageData,
-    DocumentationPrompt,
-    isInstanceOfPrompt,
+    DefaultPrompt,
+    isInstanceOfDefaultPrompt,
+    MessageToWebview,
     MessageType,
     Prompt,
     VscMessage,
@@ -50,7 +50,7 @@ let shrunk = ref(false);
 // Logic
 //
 
-const resolver = createResolver<CopilotMessageData>();
+const resolver = createResolver<MessageToWebview>();
 
 /**
  * The "main" method.
@@ -92,7 +92,7 @@ onBeforeMount(async () => {
             }
         }
 
-        if (isInstanceOfPrompt(state.currentPrompt)) {
+        if (isInstanceOfDefaultPrompt(state.currentPrompt)) {
             inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
             outputText.value = state.response ? state.response : "";
             if (typeof state.currentPrompt?.process === "string") {
@@ -107,6 +107,8 @@ onBeforeMount(async () => {
         bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
 
         loading.value = false;
+        ((viewState.value === "DefaultView") ? defaultViewKey.value++ : null);
+        ((viewState.value === "DocumentationView") ? documentViewKey.value++ : null);
         sidebarMenuKey.value++;
     } catch (error) {
         if (error instanceof MissingStateError) {
@@ -154,7 +156,7 @@ onBeforeMount(async () => {
  * @param data (optional) The data of the message
  * @param info (optional) Information that will be logged
  */
-function postMessage(type: MessageType, data?: Prompt | DocumentationPrompt, info?: string): void {
+function postMessage(type: MessageType, data?: Prompt, info?: string): void {
     switch (type) {
         case MessageType.msgFromWebview: {
             loading.value = true;
@@ -182,7 +184,7 @@ function postMessage(type: MessageType, data?: Prompt | DocumentationPrompt, inf
  * Handle incoming messages.
  * @param message The incoming message
  */
-function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): void {
+function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): void {
     try {
         const type = message.data.type;
         const data = message.data.data;
@@ -217,7 +219,7 @@ function receiveMessage(message: MessageEvent<VscMessage<CopilotMessageData>>): 
                     const receivedBpmnFiles: string[] = data.bpmnFiles;
                     bpmnFiles.value = receivedBpmnFiles;
                     if (
-                        isInstanceOfPrompt(currentPrompt) &&
+                        isInstanceOfDefaultPrompt(currentPrompt) &&
                         (typeof currentPrompt.process === "string" ||
                             currentPrompt.process as boolean)
                     ) {
@@ -239,7 +241,7 @@ function handleSidebarToggle(isVisible: boolean) {
     shrunk.value = isVisible;
 }
 
-function handleSelectedPrompt(prompt: Prompt) {
+function handleSelectedPrompt(prompt: DefaultPrompt) {
     viewState.value = "DefaultView";
     inputText.value = prompt.text;
     if (prompt.process as boolean) {

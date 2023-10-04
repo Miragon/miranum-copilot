@@ -1,11 +1,11 @@
-import {DocumentationPrompt, Prompt} from "./types";
+import {DefaultPrompt, DocumentationPrompt, Prompt} from "./types";
 
-export function isInstanceOfPrompt(object: any): object is Prompt {
+export function isInstanceOfDefaultPrompt(object: Prompt): object is DefaultPrompt {
     return "text" in object;
 }
 
 export function isInstanceOfDocumentationPrompt(
-    object: any,
+    object: Prompt,
 ): object is DocumentationPrompt {
     return "process" in object && "template" in object && "format" in object;
 }

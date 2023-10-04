@@ -1,4 +1,4 @@
-import { Prompt } from "../../../shared/types";
+import {DefaultPrompt} from "../../../shared";
 
 export interface VscState<T> {
     data: T;
@@ -10,5 +10,5 @@ export interface TemplatePrompts {
 
 interface Category {
     name: string;
-    prompts: Prompt[];
+    prompts: DefaultPrompt[];
 }
