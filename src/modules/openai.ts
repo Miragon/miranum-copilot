@@ -27,15 +27,13 @@ function getApiKey(): string {
 }
 
 export async function getCompletion(
-    prompt: string,
+    messages: { role: string; content: string }[],
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const messages: ChatCompletionMessageParam[] = [
-        {
-            role: "user",
-            content: prompt,
-        },
-    ];
+    if (!isChatCompletionMessageParam(messages)) {
+        throw new Error("[OpenAI] Invalid message");
+    }
+
     const response = await openAiApi.chat.completions.create({
         model,
         messages,
@@ -51,20 +49,14 @@ export async function getCompletion(
 }
 
 export async function getCompletionWithSchema(
-    prompt: string,
+    messages: [{ role: string; content: string }],
     schema: JSON,
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const messages: ChatCompletionMessageParam[] = [
-        {
-            role: "system",
-            content: "You are a helpful process documentation assistant.",
-        },
-        {
-            role: "user",
-            content: prompt,
-        },
-    ];
+    if (!isChatCompletionMessageParam(messages)) {
+        throw new Error("[OpenAI] Invalid message");
+    }
+
     const functions: ChatCompletionCreateParams.Function[] = [
         {
             name: "set_documentation",
@@ -90,4 +82,49 @@ export async function getCompletionWithSchema(
     } else {
         return "{}";
     }
+}
+
+// function mapMessages(
+//     messages: [{ role: string; content: string }],
+// ): ChatCompletionMessageParam[] {
+//     const msg: ChatCompletionMessageParam[] = messages.map((message) => {
+//         if (
+//             message.role === "user" ||
+//             message.role === "system" ||
+//             message.role === "assistant" ||
+//             message.role === "function"
+//         ) {
+//             return {
+//                 role: message.role,
+//                 content: message.content,
+//             };
+//         } else {
+//             throw new Error("Invalid message");
+//         }
+//     });
+//
+//     if (!msg) {
+//         throw new Error("Invalid message");
+//     }
+//
+//     return msg;
+// }
+
+function isChatCompletionMessageParam(
+    message: any,
+): message is ChatCompletionMessageParam[] {
+    for (const msg of message) {
+        if (!("role" in msg) || !("content" in msg)) {
+            return false;
+        }
+        if (
+            msg.role !== "user" &&
+            msg.role !== "system" &&
+            msg.role !== "assistant" &&
+            msg.role !== "function"
+        ) {
+            return false;
+        }
+    }
+    return true;
 }

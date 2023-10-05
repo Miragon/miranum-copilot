@@ -1,4 +1,12 @@
-import {commands, Disposable, Uri, ViewColumn, WebviewPanel, window, workspace,} from "vscode";
+import {
+    commands,
+    Disposable,
+    Uri,
+    ViewColumn,
+    WebviewPanel,
+    window,
+    workspace,
+} from "vscode";
 
 import {
     DocumentationPrompt,
@@ -10,12 +18,12 @@ import {
     Prompt,
     VscMessage,
 } from "./shared";
-import {getCompletion, getCompletionWithSchema} from "./modules/openai";
+import { getCompletion, getCompletionWithSchema } from "./modules/openai";
 
-import {Logger} from "./Logger";
-import {readBpmnFile, readFile, readFilesFromDirectory, writeFile} from "./modules/fs";
-import {createPromptsWatcher, createWatcher} from "./modules/watcher";
-import {jsonPrompt, markdownPrompt} from "./modules/processDocumentation";
+import { Logger } from "./Logger";
+import { readBpmnFile, readFile, readFilesFromDirectory, writeFile } from "./modules/fs";
+import { createPromptsWatcher, createWatcher } from "./modules/watcher";
+import { jsonPrompt, markdownPrompt } from "./modules/processDocumentation";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -51,17 +59,16 @@ export class CopilotPanel {
             this.disposables,
         );
 
-        this.panel.onDidChangeViewState(() => {
-        }, null, this.disposables);
+        this.panel.onDidChangeViewState(() => {}, null, this.disposables);
 
         //
         // Create File System Watchers
         //
         const promptsWatcher = createPromptsWatcher(extensionUri, (prompts: string) => {
-            this.postMessage(MessageType.msgFromExtension, {prompts});
+            this.postMessage(MessageType.msgFromExtension, { prompts });
         });
         const bpmnWatcher = createWatcher(".bpmn", (bpmnFiles: string[]) => {
-            this.postMessage(MessageType.msgFromExtension, {bpmnFiles});
+            this.postMessage(MessageType.msgFromExtension, { bpmnFiles });
         });
 
         //
@@ -198,7 +205,9 @@ export class CopilotPanel {
                         Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
                         window.showErrorMessage("Miranum Copilot: " + errMsg);
                         // End loading animation
-                        this.postMessage(MessageType.msgFromExtension, {response: false});
+                        this.postMessage(MessageType.msgFromExtension, {
+                            response: false,
+                        });
                     }
                     break;
                 }
@@ -281,12 +290,16 @@ async function handleReceivedMessage(
     }
 
     if (isInstanceOfDefaultPrompt(prompt)) {
-        return await getCompletion(
-            await createPrompt(
-                prompt.text,
-                await readBpmnFile(Uri.file(prompt.process as string)),
-            ),
-        );
+        const messages = [
+            {
+                role: "user",
+                content: await createPrompt(
+                    prompt.text,
+                    await readBpmnFile(Uri.file(prompt.process as string)),
+                ),
+            },
+        ];
+        return await getCompletion(messages);
     } else if (isInstanceOfDocumentationPrompt(prompt)) {
         if (await createProcessDocumentation(extensionUri, prompt)) {
             window.showInformationMessage("Process documentation created!");
@@ -319,11 +332,20 @@ export async function createProcessDocumentation(
                 ? readFile(templateUri)
                 : readFile(templateUri);
 
-            const prompt = await createPrompt(jsonPrompt, await process);
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are a helpful process documentation assistant.",
+                },
+                {
+                    role: "user",
+                    content: await createPrompt(jsonPrompt, await process),
+                },
+            ];
 
             fileName = "documentation.json";
             res = await getCompletionWithSchema(
-                prompt,
+                messages,
                 JSON.parse(await template),
                 "gpt-4",
             );
@@ -350,15 +372,25 @@ export async function createProcessDocumentation(
                         "documentation.md",
                     ),
                 );
-            const prompt = await createPrompt(
-                markdownPrompt,
-                await process,
-                undefined,
-                await template,
-            );
+
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are a helpful process documentation assistant.",
+                },
+                {
+                    role: "user",
+                    content: await createPrompt(
+                        markdownPrompt,
+                        await process,
+                        undefined,
+                        await template,
+                    ),
+                },
+            ];
 
             fileName = "documentation.md";
-            res = await getCompletion(prompt, "gpt-4");
+            res = await getCompletion(messages, "gpt-4");
         }
     }
 
