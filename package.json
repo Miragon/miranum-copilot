@@ -74,9 +74,11 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "pretest": "npm run compile && npm run lint",
+        "pretest": "npm run lint && npm run compile",
+        "compile": "tsc --skipLibCheck -p ./",
         "lint": "eslint src --ext ts",
         "test": "node ./dist/test/runTest.js",
+        "unit": "jest --config jest.config.js",
         "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
         "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
         "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
@@ -115,7 +117,7 @@
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.2.2",
         "lodash": "^4.17.21",
-        "openai": "^3.3.0",
+        "openai": "^4.11.1",
         "vue": "^3.3.4"
     }
 }
