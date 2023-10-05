@@ -49,7 +49,7 @@ export async function getCompletion(
 }
 
 export async function getCompletionWithSchema(
-    messages: [{ role: string; content: string }],
+    messages: { role: string; content: string }[],
     schema: JSON,
     model = "gpt-3.5-turbo",
 ): Promise<string> {
