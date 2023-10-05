@@ -1,3 +1,5 @@
+import { expect } from "chai";
+
 import { isInstanceOfDefaultPrompt, isInstanceOfDocumentationPrompt } from "./utils";
 import { OutputFormat } from "./types";
 
@@ -7,14 +9,14 @@ describe("isInstanceOfDefaultPrompt", () => {
             text: "test",
         });
 
-        expect(isInstanceOfDefaultPrompt(JSON.parse(prompt))).toBe(true);
+        expect(isInstanceOfDefaultPrompt(JSON.parse(prompt))).to.equal(true);
     });
     it("should return false", () => {
         const prompt = JSON.stringify({
             process: "test",
         });
 
-        expect(isInstanceOfDefaultPrompt(JSON.parse(prompt))).toBe(false);
+        expect(isInstanceOfDefaultPrompt(JSON.parse(prompt))).to.equal(false);
     });
 });
 
@@ -26,13 +28,13 @@ describe("isInstanceOfDocumentationPrompt", () => {
             format: OutputFormat.json,
         });
 
-        expect(isInstanceOfDocumentationPrompt(JSON.parse(prompt))).toBe(true);
+        expect(isInstanceOfDocumentationPrompt(JSON.parse(prompt))).to.equal(true);
     });
     it("should return false", () => {
         const prompt = JSON.stringify({
             text: "test",
         });
 
-        expect(isInstanceOfDocumentationPrompt(JSON.parse(prompt))).toBe(false);
+        expect(isInstanceOfDocumentationPrompt(JSON.parse(prompt))).to.equal(false);
     });
 });
