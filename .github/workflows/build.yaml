@@ -14,10 +14,10 @@ jobs:
         run: npm install
       - name: Lint
         run: npm run lint
-      - name: Test
-        run: |
-          npm run unit 
-          npm run test
+      - name: Unit Tests
+        run: npm run unit
+      - name: Integration Tests
+        run: xvfb-run -a npm run test
       - name: Build
         run: npm run build
       - name: Upload coverage to Codecov
