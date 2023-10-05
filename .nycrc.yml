@@ -1,4 +1,4 @@
 extends: "@istanbuljs/nyc-config-typescript"
 reporter:
-  - lcov
+  - clover
   - text

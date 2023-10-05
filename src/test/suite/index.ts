@@ -12,9 +12,10 @@ export function run(): Promise<void> {
     const testsRoot = path.resolve(__dirname, "..");
 
     return new Promise((c, e) => {
-        glob("**/**.test.js", { cwd: testsRoot })
+        glob("**/*(*.test|*.spec).js", { cwd: testsRoot })
             .then((files: string[]) => {
                 // Add files to the test suite
+                console.log("files", files);
                 files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
                 try {
