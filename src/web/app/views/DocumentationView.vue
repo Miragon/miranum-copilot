@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, ref } from "vue";
+import { computed, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -22,34 +22,28 @@ provideVSCodeDesignSystem().register(
 interface Props {
     loading: boolean;
     processDropdown: string[];
+    selectedBpmn: string;
 }
 
 const vscode: VsCode = getVsCode();
 const props = defineProps<Props>();
 const emits = defineEmits(["sendPrompt"]);
 
-const processDropdown = ref<string[]>(props.processDropdown);
+const processDropdown = computed(() => props.processDropdown);
+const selectedBpmn = computed({
+    get() {
+        return props.selectedBpmn;
+    },
+    set(processName: string) {
+        return processName;
+    },
+});
 let templatePath = ref("");
 const outputFormats = ref<OutputFormat[]>([OutputFormat.md, OutputFormat.json]);
-const loading = ref(props.loading);
 
-//
-// Lifecycle hooks
-//
-onBeforeMount(() => {
-    // set an initial prompt
-    vscode.updateState({
-        viewState: "DocumentationView",
-        currentPrompt: {
-            process: props.processDropdown[0],
-            template: "",
-            format: outputFormats.value[0] as OutputFormat,
-        },
-    });
-});
+const loading = computed(() => props.loading);
 
 function generateDocumentation() {
-    loading.value = true;
     emits("sendPrompt");
 }
 
@@ -62,11 +56,16 @@ function updatePath() {
     });
 }
 
-function handleSelectedBpmn(bpmnName: string) {
+function isBpmnSelected(processName: string) {
+    return processName === selectedBpmn.value;
+}
+
+function handleSelectedBpmn(processName: string) {
+    selectedBpmn.value = processName;
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            process: bpmnName,
+            process: processName,
         },
     });
 }
@@ -86,6 +85,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-option
             v-for="processName in processDropdown"
             :key="processName"
+            :selected="isBpmnSelected(processName)"
             @click="handleSelectedBpmn(processName)"
         >
             {{ processName }}

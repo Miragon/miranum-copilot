@@ -1,21 +1,29 @@
 <script lang="ts" setup>
-import {onBeforeMount, ref} from "vue";
+import { onBeforeMount, ref } from "vue";
 
 import {
     DefaultPrompt,
     isInstanceOfDefaultPrompt,
+    isInstanceOfDocumentationPrompt,
     MessageToWebview,
     MessageType,
     Prompt,
     VscMessage,
 } from "../../shared";
-import {createResolver, createVsCode, MissingStateError, TemplatePrompts, VsCode,} from "@/composables";
+import {
+    createResolver,
+    createVsCode,
+    MissingStateError,
+    TemplatePrompts,
+    VsCode,
+} from "@/composables";
 
 import SidebarMenu from "./components/SidebarMenu.vue";
 import DefaultView from "@/views/DefaultView.vue";
 import DocumentationView from "@/views/DocumentationView.vue";
 
 import "./css/style.css";
+import { template } from "lodash";
 
 //
 // Vars
@@ -33,14 +41,11 @@ if (process.env.NODE_ENV === "development") {
 
 let inputText = ref("");
 let outputText = ref("");
+let selectedBpmn = ref("");
 let processDropdown = ref<string[]>([]);
 
-const prompts = ref<TemplatePrompts>({categories: []});
+const prompts = ref<TemplatePrompts>({ categories: [] });
 const bpmnFiles = ref<string[]>([]);
-
-const defaultViewKey = ref(0);
-const documentViewKey = ref(0);
-const sidebarMenuKey = ref(0);
 
 const viewState = ref("DefaultView");
 const loading = ref(true);
@@ -66,13 +71,13 @@ onBeforeMount(async () => {
         const state = vscode.getState(); // Throws MissingStateError if no state is available
         postMessage(MessageType.restore, undefined, "State was restored successfully.");
 
-        // We will only get data if the user made changes while the webview was in the background.
-        const data = await resolver.wait();
-
-        let restoredPrompts: TemplatePrompts = {categories: []};
+        let restoredPrompts: TemplatePrompts = { categories: [] };
         let isPromptsChanged = false;
         let restoredBpmnFiles: string[] = [];
         let isBpmnFilesChanged = false;
+
+        // We will only get data if the user made changes while the webview was in the background.
+        const data = await resolver.wait();
         if (data) {
             if (data.prompts) {
                 restoredPrompts = JSON.parse(data.prompts);
@@ -92,6 +97,9 @@ onBeforeMount(async () => {
             }
         }
 
+        prompts.value = isPromptsChanged ? restoredPrompts : state.prompts;
+        bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
+
         if (isInstanceOfDefaultPrompt(state.currentPrompt)) {
             inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
             outputText.value = state.response ? state.response : "";
@@ -99,17 +107,11 @@ onBeforeMount(async () => {
                 processDropdown.value = isBpmnFilesChanged
                     ? restoredBpmnFiles
                     : state.bpmnFiles;
-                defaultViewKey.value++;
             }
+        } else if (isInstanceOfDocumentationPrompt(state.currentPrompt)) {
         }
 
-        prompts.value = isPromptsChanged ? restoredPrompts : state.prompts;
-        bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
-
         loading.value = false;
-        viewState.value === "DefaultView" ? defaultViewKey.value++ : null;
-        viewState.value === "DocumentationView" ? documentViewKey.value++ : null;
-        sidebarMenuKey.value++;
     } catch (error) {
         if (error instanceof MissingStateError) {
             postMessage(
@@ -123,22 +125,19 @@ onBeforeMount(async () => {
             if (data) {
                 const initPrompts: TemplatePrompts = data.prompts
                     ? JSON.parse(data.prompts)
-                    : {categories: []};
+                    : { categories: [] };
                 const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
                 bpmnFiles.value = initBpmnFiles;
-
-                defaultViewKey.value++;
-                sidebarMenuKey.value++;
 
                 vscode.setState({
                     viewState: "DefaultView",
                     prompts: initPrompts,
                     bpmnFiles: initBpmnFiles,
                     currentPrompt: {
-                        text: "",
+                        text: inputText.value,
                     },
-                    response: "",
+                    response: outputText.value,
                 });
             }
 
@@ -200,21 +199,18 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
             }
             case `${globalViewType}.${MessageType.msgFromExtension}`: {
                 loading.value = false;
-                if (data?.response) {
+                if (data) {
                     if (viewState.value === "DefaultView") {
                         if (typeof data.response === "string") {
                             outputText.value = data.response;
+                            vscode.updateState({ response: data.response });
                         }
-                        defaultViewKey.value++;
-                    } else if (viewState.value === "DocumentationView") {
-                        documentViewKey.value++;
                     }
                 }
                 if (data?.prompts) {
                     const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
                     prompts.value = receivedPrompts;
-                    sidebarMenuKey.value++;
-                    vscode.updateState({prompts: receivedPrompts});
+                    vscode.updateState({ prompts: receivedPrompts });
                 }
                 if (data?.bpmnFiles) {
                     const currentPrompt = vscode.getState().currentPrompt;
@@ -226,9 +222,8 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                             (currentPrompt.process as boolean))
                     ) {
                         processDropdown.value = receivedBpmnFiles;
-                        defaultViewKey.value++;
                     }
-                    vscode.updateState({bpmnFiles: receivedBpmnFiles});
+                    vscode.updateState({ bpmnFiles: receivedBpmnFiles });
                 }
                 break;
             }
@@ -246,12 +241,19 @@ function handleSidebarToggle(isVisible: boolean) {
 function handleSelectedPrompt(prompt: DefaultPrompt) {
     viewState.value = "DefaultView";
     inputText.value = prompt.text;
-    if (prompt.process as boolean) {
+    if (typeof prompt.process === "boolean" && prompt.process) {
         processDropdown.value = bpmnFiles.value;
+        selectedBpmn.value = processDropdown.value[0];
     } else {
         processDropdown.value = [];
     }
-    defaultViewKey.value++;
+
+    vscode.updateState({
+        currentPrompt: {
+            text: inputText.value,
+            process: processDropdown.value[0] ?? undefined,
+        },
+    });
 }
 
 function handleSelectedDocumentation() {
@@ -270,23 +272,22 @@ function sendPrompt() {
     <main :class="{ shrunk: shrunk }">
         <DefaultView
             v-if="viewState === 'DefaultView'"
-            :key="defaultViewKey"
             :input-text="inputText"
             :loading="loading"
             :output-text="outputText"
             :process-dropdown="processDropdown"
+            :selected-bpmn="selectedBpmn"
             @send-prompt="sendPrompt"
         />
         <DocumentationView
             v-if="viewState === 'DocumentationView'"
-            :key="documentViewKey"
             :loading="loading"
             :process-dropdown="bpmnFiles"
+            :selected-bpmn="selectedBpmn"
             @send-prompt="sendPrompt"
         />
     </main>
     <SidebarMenu
-        :key="sidebarMenuKey"
         :prompts="prompts"
         @sidebar-toggled="handleSidebarToggle"
         @prompt-selected="handleSelectedPrompt"

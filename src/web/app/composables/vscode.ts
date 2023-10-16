@@ -84,6 +84,7 @@ class VsCodeImpl implements VsCode {
             ...this.getState(),
             ...state,
         });
+        console.log("[Log] updateState()", this.vscode.getState());
     }
 
     public postMessage(message: VscMessage<Prompt>) {
@@ -150,12 +151,16 @@ class VsCodeMock implements VsCode {
                         }),
                     );
                 } else if (isInstanceOfDocumentationPrompt(data)) {
+                    const url: string =
+                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createDocumentation";
+                    const res = await fetch(url);
+                    const json = await res.json();
                     window.dispatchEvent(
                         new MessageEvent("message", {
                             data: {
                                 type: `${globalViewType}.${MessageType.msgFromExtension}`,
                                 data: {
-                                    response: true,
+                                    response: json.created,
                                 },
                             },
                         }),

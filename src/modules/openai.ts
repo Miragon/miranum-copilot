@@ -8,15 +8,15 @@ import {
 export let openAiApi = new OpenAI({ apiKey: getApiKey() });
 
 workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration("miranum-ide.copilot.openaikey")) {
+    if (event.affectsConfiguration("miranumIDE.copilot.openaiApiKey")) {
         openAiApi = new OpenAI({ apiKey: getApiKey() });
     }
 });
 
 function getApiKey(): string {
     const apiKey = workspace
-        .getConfiguration("miranum-ide.copilot")
-        .get<string>("openaikey");
+        .getConfiguration("miranumIDE.copilot")
+        .get<string>("openaiApiKey");
 
     if (!apiKey) {
         window.showErrorMessage("OpenAI key not found");

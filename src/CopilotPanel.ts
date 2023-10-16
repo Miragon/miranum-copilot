@@ -290,13 +290,15 @@ async function handleReceivedMessage(
     }
 
     if (isInstanceOfDefaultPrompt(prompt)) {
+        let process: string | undefined;
+        if (typeof prompt.process === "string") {
+            process = await readBpmnFile(Uri.file(prompt.process));
+        }
+
         const messages = [
             {
                 role: "user",
-                content: await createPrompt(
-                    prompt.text,
-                    await readBpmnFile(Uri.file(prompt.process as string)),
-                ),
+                content: await createPrompt(prompt.text, process),
             },
         ];
         return await getCompletion(messages);

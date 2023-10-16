@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, ref } from "vue";
+import { computed } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,7 +8,7 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import { getVsCode, MissingStateError, VsCode } from "@/composables";
+import { getVsCode, VsCode } from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -22,55 +22,42 @@ interface Props {
     loading: boolean;
     inputText: string;
     outputText: string;
+    selectedBpmn: string;
     processDropdown: string[];
 }
 
 const vscode: VsCode = getVsCode();
-const emits = defineEmits(["sendPrompt", "updateState"]);
+const emits = defineEmits(["sendPrompt"]);
 const props = defineProps<Props>();
 
-let inputText = ref(props.inputText);
-let outputText = ref(props.outputText);
-let processDropdown = ref<string[]>(props.processDropdown);
-
-let loading = ref(props.loading);
-
-//
-// Lifecycle hooks
-//
-onBeforeMount(() => {
-    try {
-        vscode.updateState({
-            viewState: "DefaultView",
-            currentPrompt: {
-                text: props.inputText,
-                process: props.processDropdown[0],
-            },
-            response: props.outputText,
-        });
-    } catch (error) {
-        if (!vscode) {
-            // This is ok because we set the state in the App.vue on initialization.
-            console.log("[Default View]: onBeforeMount() -> vscode is undefined");
-        } else if (error instanceof MissingStateError) {
-            // This is ok because we set the state in the App.vue on initialization.
-            console.log(
-                "[Default View]: onBeforeMount() -> Component was mounted before the initial state was set.",
-            );
-        }
-    }
+let inputText = computed(() => props.inputText);
+let outputText = computed(() => props.outputText);
+let selectedBpmn = computed({
+    get() {
+        return props.selectedBpmn;
+    },
+    set(processName: string) {
+        return processName;
+    },
 });
+let processDropdown = computed(() => props.processDropdown);
+
+let loading = computed(() => props.loading);
+
+function isBpmnSelected(processName: string) {
+    return processName === selectedBpmn.value;
+}
 
 function updatePrompt() {
     vscode.updateState({ currentPrompt: { text: inputText.value } });
 }
 
 function sendPrompt() {
-    loading.value = true;
     emits("sendPrompt");
 }
 
 function handleSelectedBpmn(bpmnName: string) {
+    selectedBpmn.value = bpmnName;
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
@@ -98,6 +85,7 @@ function handleSelectedBpmn(bpmnName: string) {
             <vscode-option
                 v-for="processName in processDropdown"
                 :key="processName"
+                :selected="isBpmnSelected"
                 @click="handleSelectedBpmn(processName)"
             >
                 {{ processName }}

@@ -19,7 +19,12 @@ const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSel
 const isSidebarVisible = ref(false);
 const selectedCategory = ref("");
 
-const categories = props.prompts.categories;
+const categories = computed(() => props.prompts.categories);
+const buttonStyle = computed(() => {
+    return {
+        left: isSidebarVisible.value ? "33%" : "0",
+    };
+});
 
 const selectCategory = (categoryName: string) => {
     if (selectedCategory.value === categoryName) {
@@ -37,12 +42,6 @@ const toggleSidebar = () => {
     isSidebarVisible.value = !isSidebarVisible.value;
     emits("sidebarToggled", isSidebarVisible.value);
 };
-
-const buttonStyle = computed(() => {
-    return {
-        left: isSidebarVisible.value ? "33%" : "0",
-    };
-});
 </script>
 
 <template>
