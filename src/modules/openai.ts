@@ -4,19 +4,70 @@ import {
     ChatCompletionCreateParams,
     ChatCompletionMessageParam,
 } from "openai/resources/chat";
+import fs from "fs"; //imports .from
+import path from "path"; //imports .from
+
+//*** JSON Schema .form*/
+export async function fillFormWithGPT3(formFilePath: string): Promise<void> {
+    // Read the form file
+    const formContent = fs.readFileSync(formFilePath, "utf-8");
+    const formJson = JSON.parse(formContent);
+
+    // Define the prompts based on the form fields
+    const prompts = {
+        Vorname: "Please provide a common first name.",
+        Nachname: "Please provide a common last name.",
+        Adresse: "Please provide an example address.",
+        Datum: "Please provide the current date.",
+    };
+
+    // Iterate over each field in the form and get GPT-3 to generate content
+    for (const field in formJson) {
+        if (prompts[field]) {
+            try {
+                // Use GPT-3 to generate content for the field
+                const prompt = prompts[field];
+                const response: Completion = await openAiApi.createChatCompletion({
+                    model: "gpt-3.5-turbo",
+                    messages: [
+                        {
+                            role: "system",
+                            content: prompt,
+                        },
+                    ],
+                });
+
+                // Use the GPT-3 response to fill in the form field
+                formJson[field] = response.choices[0]?.message?.content || "";
+            } catch (error) {
+                console.error(`Failed to generate content for field ${field}:`, error);
+            }
+        }
+    }
+
+    // Save the modified form back to a file
+    const modifiedFormContent = JSON.stringify(formJson, null, 4);
+    const modifiedFormFilePath = path.join(
+        path.dirname(formFilePath),
+        "modified_form.json",
+    );
+    fs.writeFileSync(modifiedFormFilePath, modifiedFormContent);
+
+    window.showInformationMessage(`Form filled and saved to ${modifiedFormFilePath}`);
+} // Example: fillFormWithGPT3("/path/to/your/form.form");
 
 export let openAiApi = new OpenAI({ apiKey: getApiKey() });
 
 workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration("miranumIDE.copilot.openaiApiKey")) {
+    if (event.affectsConfiguration("miranum-ide.copilot.openaikey")) {
         openAiApi = new OpenAI({ apiKey: getApiKey() });
     }
 });
 
 function getApiKey(): string {
     const apiKey = workspace
-        .getConfiguration("miranumIDE.copilot")
-        .get<string>("openaiApiKey");
+        .getConfiguration("miranum-ide.copilot")
+        .get<string>("openaikey");
 
     if (!apiKey) {
         window.showErrorMessage("OpenAI key not found");
