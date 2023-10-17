@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import {computed, ref} from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,8 @@ import {
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
 
-import { OutputFormat } from "../../../shared";
-import { getVsCode, VsCode } from "@/composables";
+import {OutputFormat} from "../../../shared";
+import {getVsCode, VsCode} from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -107,7 +107,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-button @click="generateDocumentation">Generate</vscode-button>
     </div>
     <div v-else class="loading">
-        <LoadingAnimation />
+        <LoadingAnimation/>
     </div>
 </template>
 

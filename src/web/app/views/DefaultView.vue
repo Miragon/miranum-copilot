@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from "vue";
+import {computed} from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,7 +8,7 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import { getVsCode, VsCode } from "@/composables";
+import {getVsCode, VsCode} from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -27,7 +27,7 @@ interface Props {
 }
 
 const vscode: VsCode = getVsCode();
-const emits = defineEmits(["sendPrompt"]);
+const emits = defineEmits(["sendPrompt", "updateSelectedBpmn"]);
 const props = defineProps<Props>();
 
 let inputText = computed(() => props.inputText);
@@ -49,7 +49,7 @@ function isBpmnSelected(processName: string) {
 }
 
 function updatePrompt() {
-    vscode.updateState({ currentPrompt: { text: inputText.value } });
+    vscode.updateState({currentPrompt: {text: inputText.value}});
 }
 
 function sendPrompt() {
@@ -57,13 +57,15 @@ function sendPrompt() {
 }
 
 function handleSelectedBpmn(bpmnName: string) {
-    selectedBpmn.value = bpmnName;
+    // selectedBpmn.value = bpmnName;
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
             process: bpmnName,
         },
     });
+
+    emits("updateSelectedBpmn", bpmnName);
 }
 </script>
 
@@ -103,7 +105,7 @@ function handleSelectedBpmn(bpmnName: string) {
 
     <div class="output">
         <div v-if="loading" class="output-loading">
-            <LoadingAnimation />
+            <LoadingAnimation/>
         </div>
 
         <div v-if="!loading" class="output-loaded">
