@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
 
 import { DefaultPrompt } from "../../../shared";
-import { TemplatePrompts } from "@/composables/types";
+import { TemplatePrompts } from "@/helpers";
 
 import "../css/style.css";
 

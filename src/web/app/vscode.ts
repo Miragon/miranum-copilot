@@ -6,8 +6,8 @@ import {
     MessageType,
     Prompt,
     VscMessage,
-} from "../../../shared";
-import { TemplatePrompts } from "@/composables/types";
+} from "../../shared";
+import { TemplatePrompts } from "@/helpers";
 
 declare const globalViewType: string;
 

@@ -9,7 +9,7 @@ import {
 } from "@vscode/webview-ui-toolkit";
 
 import { OutputFormat } from "../../../shared";
-import { getVsCode, VsCode } from "@/composables";
+import { getVsCode, VsCode } from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(

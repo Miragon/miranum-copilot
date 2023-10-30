@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed} from "vue";
+import { computed } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,7 +8,7 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import {getVsCode, VsCode} from "@/composables";
+import { getVsCode, VsCode } from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -44,12 +44,14 @@ let processDropdown = computed(() => props.processDropdown);
 
 let loading = computed(() => props.loading);
 
-function isBpmnSelected(processName: string) {
-    return processName === selectedBpmn.value;
+function selectBpmn(element: HTMLOptionElement, processName: string) {
+    if (processName === selectedBpmn.value) {
+        element.setAttribute("selected", "selected");
+    }
 }
 
 function updatePrompt() {
-    vscode.updateState({currentPrompt: {text: inputText.value}});
+    vscode.updateState({ currentPrompt: { text: inputText.value } });
 }
 
 function sendPrompt() {
@@ -87,7 +89,7 @@ function handleSelectedBpmn(bpmnName: string) {
             <vscode-option
                 v-for="processName in processDropdown"
                 :key="processName"
-                :selected="isBpmnSelected"
+                :ref="(el: HTMLOptionElement) => selectBpmn(el, processName)"
                 @click="handleSelectedBpmn(processName)"
             >
                 {{ processName }}
@@ -105,7 +107,7 @@ function handleSelectedBpmn(bpmnName: string) {
 
     <div class="output">
         <div v-if="loading" class="output-loading">
-            <LoadingAnimation/>
+            <LoadingAnimation />
         </div>
 
         <div v-if="!loading" class="output-loaded">
