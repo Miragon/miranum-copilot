@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue";
+import { computed, ref } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,8 @@ import {
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
 
-import {OutputFormat} from "../../../shared";
-import {getVsCode, VsCode} from "@/composables";
+import { OutputFormat } from "../../../shared";
+import { getVsCode, VsCode } from "@/composables";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -30,6 +30,7 @@ const props = defineProps<Props>();
 const emits = defineEmits(["sendPrompt"]);
 
 const processDropdown = computed(() => props.processDropdown);
+const bpmnDropdown = ref([]);
 const selectedBpmn = computed({
     get() {
         return props.selectedBpmn;
@@ -56,9 +57,10 @@ function updatePath() {
     });
 }
 
-function isBpmnSelected(processName: string) {
-    console.log("isBpmnSelected", processName, selectedBpmn.value);
-    return processName === selectedBpmn.value;
+function selectBpmn(element: HTMLOptionElement, processName: string) {
+    if (processName === selectedBpmn.value) {
+        element.setAttribute("selected", "selected");
+    }
 }
 
 function handleSelectedBpmn(processName: string) {
@@ -86,7 +88,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-option
             v-for="processName in processDropdown"
             :key="processName"
-            :selected="isBpmnSelected(processName)"
+            :ref="(el: HTMLOptionElement) => selectBpmn(el, processName)"
             @click="handleSelectedBpmn(processName)"
         >
             {{ processName }}
@@ -108,7 +110,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-button @click="generateDocumentation">Generate</vscode-button>
     </div>
     <div v-else class="loading">
-        <LoadingAnimation/>
+        <LoadingAnimation />
     </div>
 </template>
 
