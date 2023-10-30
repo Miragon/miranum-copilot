@@ -57,6 +57,7 @@ function updatePath() {
 }
 
 function isBpmnSelected(processName: string) {
+    console.log("isBpmnSelected", processName, selectedBpmn.value);
     return processName === selectedBpmn.value;
 }
 

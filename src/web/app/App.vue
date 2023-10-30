@@ -101,6 +101,8 @@ onBeforeMount(async () => {
         bpmnFiles.value = isBpmnFilesChanged ? restoredBpmnFiles : state.bpmnFiles;
 
         if (isInstanceOfDefaultPrompt(state.currentPrompt)) {
+            console.log("DefaultPrompt");
+            viewState.value = "DefaultView";
             inputText.value = state.currentPrompt?.text ? state.currentPrompt.text : "";
             outputText.value = state.response ? state.response : "";
             if (typeof state.currentPrompt?.process === "string") {
@@ -109,6 +111,11 @@ onBeforeMount(async () => {
                     : state.bpmnFiles;
             }
         } else if (isInstanceOfDocumentationPrompt(state.currentPrompt)) {
+            console.log("DocumentationPrompt");
+            viewState.value = "DocumentationView";
+            selectedBpmn.value = state.currentPrompt?.process
+                ? state.currentPrompt.process
+                : bpmnFiles.value[0];
         }
 
         loading.value = false;
