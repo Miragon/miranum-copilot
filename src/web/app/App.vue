@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, ref } from "vue";
+import {onBeforeMount, ref} from "vue";
 
 import {
     DefaultPrompt,
@@ -7,23 +7,18 @@ import {
     isInstanceOfDocumentationPrompt,
     MessageToWebview,
     MessageType,
+    OutputFormat,
     Prompt,
     VscMessage,
 } from "../../shared";
-import {
-    createResolver,
-    createVsCode,
-    MissingStateError,
-    TemplatePrompts,
-    VsCode,
-} from "@/composables";
+import {createResolver, createVsCode, MissingStateError, TemplatePrompts, VsCode,} from "@/composables";
 
 import SidebarMenu from "./components/SidebarMenu.vue";
 import DefaultView from "@/views/DefaultView.vue";
 import DocumentationView from "@/views/DocumentationView.vue";
 
 import "./css/style.css";
-import { template } from "lodash";
+import {template} from "lodash";
 
 //
 // Vars
@@ -44,7 +39,7 @@ let outputText = ref("");
 let selectedBpmn = ref("");
 let processDropdown = ref<string[]>([]);
 
-const prompts = ref<TemplatePrompts>({ categories: [] });
+const prompts = ref<TemplatePrompts>({categories: []});
 const bpmnFiles = ref<string[]>([]);
 
 const viewState = ref("DefaultView");
@@ -71,7 +66,7 @@ onBeforeMount(async () => {
         const state = vscode.getState(); // Throws MissingStateError if no state is available
         postMessage(MessageType.restore, undefined, "State was restored successfully.");
 
-        let restoredPrompts: TemplatePrompts = { categories: [] };
+        let restoredPrompts: TemplatePrompts = {categories: []};
         let isPromptsChanged = false;
         let restoredBpmnFiles: string[] = [];
         let isBpmnFilesChanged = false;
@@ -132,7 +127,7 @@ onBeforeMount(async () => {
             if (data) {
                 const initPrompts: TemplatePrompts = data.prompts
                     ? JSON.parse(data.prompts)
-                    : { categories: [] };
+                    : {categories: []};
                 const initBpmnFiles: string[] = data.bpmnFiles ? data.bpmnFiles : [];
                 prompts.value = initPrompts;
                 bpmnFiles.value = initBpmnFiles;
@@ -210,14 +205,14 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                     if (viewState.value === "DefaultView") {
                         if (typeof data.response === "string") {
                             outputText.value = data.response;
-                            vscode.updateState({ response: data.response });
+                            vscode.updateState({response: data.response});
                         }
                     }
                 }
                 if (data?.prompts) {
                     const receivedPrompts: TemplatePrompts = JSON.parse(data.prompts);
                     prompts.value = receivedPrompts;
-                    vscode.updateState({ prompts: receivedPrompts });
+                    vscode.updateState({prompts: receivedPrompts});
                 }
                 if (data?.bpmnFiles) {
                     const currentPrompt = vscode.getState().currentPrompt;
@@ -230,7 +225,7 @@ function receiveMessage(message: MessageEvent<VscMessage<MessageToWebview>>): vo
                     ) {
                         processDropdown.value = receivedBpmnFiles;
                     }
-                    vscode.updateState({ bpmnFiles: receivedBpmnFiles });
+                    vscode.updateState({bpmnFiles: receivedBpmnFiles});
                 }
                 break;
             }
@@ -263,8 +258,16 @@ function handleSelectedPrompt(prompt: DefaultPrompt) {
     });
 }
 
-function handleSelectedDocumentation() {
+function switchToDocumentationView() {
     viewState.value = "DocumentationView";
+    vscode.updateState({
+        viewState: viewState.value,
+        currentPrompt: {
+            process: selectedBpmn.value !== "" ? selectedBpmn.value : bpmnFiles.value[0],
+            template: "",
+            format: OutputFormat.md,
+        }
+    })
 }
 
 function sendPrompt() {
@@ -272,6 +275,10 @@ function sendPrompt() {
     if (currentPrompt) {
         postMessage(MessageType.msgFromWebview, currentPrompt);
     }
+}
+
+function updateSelectedBpmn(processName: string) {
+    selectedBpmn.value = processName;
 }
 </script>
 
@@ -285,6 +292,7 @@ function sendPrompt() {
             :process-dropdown="processDropdown"
             :selected-bpmn="selectedBpmn"
             @send-prompt="sendPrompt"
+            @update-selected-bpmn="updateSelectedBpmn"
         />
         <DocumentationView
             v-if="viewState === 'DocumentationView'"
@@ -298,7 +306,7 @@ function sendPrompt() {
         :prompts="prompts"
         @sidebar-toggled="handleSidebarToggle"
         @prompt-selected="handleSelectedPrompt"
-        @documentation-selected="handleSelectedDocumentation"
+        @documentation-selected="switchToDocumentationView"
     />
 </template>
 
