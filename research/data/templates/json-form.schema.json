@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Process Documentation",
+  "description": "A template for documenting a (business) process.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "$ref": "https://json-schema.org/draft/2020-12/schema"
+    }
+  }
+}
