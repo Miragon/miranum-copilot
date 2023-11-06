@@ -6,6 +6,62 @@
   "properties": {
     "schema": {
       "$ref": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "uischema": {
+      "type": "object",
+      "required": [
+        "type",
+        "elements"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "VerticalLayout",
+            "HorizontalLayout"
+          ]
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "scope"
+            ],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "scope": {
+                "type": "string"
+              },
+              "options": {
+                "type": "object",
+                "required": [
+                  "detail"
+                ],
+                "properties": {
+                  "detail": {
+                    "type": "string",
+                    "enum": [
+                      "DEFAULT",
+                      "GENERATED",
+                      "REGISTERED"
+                    ]
+                  },
+                  "showSortButtons": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
