@@ -97,7 +97,7 @@
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.2.2",
         "lodash": "^4.17.21",
-        "openai": "^3.3.0",
+        "openai": "^4.19.0",
         "vue": "^3.3.4"
     }
 }
