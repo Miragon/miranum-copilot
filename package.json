@@ -103,7 +103,7 @@
         "@typescript-eslint/eslint-plugin": "^6.7.4",
         "@typescript-eslint/parser": "^6.7.4",
         "@vitejs/plugin-vue": "^4.5.1",
-        "@vscode/test-electron": "^2.3.4",
+        "@vscode/test-electron": "^2.3.8",
         "chai": "^4.3.10",
         "concurrently": "^8.2.1",
         "esbuild": "^0.19.8",
