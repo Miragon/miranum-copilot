@@ -2,6 +2,7 @@ import { window, workspace } from "vscode";
 import OpenAI from "openai";
 import {
     ChatCompletionCreateParams,
+    ChatCompletionFunctionCallOption,
     ChatCompletionMessageParam,
 } from "openai/resources/chat";
 
@@ -65,7 +66,7 @@ export async function getCompletionWithSchema(
             },
         },
     ];
-    const function_call: ChatCompletionCreateParams.FunctionCallOption = {
+    const function_call: ChatCompletionFunctionCallOption = {
         name: "set_documentation",
     };
 
