@@ -39,16 +39,32 @@
     "contributes": {
         "commands": [
             {
-                "command": "copilot.start",
+                "command": "miranum.copilot.start",
                 "title": "Open Copilot",
                 "category": "Miranum Copilot"
             },
             {
-                "command": "copilot.editPrompts",
+                "command": "miranum.copilot.editPrompts",
                 "title": "Edit Prompts",
+                "category": "Miranum Copilot"
+            },
+            {
+                "command": "miranum.copilot.testReturnValue",
+                "title": "Test Return Value",
                 "category": "Miranum Copilot"
             }
         ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "miranum.copilot.start",
+                    "when": "workspaceFolderCount > 0"
+                },
+                {
+                    "command": "miranum.copilot.editPrompts"
+                }
+            ]
+        },
         "configuration": {
             "title": "MiranumCopilot",
             "properties": {
@@ -63,9 +79,12 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "pretest": "npm run compile && npm run lint",
+        "pretest": "npm run lint && npm run compile",
+        "compile": "tsc --skipLibCheck -p ./",
         "lint": "eslint src --ext ts",
-        "test": "node ./dist/test/runTest.js",
+        "unit": "nyc --silent ts-mocha -p ./tsconfig.json ./src/**/*.spec.ts",
+        "integration": "nyc --silent --clean false node ./dist/test/runTest.js",
+        "test": "npm run unit && npm run integration && nyc report",
         "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
         "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
         "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
@@ -73,6 +92,8 @@
         "vite:browser": "cd ./src/web && vite --open true"
     },
     "devDependencies": {
+        "@istanbuljs/nyc-config-typescript": "^1.0.2",
+        "@types/chai": "^4.3.6",
         "@types/glob": "^8.1.0",
         "@types/lodash": "^4.14.199",
         "@types/mocha": "^10.0.2",
@@ -83,6 +104,7 @@
         "@typescript-eslint/parser": "^6.7.4",
         "@vitejs/plugin-vue": "^4.3.4",
         "@vscode/test-electron": "^2.3.4",
+        "chai": "^4.3.10",
         "concurrently": "^8.2.1",
         "esbuild": "^0.19.3",
         "eslint": "^8.50.0",
@@ -90,14 +112,16 @@
         "eslint-plugin-vue": "^9.17.0",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
+        "nyc": "^15.1.0",
         "prettier": "^3.0.3",
+        "ts-mocha": "^10.0.0",
         "typescript": "^5.2.2",
         "vite": "^4.4.9"
     },
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.2.2",
         "lodash": "^4.17.21",
-        "openai": "^3.3.0",
+        "openai": "^4.11.1",
         "vue": "^3.3.4"
     }
 }

@@ -19,6 +19,7 @@ node_modules
 
 # IDE - VSCode
 .vscode/*
+.vscode-test/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -38,4 +39,6 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Env
 **/.env
+**/.nyc_output

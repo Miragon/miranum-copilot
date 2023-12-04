@@ -1,11 +1,29 @@
-import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import {
+    commands,
+    Disposable,
+    Uri,
+    ViewColumn,
+    WebviewPanel,
+    window,
+    workspace,
+} from "vscode";
 
-import { CopilotMessageData, MessageType, Prompt, VscMessage } from "./shared/types";
-import { getCompletion } from "./modules/openai";
+import {
+    DocumentationPrompt,
+    isInstanceOfDefaultPrompt,
+    isInstanceOfDocumentationPrompt,
+    MessageToWebview,
+    MessageType,
+    OutputFormat,
+    Prompt,
+    VscMessage,
+} from "./shared";
+import { getCompletion, getCompletionWithSchema } from "./modules/openai";
 
 import { Logger } from "./Logger";
-import { readFile, readFilesFromDirectory } from "./modules/reader";
+import { readBpmnFile, readFile, readFilesFromDirectory, writeFile } from "./modules/fs";
 import { createPromptsWatcher, createWatcher } from "./modules/watcher";
+import { jsonPrompt, markdownPrompt } from "./modules/processDocumentation";
 
 export class CopilotPanel {
     public static readonly viewType: string = "miranum-copilot";
@@ -15,7 +33,8 @@ export class CopilotPanel {
     private readonly extensionUri: Uri;
     private disposables: Disposable[] = [];
 
-    private buffer: Partial<CopilotMessageData> | undefined;
+    private initialData: Map<string, Promise<string | string[]>>;
+    private buffer: Partial<MessageToWebview> | undefined;
 
     private constructor(panel: WebviewPanel, extensionUri: Uri) {
         Logger.get().clear();
@@ -27,95 +46,24 @@ export class CopilotPanel {
         this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml();
 
-        const initialData = this.init(extensionUri);
+        this.initialData = this.init(extensionUri);
 
-        // Handle messages from the webview
+        //this.panel.webview.postMessage({});
+
+        //
+        // Handle events from the webview.
+        //
         this.panel.webview.onDidReceiveMessage(
-            async (message: VscMessage<string>) => {
-                try {
-                    switch (message.type) {
-                        case `${CopilotPanel.viewType}.${MessageType.initialize}`: {
-                            Logger.info(
-                                "[Miranum.Copilot]",
-                                `(Webview: ${this.panel.title})`,
-                                message.logger ?? "",
-                            );
-                            const copilotMessageData: CopilotMessageData = {
-                                prompts: (await initialData.get("prompts")) as string,
-                                bpmnFiles: (await initialData.get(
-                                    "bpmnFiles",
-                                )) as string[],
-                            };
-                            await this.postMessage(
-                                MessageType.initialize,
-                                copilotMessageData,
-                            );
-                            break;
-                        }
-                        case `${CopilotPanel.viewType}.${MessageType.restore}`: {
-                            Logger.info(
-                                "[Miranum.Copilot]",
-                                `(Webview: ${this.panel.title})`,
-                                message.logger ?? "",
-                            );
-                            if (
-                                await this.postMessage(MessageType.restore, this.buffer)
-                            ) {
-                                this.buffer = undefined;
-                            }
-                            break;
-                        }
-                        case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
-                            try {
-                                const copilotMessageData: CopilotMessageData = {
-                                    response: await this.getResponseFromApi(
-                                        message.data,
-                                    ),
-                                };
-                                await this.postMessage(
-                                    MessageType.msgFromExtension,
-                                    copilotMessageData,
-                                );
-                            } catch (err) {
-                                const errMsg =
-                                    err instanceof Error ? err.message : `${err}`;
-                                Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
-                                window.showErrorMessage("Miranum Copilot: " + errMsg);
-                            }
-                            break;
-                        }
-                        case `${CopilotPanel.viewType}.${MessageType.info}`: {
-                            Logger.info(
-                                "[Miranum.Copilot.Webview]",
-                                `(Webview: ${this.panel.title}`,
-                                message.logger ?? "",
-                            );
-                            break;
-                        }
-                        case `${CopilotPanel.viewType}.${MessageType.error}`: {
-                            Logger.error(
-                                "[Miranum.Copilot.Webview]",
-                                `(Webview: ${this.panel.title}`,
-                                message.logger ?? "",
-                            );
-                            break;
-                        }
-                    }
-                } catch (error) {
-                    const message = error instanceof Error ? error.message : `${error}`;
-                    Logger.error(
-                        "[Miranum.Copilot]",
-                        `(Webview: ${this.panel.title})`,
-                        message,
-                    );
-                }
-            },
+            async (message: VscMessage<Prompt>) => this.receiveMessage(message),
             null,
             this.disposables,
         );
-        this.panel.webview.postMessage({});
+
         this.panel.onDidChangeViewState(() => {}, null, this.disposables);
 
+        //
+        // Create File System Watchers
+        //
         const promptsWatcher = createPromptsWatcher(extensionUri, (prompts: string) => {
             this.postMessage(MessageType.msgFromExtension, { prompts });
         });
@@ -123,6 +71,9 @@ export class CopilotPanel {
             this.postMessage(MessageType.msgFromExtension, { bpmnFiles });
         });
 
+        //
+        // Webview gets disposed when the panel is closed
+        //
         this.panel.onDidDispose(
             () => {
                 promptsWatcher.dispose();
@@ -185,9 +136,9 @@ export class CopilotPanel {
 
     private async postMessage(
         messageType: MessageType,
-        data?: CopilotMessageData,
+        data?: MessageToWebview,
     ): Promise<boolean> {
-        const message: VscMessage<CopilotMessageData> = {
+        const message: VscMessage<MessageToWebview> = {
             type: `${CopilotPanel.viewType}.${messageType}`,
             data,
         };
@@ -210,6 +161,79 @@ export class CopilotPanel {
         return res;
     }
 
+    private async receiveMessage(message: VscMessage<Prompt>): Promise<void> {
+        try {
+            switch (message.type) {
+                case `${CopilotPanel.viewType}.${MessageType.initialize}`: {
+                    Logger.info(
+                        "[Miranum.Copilot]",
+                        `(Webview: ${this.panel.title})`,
+                        message.logger ?? "",
+                    );
+                    const copilotMessageData: MessageToWebview = {
+                        prompts: (await this.initialData.get("prompts")) as string,
+                        bpmnFiles: (await this.initialData.get("bpmnFiles")) as string[],
+                    };
+                    await this.postMessage(MessageType.initialize, copilotMessageData);
+                    break;
+                }
+                case `${CopilotPanel.viewType}.${MessageType.restore}`: {
+                    Logger.info(
+                        "[Miranum.Copilot]",
+                        `(Webview: ${this.panel.title})`,
+                        message.logger ?? "",
+                    );
+                    if (await this.postMessage(MessageType.restore, this.buffer)) {
+                        this.buffer = undefined;
+                    }
+                    break;
+                }
+                case `${CopilotPanel.viewType}.${MessageType.msgFromWebview}`: {
+                    try {
+                        const messageToWebview: MessageToWebview = {
+                            response: await handleReceivedMessage(
+                                this.extensionUri,
+                                message.data,
+                            ),
+                        };
+                        await this.postMessage(
+                            MessageType.msgFromExtension,
+                            messageToWebview,
+                        );
+                    } catch (err) {
+                        const errMsg = err instanceof Error ? err.message : `${err}`;
+                        Logger.error("[Miranum.Copilot.OpenAI]", errMsg);
+                        window.showErrorMessage("Miranum Copilot: " + errMsg);
+                        // End loading animation
+                        this.postMessage(MessageType.msgFromExtension, {
+                            response: false,
+                        });
+                    }
+                    break;
+                }
+                case `${CopilotPanel.viewType}.${MessageType.info}`: {
+                    Logger.info(
+                        "[Miranum.Copilot.Webview]",
+                        `(Webview: ${this.panel.title}`,
+                        message.logger ?? "",
+                    );
+                    break;
+                }
+                case `${CopilotPanel.viewType}.${MessageType.error}`: {
+                    Logger.error(
+                        "[Miranum.Copilot.Webview]",
+                        `(Webview: ${this.panel.title}`,
+                        message.logger ?? "",
+                    );
+                    break;
+                }
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : `${error}`;
+            Logger.error("[Miranum.Copilot]", `(Webview: ${this.panel.title})`, message);
+        }
+    }
+
     private getHtml(): string {
         const webview = this.panel.webview;
 
@@ -220,7 +244,7 @@ export class CopilotPanel {
             Uri.joinPath(this.extensionUri, "dist", "client", "main.js"),
         );
 
-        const nonce: string = this.getNonce();
+        const nonce: string = getNonce();
 
         return `
         <!DOCTYPE html>
@@ -246,23 +270,186 @@ export class CopilotPanel {
         </html>
     `;
     }
+}
 
-    private getNonce(): string {
-        let text = "";
-        const possible =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
+function getNonce(): string {
+    let text = "";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+
+async function handleReceivedMessage(
+    extensionUri: Uri,
+    prompt?: Prompt,
+): Promise<string | boolean> {
+    if (!prompt) {
+        throw Error("No prompt given!");
     }
 
-    private async getResponseFromApi(prompt?: string): Promise<string> {
-        if (!prompt) {
-            throw Error("No prompt given!");
+    if (isInstanceOfDefaultPrompt(prompt)) {
+        let process: string | undefined;
+        if (typeof prompt.process === "string") {
+            process = await readBpmnFile(Uri.file(prompt.process));
         }
 
-        const promptObject: Prompt = JSON.parse(prompt);
-        return await getCompletion(this.extensionUri, promptObject);
+        const messages = [
+            {
+                role: "user",
+                content: await createPrompt(prompt.text, process),
+            },
+        ];
+        return await getCompletion(messages);
+    } else if (isInstanceOfDocumentationPrompt(prompt)) {
+        if (await createProcessDocumentation(extensionUri, prompt)) {
+            window.showInformationMessage("Process documentation created!");
+            return true;
+        }
     }
+    return false;
+}
+
+export async function createProcessDocumentation(
+    extensionUri: Uri,
+    documentationPrompt: DocumentationPrompt,
+): Promise<boolean> {
+    const process = readBpmnFile(Uri.file(documentationPrompt.process));
+
+    let res: string;
+    let fileName: string;
+
+    switch (documentationPrompt.format) {
+        case OutputFormat.json: {
+            const templateUri = documentationPrompt.template
+                ? Uri.file(documentationPrompt.template)
+                : Uri.joinPath(
+                    extensionUri,
+                    "resources",
+                    "templates",
+                    "documentation.schema.json",
+                );
+            const template = documentationPrompt.template
+                ? readFile(templateUri)
+                : readFile(templateUri);
+
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are a helpful process documentation assistant.",
+                },
+                {
+                    role: "user",
+                    content: await createPrompt(jsonPrompt, await process),
+                },
+            ];
+
+            fileName = "documentation.json";
+            res = await getCompletionWithSchema(
+                messages,
+                JSON.parse(await template),
+                "gpt-4",
+            );
+
+            const json = JSON.parse(res);
+            if (!json.$schema) {
+                json.$schema = templateUri.fsPath;
+                res = JSON.stringify(json, null, 2);
+            } else {
+                res = JSON.stringify(json, null, 2);
+            }
+
+            break;
+        }
+        case OutputFormat.md:
+        default: {
+            const template = documentationPrompt.template
+                ? readFile(Uri.file(documentationPrompt.template))
+                : readFile(
+                    Uri.joinPath(
+                        extensionUri,
+                        "resources",
+                        "templates",
+                        "documentation.md",
+                    ),
+                );
+
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are a helpful process documentation assistant.",
+                },
+                {
+                    role: "user",
+                    content: await createPrompt(
+                        markdownPrompt,
+                        await process,
+                        undefined,
+                        await template,
+                    ),
+                },
+            ];
+
+            fileName = "documentation.md";
+            res = await getCompletion(messages, "gpt-4");
+        }
+    }
+
+    if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
+        for (const folder of workspace.workspaceFolders) {
+            if (documentationPrompt.process.startsWith(folder.uri.fsPath)) {
+                const file = Uri.joinPath(folder.uri, "docs", fileName);
+                await writeFile(file, res);
+                commands.executeCommand("vscode.open", file, ViewColumn.Beside);
+                return true;
+            }
+        }
+    } else {
+        window.showErrorMessage("No workspace opened!");
+    }
+
+    return false;
+}
+
+async function createPrompt(
+    base: string,
+    process?: string,
+    form?: string,
+    template?: string,
+): Promise<string> {
+    let returnValue = base;
+
+    if (process) {
+        returnValue =
+            returnValue +
+            "\n\n" +
+            "The BPMN Process is delimited by triple quotes." +
+            "\n" +
+            "'''\n" +
+            process +
+            "\n'''";
+    }
+    if (form) {
+        returnValue =
+            returnValue +
+            "\n\n" +
+            "The Form is delimited by triple equal signs." +
+            "\n" +
+            "===\n" +
+            form +
+            "\n===";
+    }
+    if (template) {
+        returnValue =
+            returnValue +
+            "\n\n" +
+            "The Template is delimited by triple asterisks." +
+            "\n" +
+            "***\n" +
+            template +
+            "\n***";
+    }
+
+    return returnValue;
 }

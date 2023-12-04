@@ -37,18 +37,9 @@
                 },
                 "form": {
                     "type": "boolean"
-                },
-                "template": {
-                    "type": [
-                        "string",
-                        "boolean"
-                    ],
-                    "description": "You can define the absolute path to your template as a string or use the default template by setting this to true."
                 }
             },
-            "required": [
-                "text"
-            ]
+            "required": ["text"]
         }
     },
     "required": ["categories"]
