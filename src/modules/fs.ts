@@ -8,6 +8,11 @@ export async function readFile(uri: Uri): Promise<string> {
     return Buffer.from(uint8Array).toString();
 }
 
+export async function writeFile(uri: Uri, content: string): Promise<void> {
+    const uint8Array = Buffer.from(content);
+    await fs.writeFile(uri, uint8Array);
+}
+
 /**
  * Read a bpmn file and return the process as string.
  * The *bpmndi* section is removed.
@@ -27,10 +32,7 @@ export async function readBpmnFile(uri: Uri): Promise<string> {
 /**
  * Extract all files with a given extension from a directory recursively.
  */
-export async function readFilesFromDirectory(
-    extension: string,
-): Promise<string[]> {
-
+export async function readFilesFromDirectory(extension: string): Promise<string[]> {
     const uris = await workspace.findFiles(`**/*.${extension}`);
     const fileNames: string[] = [];
 

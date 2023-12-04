@@ -1,9 +1,39 @@
 import { WebviewApi } from "vscode-webview";
 
-import { MessageType, Prompt, VscMessage } from "../../../shared/types";
-import { TemplatePrompts } from "@/composables/types";
+import {
+    isInstanceOfDefaultPrompt,
+    isInstanceOfDocumentationPrompt,
+    MessageType,
+    Prompt,
+    VscMessage,
+} from "../../shared";
+import { TemplatePrompts } from "@/helpers";
 
 declare const globalViewType: string;
+
+let vscode: VsCode | undefined;
+
+export function createVsCode(env: string): VsCode {
+    if (vscode) {
+        return vscode;
+    }
+
+    if (env === "production") {
+        vscode = new VsCodeImpl();
+    } else {
+        vscode = new VsCodeMock();
+    }
+
+    return vscode;
+}
+
+export function getVsCode(): VsCode {
+    if (!vscode) {
+        throw new Error("VsCode not initialized.");
+    }
+
+    return vscode;
+}
 
 export interface VsCode {
     getState(): CopilotState;
@@ -12,7 +42,15 @@ export interface VsCode {
 
     updateState(state: Partial<CopilotState>): void;
 
-    postMessage(message: VscMessage<string>): void;
+    postMessage(message: VscMessage<Prompt>): void;
+}
+
+export interface CopilotState {
+    viewState: string;
+    prompts: TemplatePrompts;
+    bpmnFiles: string[];
+    currentPrompt: Prompt;
+    response: string;
 }
 
 export class MissingStateError extends Error {
@@ -21,14 +59,7 @@ export class MissingStateError extends Error {
     }
 }
 
-interface CopilotState {
-    prompts: TemplatePrompts;
-    bpmnFiles: string[];
-    currentPrompt: Partial<Prompt>;
-    response: string;
-}
-
-export class VsCodeImpl implements VsCode {
+class VsCodeImpl implements VsCode {
     private vscode: WebviewApi<CopilotState>;
 
     constructor() {
@@ -45,27 +76,18 @@ export class VsCodeImpl implements VsCode {
     }
 
     public setState(state: CopilotState) {
-        this.vscode.setState({
-            prompts: state.prompts,
-            bpmnFiles: state.bpmnFiles,
-            currentPrompt: state.currentPrompt,
-            response: state.response,
-        });
-        console.log("[Log] setState()", this.getState());
+        this.vscode.setState(state);
     }
 
     public updateState(state: Partial<CopilotState>) {
         this.setState({
             ...this.getState(),
             ...state,
-            currentPrompt: {
-                ...this.getState().currentPrompt,
-                ...state.currentPrompt,
-            },
         });
+        console.log("[Log] updateState()", this.vscode.getState());
     }
 
-    public postMessage(message: VscMessage<string>) {
+    public postMessage(message: VscMessage<Prompt>) {
         this.vscode.postMessage(message);
     }
 }
@@ -74,7 +96,7 @@ export class VsCodeImpl implements VsCode {
  * To simplify the development of the webview, we allow it to run in the browser.
  * For this purpose, the functionality of the extension/backend is mocked.
  */
-export class VsCodeMock implements VsCode {
+class VsCodeMock implements VsCode {
     private state: CopilotState | undefined;
 
     getState(): CopilotState {
@@ -85,7 +107,7 @@ export class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(message: VscMessage<string>): Promise<void> {
+    async postMessage(message: VscMessage<Prompt>): Promise<void> {
         const { type, data, logger } = message;
         switch (type) {
             case `${globalViewType}.${MessageType.initialize}`: {
@@ -104,20 +126,47 @@ export class VsCodeMock implements VsCode {
                 break;
             }
             case `${globalViewType}.${MessageType.msgFromWebview}`: {
-                // We use a Postman Mock Server to mock the OpenAI API Call.
-                // The server simulates a fixed network delay of 1000 seconds.
-                const url: string =
-                    "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
-                const res = await fetch(url);
-                const json = await res.json();
-                window.dispatchEvent(
-                    new MessageEvent("message", {
-                        data: {
-                            type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                            data: json.data,
-                        },
-                    }),
-                );
+                console.log("[Log]", data);
+
+                if (!data) {
+                    console.error("No data to send.");
+                    return;
+                }
+
+                if (isInstanceOfDefaultPrompt(data)) {
+                    // We use a Postman Mock Server to mock the OpenAI API Call.
+                    // The server simulates a fixed network delay of 1000 seconds.
+                    const url: string =
+                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    window.dispatchEvent(
+                        new MessageEvent("message", {
+                            data: {
+                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
+                                data: {
+                                    response: json.data,
+                                },
+                            },
+                        }),
+                    );
+                } else if (isInstanceOfDocumentationPrompt(data)) {
+                    const url: string =
+                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createDocumentation";
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    window.dispatchEvent(
+                        new MessageEvent("message", {
+                            data: {
+                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
+                                data: {
+                                    response: json.created,
+                                },
+                            },
+                        }),
+                    );
+                }
+
                 break;
             }
             case `${globalViewType}.${MessageType.error}`: {
@@ -138,25 +187,31 @@ export class VsCodeMock implements VsCode {
 
     updateState(state: Partial<CopilotState>): void {
         const currentState = this.getState();
-        let prompts: TemplatePrompts = { categories: [] };
+        let viewState: string;
+        if (state?.viewState) {
+            viewState = state.viewState;
+        } else {
+            viewState = currentState.viewState;
+        }
+        let prompts: TemplatePrompts;
         if (state?.prompts) {
             prompts = state.prompts;
         } else {
             prompts = currentState.prompts;
         }
-        let bpmnFiles: string[] = [];
+        let bpmnFiles: string[];
         if (state?.bpmnFiles) {
             bpmnFiles = state.bpmnFiles;
         } else {
             bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Partial<Prompt> = {};
+        let currentPrompt: Prompt;
         if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
         } else {
             currentPrompt = currentState.currentPrompt;
         }
-        let response: string = "";
+        let response: string;
         if (state?.response) {
             response = state.response;
         } else {
@@ -164,6 +219,7 @@ export class VsCodeMock implements VsCode {
         }
 
         this.state = {
+            viewState,
             prompts,
             bpmnFiles,
             currentPrompt,

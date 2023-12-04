@@ -240,7 +240,12 @@
     --vscode-editorBracketHighlight-foreground4: rgba(0, 0, 0, 0);
     --vscode-editorBracketHighlight-foreground5: rgba(0, 0, 0, 0);
     --vscode-editorBracketHighlight-foreground6: rgba(0, 0, 0, 0);
-    --vscode-editorBracketHighlight-unexpectedBracket\.foreground: rgba(255, 18, 18, 0.8);
+    --vscode-editorBracketHighlight-unexpectedBracket\.foreground: rgba(
+        255,
+        18,
+        18,
+        0.8
+    );
     --vscode-editorBracketPairGuide-background1: rgba(0, 0, 0, 0);
     --vscode-editorBracketPairGuide-background2: rgba(0, 0, 0, 0);
     --vscode-editorBracketPairGuide-background3: rgba(0, 0, 0, 0);
@@ -440,7 +445,12 @@
     --vscode-mergeEditor-conflict\.unhandledFocused\.border: #ffa600;
     --vscode-mergeEditor-conflict\.handledUnfocused\.border: rgba(134, 134, 134, 0.29);
     --vscode-mergeEditor-conflict\.handledFocused\.border: rgba(193, 193, 193, 0.8);
-    --vscode-mergeEditor-conflict\.handled\.minimapOverViewRuler: rgba(173, 172, 168, 0.93);
+    --vscode-mergeEditor-conflict\.handled\.minimapOverViewRuler: rgba(
+        173,
+        172,
+        168,
+        0.93
+    );
     --vscode-mergeEditor-conflict\.unhandled\.minimapOverViewRuler: #fcba03;
     --vscode-mergeEditor-conflictingLines\.background: rgba(255, 234, 0, 0.28);
     --vscode-mergeEditor-conflict\.input1\.background: rgba(64, 200, 174, 0.2);

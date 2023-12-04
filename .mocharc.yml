@@ -1,0 +1,10 @@
+parallel: true
+ignore: [
+  "/dist/*",
+  "/node_modules/*",
+  "/src/test/*"
+]
+watch-ignore:
+  - "/dist/*"
+  - "/node_modules/*"
+  - "/src/test/*"

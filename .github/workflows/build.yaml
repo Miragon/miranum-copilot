@@ -7,10 +7,25 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - name: Setup NodeJS 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
       - name: Install dependencies
         run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Unit Tests
+        run: npm run unit
+      - name: Integration Tests
+        run: xvfb-run -a npm run test
       - name: Build
         run: npm run build
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: "./coverage"
+          fail_ci_if_error: false
+          flags: unittests
+          name: miranum-ide
+          verbose: true
