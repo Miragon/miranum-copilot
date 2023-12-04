@@ -1,125 +1,130 @@
-import { Uri, workspace } from "vscode";
-import { Configuration, OpenAIApi } from "openai";
+import { window, workspace } from "vscode";
+import OpenAI from "openai";
 import {
-    ChatCompletionRequestMessage,
-    ChatCompletionRequestMessageRoleEnum,
-} from "openai/api";
-import { OutputFormat, Prompt } from "../shared/types";
-import { readBpmnFile, readFile } from "./reader";
+    ChatCompletionCreateParams,
+    ChatCompletionMessageParam,
+} from "openai/resources/chat";
 
-export let openAiApi = new OpenAIApi(getOpenAiConf());
+export let openAiApi = new OpenAI({ apiKey: getApiKey() });
 
 workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration("miranum-ide.copilot.openaikey")) {
-        openAiApi = new OpenAIApi(getOpenAiConf());
+    if (event.affectsConfiguration("miranumIDE.copilot.openaiApiKey")) {
+        openAiApi = new OpenAI({ apiKey: getApiKey() });
     }
 });
 
-function getOpenAiConf(): Configuration {
+function getApiKey(): string {
     const apiKey = workspace
-        .getConfiguration("miranum-ide.copilot")
-        .get<string>("openaikey");
+        .getConfiguration("miranumIDE.copilot")
+        .get<string>("openaiApiKey");
 
-    return new Configuration({
-        apiKey,
-    });
+    if (!apiKey) {
+        window.showErrorMessage("OpenAI key not found");
+        throw new Error("OpenAI key not found");
+    }
+
+    return apiKey;
 }
 
 export async function getCompletion(
-    extensionUri: Uri,
-    prompt: Prompt,
+    messages: { role: string; content: string }[],
     model = "gpt-3.5-turbo",
 ): Promise<string> {
-    const content = await createCompletion(prompt, extensionUri);
-    const messages: ChatCompletionRequestMessage[] = [
-        {
-            role: ChatCompletionRequestMessageRoleEnum.User,
-            content,
-        },
-    ];
-    const response = await openAiApi.createChatCompletion({
+    if (!isChatCompletionMessageParam(messages)) {
+        throw new Error("[OpenAI] Invalid message");
+    }
+
+    const response = await openAiApi.chat.completions.create({
         model,
         messages,
         temperature: 0,
     });
 
-    if (response.data.choices[0].message && response.data.choices[0].message.content) {
-        return response.data.choices[0].message.content;
+    const returnVal = response.choices[0].message?.content;
+    if (returnVal) {
+        return returnVal;
     } else {
         return "";
     }
 }
 
-async function createCompletion(prompt: Prompt, extensionUri: Uri): Promise<string> {
-    let returnValue = prompt.text;
-
-    if (typeof prompt.process === "string") {
-        returnValue =
-            returnValue +
-            "\n\n" +
-            "The BPMN Process is delimited by triple quotes." +
-            "\n\n" +
-            "'''" +
-            (await readBpmnFile(Uri.file(prompt.process))) +
-            "'''";
-    }
-    if (prompt.form) {
-        // returnValue =
-        //     returnValue +
-        //     "\n\n" +
-        //     "The Form is delimited by triple equal signs." +
-        //     "\n\n" +
-        //     "===" +
-        //     formBuilder.getForm() +
-        //     "===";
-    }
-    if (prompt.template) {
-        returnValue =
-            returnValue +
-            "\n\n" +
-            "The Template is delimited by triple asterisks." +
-            "\n\n" +
-            "***" +
-            (await getTemplate(prompt, extensionUri)) +
-            "***";
+export async function getCompletionWithSchema(
+    messages: { role: string; content: string }[],
+    schema: JSON,
+    model = "gpt-3.5-turbo",
+): Promise<string> {
+    if (!isChatCompletionMessageParam(messages)) {
+        throw new Error("[OpenAI] Invalid message");
     }
 
-    return returnValue;
+    const functions: ChatCompletionCreateParams.Function[] = [
+        {
+            name: "set_documentation",
+            parameters: {
+                ...schema,
+            },
+        },
+    ];
+    const function_call: ChatCompletionCreateParams.FunctionCallOption = {
+        name: "set_documentation",
+    };
+
+    const response = await openAiApi.chat.completions.create({
+        model,
+        messages,
+        functions,
+        function_call,
+    });
+
+    const returnVal = response.choices[0].message?.function_call?.arguments;
+    if (returnVal) {
+        return returnVal;
+    } else {
+        return "{}";
+    }
 }
 
-async function getTemplate(prompt: Prompt, extensionUri: Uri): Promise<string> {
-    if (!prompt.template) {
-        throw new Error("No template specified");
-    }
+// function mapMessages(
+//     messages: [{ role: string; content: string }],
+// ): ChatCompletionMessageParam[] {
+//     const msg: ChatCompletionMessageParam[] = messages.map((message) => {
+//         if (
+//             message.role === "user" ||
+//             message.role === "system" ||
+//             message.role === "assistant" ||
+//             message.role === "function"
+//         ) {
+//             return {
+//                 role: message.role,
+//                 content: message.content,
+//             };
+//         } else {
+//             throw new Error("Invalid message");
+//         }
+//     });
+//
+//     if (!msg) {
+//         throw new Error("Invalid message");
+//     }
+//
+//     return msg;
+// }
 
-    let uri;
-    if (typeof prompt.template === "boolean") {
-        switch (prompt.outputFormat) {
-            case OutputFormat.json:
-                uri = Uri.joinPath(
-                    extensionUri,
-                    "resources",
-                    "templates",
-                    "documentation.schema.json",
-                );
-                break;
-            case OutputFormat.md:
-            default:
-                uri = Uri.joinPath(
-                    extensionUri,
-                    "resources",
-                    "templates",
-                    "documentation.md",
-                );
-                break;
+function isChatCompletionMessageParam(
+    message: any,
+): message is ChatCompletionMessageParam[] {
+    for (const msg of message) {
+        if (!("role" in msg) || !("content" in msg)) {
+            return false;
         }
-    } else {
-        uri = Uri.file(prompt.template);
+        if (
+            msg.role !== "user" &&
+            msg.role !== "system" &&
+            msg.role !== "assistant" &&
+            msg.role !== "function"
+        ) {
+            return false;
+        }
     }
-
-    if (!uri) {
-        throw new Error("Something went wrong while creating the uri!");
-    }
-
-    return await readFile(uri);
+    return true;
 }

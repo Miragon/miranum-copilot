@@ -15,7 +15,7 @@
                     "text": "What are common mistakes to avoid when creating BPMN diagrams?"
                 },
                 {
-                    "text": "Can you create a basic bpmn diagram for the following process:"
+                    "text": "Can you create a basic bpmn diagram for the following process?"
                 }
             ]
         },
@@ -61,7 +61,7 @@
             ]
         },
         {
-            "name": "forms",
+            "name": "Forms",
             "prompts": [
                 {
                     "text": "What benefits does the creation and usage of forms have?"
@@ -81,21 +81,6 @@
                 {
                     "text": "Design a visually appealing form layout for the process.",
                     "process": true
-                }
-            ]
-        },
-        {
-            "name": "processDocumentation",
-            "prompts": [
-                {
-                    "text": "Generate a process documentation as a valid JSON Object file using the a template.",
-                    "process": true,
-                    "template": true
-                },
-                {
-                    "text": "Generate a process documentation as a valid Markdown file using the a template.",
-                    "process": true,
-                    "template": true
                 }
             ]
         }

@@ -1,31 +1,94 @@
 # Documentation
 
 ## Process
-<!-- Enter the process name here -->
+<!-- 
+instruction: "Your task is to generate a name for the given process."
+format: "text"
+example: "Order Process"
+-->
 
-## ProcessResponsibility
-<!-- Enter the process responsibility here -->
+## Process Responsibility
+<!-- 
+instruction: "Your task is to describe the given process in maximal 3 sentences."
+format: "text"
+example: "This process describes the steps that take place from the receipt of an order to the delivery of the goods."
+-->
 
 ## Input
-<!-- Enter the input for the process here -->
+<!--
+instruction: "Your task is to list all inputParameter in the given process."
+format: "unordered list"
+example: [
+    "Customer Information",
+    "Desired date of delivery"
+]
+-->
 
-## SupplierOfInput
-<!-- Enter the supplier of the input for the process here -->
+## Supplier Of Input
+<!--
+instruction: "Your task is to define from where the inputs come from."
+format: "unordered list"
+example: [
+    "Order"
+]
+-->
 
-## ProcessSteps
-<!-- Enter the process steps in their correct order here -->
+## Process Steps
+<!--
+instruction: "Your task is to list the process steps in their correct order.",
+format: "ordered list",
+example: [
+    "Order received",
+    "Order checked",
+    "If ok, send order confirmation",
+    "If no, send cancellation",
+    "Deliver goods"
+]
+-->
 
 ## Output
-<!-- Enter the output for the process here -->
+<!--
+instruction: "Your task is to list all outputParameter in the given process.",
+format: "unordered list",
+example: [
+    "Bill of delivery"
+]
+-->
 
-## CustomerOfOutput
-<!-- Enter the customer of the process output here -->
+## Customer Of Output
+<!--
+instruction: "Your task is to define who consumes the output.",
+format: "unordered list",
+example: [
+    "Accounting"
+]
+-->
 
 ## Metrics
-<!-- Enter the process metrics here -->
+<!--
+instruction: "Your task is to define plausible metrics for the given process.",
+format: "unordered list",
+example: [
+    "Time taken from receiving the order to deliver the goods",
+    "Number of deliveries"
+]
+-->
 
 ## IT-Systems
-<!-- Enter the IT-Systems involved in the process here -->
+<!--
+instruction: "Your task is to define which different IT-Systems are involved in the given process.",
+format: "unordered list",
+example: [
+    "ERP-System"
+]
+-->
 
-## Ressources
-<!-- Enter the process ressources here -->
+## Resources
+<!--
+instruction: "Your task is to define which resources are needed from the given process.",
+format: "unordered list",
+example: [
+    "Order Processing Department",
+    "Goods Issuing Department"
+]
+-->

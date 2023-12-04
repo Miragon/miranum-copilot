@@ -6,6 +6,10 @@
 /dist
 /node_modules
 
+/resources
+/research
+/docs
+
+**/*.md
+
 package-lock.json
-CODE_OF_CONDUCT.md
-README.md

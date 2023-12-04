@@ -1,3 +1,49 @@
+<script lang="ts" setup>
+import { computed, ref } from "vue";
+import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
+
+import { DefaultPrompt } from "../../../shared";
+import { TemplatePrompts } from "@/helpers";
+
+import "../css/style.css";
+
+provideVSCodeDesignSystem().register(vsCodeButton());
+
+interface Props {
+    prompts: TemplatePrompts;
+}
+
+const props = defineProps<Props>();
+const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSelected"]);
+
+const isSidebarVisible = ref(false);
+const selectedCategory = ref("");
+
+const categories = computed(() => props.prompts.categories);
+const buttonStyle = computed(() => {
+    return {
+        left: isSidebarVisible.value ? "33%" : "0",
+    };
+});
+
+const selectCategory = (categoryName: string) => {
+    if (selectedCategory.value === categoryName) {
+        selectedCategory.value = "";
+    } else {
+        selectedCategory.value = categoryName;
+    }
+};
+
+const selectPrompt = (prompt: DefaultPrompt) => {
+    emits("promptSelected", prompt);
+};
+
+const toggleSidebar = () => {
+    isSidebarVisible.value = !isSidebarVisible.value;
+    emits("sidebarToggled", isSidebarVisible.value);
+};
+</script>
+
 <template>
     <div class="sidebar-container">
         <button :style="buttonStyle" @click="toggleSidebar">
@@ -30,53 +76,12 @@
                     </ul>
                 </li>
             </ul>
+            <vscode-button @click="$emit('documentationSelected')">
+                Process Documentation
+            </vscode-button>
         </div>
     </div>
 </template>
-
-<script lang="ts" setup>
-import "./css/style.css";
-
-import { Prompt } from "../../shared/types";
-
-import { computed, ref } from "vue";
-import { TemplatePrompts } from "@/composables/types";
-
-interface Props {
-    prompts: TemplatePrompts;
-}
-
-const props = defineProps<Props>();
-const emits = defineEmits(["sidebarToggled", "promptSelected"]);
-
-const isSidebarVisible = ref(false);
-const selectedCategory = ref("");
-
-const categories = props.prompts.categories;
-
-const selectCategory = (categoryName: string) => {
-    if (selectedCategory.value === categoryName) {
-        selectedCategory.value = "";
-    } else {
-        selectedCategory.value = categoryName;
-    }
-};
-
-const selectPrompt = (prompt: Prompt) => {
-    emits("promptSelected", prompt);
-};
-
-const toggleSidebar = () => {
-    isSidebarVisible.value = !isSidebarVisible.value;
-    emits("sidebarToggled", isSidebarVisible.value);
-};
-
-const buttonStyle = computed(() => {
-    return {
-        left: isSidebarVisible.value ? "33%" : "0",
-    };
-});
-</script>
 
 <style scoped>
 #sidebar {
