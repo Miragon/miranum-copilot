@@ -122,6 +122,7 @@
         "@vscode/webview-ui-toolkit": "^1.2.2",
         "lodash": "^4.17.21",
         "openai": "^4.20.1",
+        "tsyringe": "^4.8.0",
         "vue": "^3.3.13"
     }
 }
