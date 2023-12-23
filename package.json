@@ -108,7 +108,7 @@
         "concurrently": "^8.2.1",
         "esbuild": "^0.19.8",
         "eslint": "^8.50.0",
-        "eslint-config-prettier": "^9.0.0",
+        "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-vue": "^9.17.0",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
