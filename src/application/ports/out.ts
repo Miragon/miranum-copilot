@@ -5,11 +5,15 @@ export interface GetPromptsOutPort {
 }
 
 export interface GetBpmnFilesOutPort {
-    getBpmnFiles(): Promise<string[]>;
+    getBpmnFiles(): Promise<BpmnFile[]>;
 }
 
 export interface CreateOrShowWebviewOutPort {
-    createOrShowWebview(): boolean;
+    createOrShowWebview(): string;
+}
+
+export interface CreateFileOutPort {
+    createFile(fileName: string, fileContent: string): Promise<boolean>;
 }
 
 export interface GetProcessDocumentationOutPort {

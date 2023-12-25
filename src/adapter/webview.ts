@@ -24,11 +24,13 @@ export class CopilotWebview {
         return this.panel.webview;
     }
 
-    showOrCreate() {
+    showOrCreate(): string {
         if (this.panel) {
             this.panel.reveal();
+            return "Webview already exists";
         } else {
             this.create();
+            return "Webview created";
         }
     }
 
@@ -51,8 +53,6 @@ export class CopilotWebview {
         this.onDidReceiveMessage(); // have to be called before setting the html otherwise we may miss the first message
         // this.panel.webview.options = {};
         this.panel.webview.html = this.getHtml(extensionUri);
-
-        return true;
     }
 
     private onDidReceiveMessage() {

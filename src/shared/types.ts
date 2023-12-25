@@ -46,14 +46,14 @@ export class GetBpmnFilesCommand implements MiranumCopilotCommand {
 export class CreateProcessDocumentationCommand implements MiranumCopilotCommand {
     public readonly type = "CreateProcessDocumentationCommand";
 
-    public readonly process: string;
+    public readonly bpmnFilePath: string;
 
     public readonly templatePath: string;
 
     public readonly templateFormat: TemplateFormat;
 
     constructor(process: string, templatePath: string, templateFormat: TemplateFormat) {
-        this.process = process;
+        this.bpmnFilePath = process;
         this.templatePath = templatePath;
         this.templateFormat = templateFormat;
     }

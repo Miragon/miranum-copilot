@@ -1,9 +1,15 @@
+import {
+    CreateFormCommand,
+    CreateProcessDocumentationCommand,
+    GetAiResponseCommand,
+} from "../../shared";
+
 export interface CreateOrShowWebviewInPort {
-    createOrShowWebview(): void;
+    createOrShowWebview(): string;
 
-    sendPrompts(): void;
+    sendPrompts(): Promise<boolean>;
 
-    sendBpmnFiles(): void;
+    sendBpmnFiles(): Promise<boolean>;
 }
 
 export interface UpdatePromptsInPort {
@@ -15,13 +21,15 @@ export interface UpdateBpmnFilesInPort {
 }
 
 export interface CreateProcessDocumentationInPort {
-    createProcessDocumentation(): void;
+    createProcessDocumentation(
+        createProcessDocumentationCommand: CreateProcessDocumentationCommand,
+    ): Promise<boolean>;
 }
 
 export interface CreateFormInPort {
-    createForm(): void;
+    createForm(createFormCommand: CreateFormCommand): void;
 }
 
 export interface SendAiResponseInPort {
-    sendAiResponse(): void;
+    sendAiResponse(getAiResponseCommand: GetAiResponseCommand): void;
 }
