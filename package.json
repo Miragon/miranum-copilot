@@ -102,7 +102,7 @@
         "@types/vscode-webview": "^1.57.4",
         "@typescript-eslint/eslint-plugin": "^6.15.0",
         "@typescript-eslint/parser": "^6.15.0",
-        "@vitejs/plugin-vue": "^4.5.2",
+        "@vitejs/plugin-vue": "^5.0.0",
         "@vscode/test-electron": "^2.3.8",
         "chai": "^4.3.10",
         "concurrently": "^8.2.2",
