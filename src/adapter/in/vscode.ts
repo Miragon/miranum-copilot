@@ -10,6 +10,11 @@ import {
     UpdatePromptsInPort,
 } from "../../application/ports/in";
 import { EXTENSION_CONTEXT } from "../../utils";
+import {
+    CreateFormCommand,
+    CreateProcessDocumentationCommand,
+    GetAiResponseCommand,
+} from "../../shared";
 
 @singleton()
 export class CommandAdapter {
@@ -63,6 +68,10 @@ export class WebviewAdapter {
         private readonly sendAiResponseInPort: SendAiResponseInPort,
     ) {}
 
+    sendTemplates() {
+        this.createOrShowWebviewInPort.sendTemplates();
+    }
+
     sendPrompts() {
         this.createOrShowWebviewInPort.sendPrompts();
     }
@@ -71,16 +80,20 @@ export class WebviewAdapter {
         this.createOrShowWebviewInPort.sendBpmnFiles();
     }
 
-    createProcessDocumentation() {
-        this.createProcessDocumentationInPort.createProcessDocumentation();
+    createProcessDocumentation(
+        createProcessDocumentationCommand: CreateProcessDocumentationCommand,
+    ) {
+        this.createProcessDocumentationInPort.createProcessDocumentation(
+            createProcessDocumentationCommand,
+        );
     }
 
-    createForm() {
-        this.createFormInPort.createForm();
+    createForm(createFormCommand: CreateFormCommand) {
+        this.createFormInPort.createForm(createFormCommand);
     }
 
-    sendAiResponse() {
-        this.sendAiResponseInPort.sendAiResponse();
+    sendAiResponse(getAiResponseCommand: GetAiResponseCommand) {
+        this.sendAiResponseInPort.sendAiResponse(getAiResponseCommand);
     }
 }
 

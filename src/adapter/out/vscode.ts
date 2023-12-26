@@ -1,15 +1,21 @@
 import { Uri, workspace } from "vscode";
 
-import { BpmnFile, Prompt } from "../../application/model";
+import { Prompt } from "../../application/model";
 import {
     CreateOrShowWebviewOutPort,
     GetBpmnFilesOutPort,
     GetPromptsOutPort,
-    SendAiResponseOutPort,
-    SendBpmnFilesOutPort,
-    SendPromptsOutPort,
+    GetTemplatesOutPort,
+    PostMessageOutPort,
+    ReadFileOutPort,
 } from "../../application/ports/out";
-import { AiResponseQuery, BpmnFileQuery, PromptQuery } from "../../shared";
+import {
+    BpmnFile,
+    MiranumCopilotCommand,
+    MiranumCopilotQuery,
+    Template,
+    TemplateExtension,
+} from "../../shared";
 import { CopilotWebview } from "../webview";
 import { EXTENSION_CONTEXT } from "../../utils";
 
@@ -28,19 +34,46 @@ type PromptsSchema = {
     ];
 };
 
-export class WorkspaceAdapter implements GetPromptsOutPort, GetBpmnFilesOutPort {
+export class WorkspaceAdapter
+    implements
+        ReadFileOutPort,
+        GetPromptsOutPort,
+        GetBpmnFilesOutPort,
+        GetTemplatesOutPort
+{
     private readonly fs = workspace.fs;
 
+    async readFile(filePath: string): Promise<string> {
+        const uri = Uri.file(filePath);
+        const uint8Array = await this.fs.readFile(uri);
+        return Buffer.from(uint8Array).toString();
+    }
+
+    async getTemplates(): Promise<Template[]> {
+        const path: string[] = [
+            EXTENSION_CONTEXT.getContext().extensionUri.path,
+            "resources",
+            "templates",
+        ];
+
+        const files = await workspace.findFiles(path.join("/"), "**/*");
+
+        return files.map((uri) => {
+            const file = uri.path.split("/").pop()!;
+            return new Template(file, file.split(".").pop() as TemplateExtension);
+        });
+    }
+
     async getPrompts(): Promise<Prompt[]> {
-        const uri = Uri.joinPath(
-            EXTENSION_CONTEXT.getContext().extensionUri,
+        const path: string[] = [
+            EXTENSION_CONTEXT.getContext().extensionUri.path,
             "resources",
             "prompts",
             "prompts.json",
-        );
-        const uint8Array = await this.fs.readFile(uri);
-        const fileString = Buffer.from(uint8Array).toString();
-        const json: PromptsSchema = JSON.parse(fileString);
+        ];
+
+        const file = await this.readFile(path.join("/"));
+        const json: PromptsSchema = JSON.parse(file);
 
         const prompts = json.categories.map((category) => {
             return category.prompts.map((prompt) => {
@@ -64,6 +97,7 @@ export class WorkspaceAdapter implements GetPromptsOutPort, GetBpmnFilesOutPort 
                     return new BpmnFile(
                         file.path.split("/").pop()!,
                         ws.uri.path.split("/").pop()!,
+                        file.path,
                     );
                 }
             });
@@ -89,31 +123,14 @@ export class WorkspaceAdapter implements GetPromptsOutPort, GetBpmnFilesOutPort 
     }
 }
 
-export class WebviewAdapter
-    implements
-        CreateOrShowWebviewOutPort,
-        SendPromptsOutPort,
-        SendBpmnFilesOutPort,
-        SendAiResponseOutPort
-{
+export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOutPort {
     constructor(private readonly webview: CopilotWebview) {}
 
     createOrShowWebview(): string {
         return this.webview.showOrCreate();
     }
 
-    sendPrompts(prompts: Prompt[]): Promise<boolean> {
-        const sendPromptQuery = new PromptQuery(prompts);
-        return this.webview.postMessage(sendPromptQuery);
-    }
-
-    sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean> {
-        const sendBpmnFileQuery = new BpmnFileQuery(bpmnFiles);
-        return this.webview.postMessage(sendBpmnFileQuery);
-    }
-
-    sendAiResponse(response: string): Promise<boolean> {
-        const sendAiResponseQuery = new AiResponseQuery(response);
-        return this.webview.postMessage(sendAiResponseQuery);
+    postMessage(message: MiranumCopilotCommand | MiranumCopilotQuery): Promise<boolean> {
+        return this.webview.postMessage(message);
     }
 }

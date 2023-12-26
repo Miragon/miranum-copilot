@@ -19,21 +19,39 @@ export class BpmnFile {
 
     public readonly workspaceName: string;
 
-    constructor(fileName: string, workspaceName: string) {
+    public readonly fullPath: string;
+
+    constructor(fileName: string, workspaceName: string, fullPath: string) {
         this.fileName = fileName;
         this.workspaceName = workspaceName;
+        this.fullPath = fullPath;
     }
 }
 
-export enum TemplateFormat {
+export enum TemplateExtension {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    JSON = "JSON",
+    JSON = "json",
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    MARKDOWN = "Markdown",
+    MARKDOWN = "md",
+}
+
+export class Template {
+    public readonly path: string;
+
+    public readonly extension: TemplateExtension;
+
+    constructor(path: string, extension: TemplateExtension) {
+        this.path = path;
+        this.extension = extension;
+    }
 }
 
 // Commands
 export interface MiranumCopilotCommand extends Command {}
+
+export class GetTemplatesCommand implements MiranumCopilotCommand {
+    public readonly type = "GetTemplatesCommand";
+}
 
 export class GetPromptsCommand implements MiranumCopilotCommand {
     public readonly type = "GetPromptsCommand";
@@ -46,16 +64,13 @@ export class GetBpmnFilesCommand implements MiranumCopilotCommand {
 export class CreateProcessDocumentationCommand implements MiranumCopilotCommand {
     public readonly type = "CreateProcessDocumentationCommand";
 
-    public readonly bpmnFilePath: string;
+    public readonly bpmnFile: BpmnFile;
 
-    public readonly templatePath: string;
+    public readonly template: Template;
 
-    public readonly templateFormat: TemplateFormat;
-
-    constructor(process: string, templatePath: string, templateFormat: TemplateFormat) {
-        this.bpmnFilePath = process;
-        this.templatePath = templatePath;
-        this.templateFormat = templateFormat;
+    constructor(bpmnFile: BpmnFile, template: Template) {
+        this.bpmnFile = bpmnFile;
+        this.template = template;
     }
 }
 
@@ -84,6 +99,16 @@ export class GetAiResponseCommand implements MiranumCopilotCommand {
 
 // Queries
 export interface MiranumCopilotQuery extends Query {}
+
+export class TemplateQuery implements MiranumCopilotQuery {
+    public readonly type = "TemplateQuery";
+
+    public readonly templates: Template[];
+
+    constructor(templates: Template[]) {
+        this.templates = templates;
+    }
+}
 
 export class PromptQuery implements MiranumCopilotQuery {
     public readonly type = "PromptQuery";

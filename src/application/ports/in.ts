@@ -7,6 +7,8 @@ import {
 export interface CreateOrShowWebviewInPort {
     createOrShowWebview(): string;
 
+    sendTemplates(): Promise<boolean>;
+
     sendPrompts(): Promise<boolean>;
 
     sendBpmnFiles(): Promise<boolean>;

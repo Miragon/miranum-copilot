@@ -1,4 +1,10 @@
-import { BpmnFile, Prompt } from "../model";
+import { BpmnFile, Prompt, PromptCreation } from "../model";
+// FIXME: No dependency to shared
+import { MiranumCopilotCommand, MiranumCopilotQuery, Template } from "../../shared";
+
+export interface ReadFileOutPort {
+    readFile(path: string): Promise<string>;
+}
 
 export interface GetPromptsOutPort {
     getPrompts(): Promise<Prompt[]>;
@@ -6,6 +12,10 @@ export interface GetPromptsOutPort {
 
 export interface GetBpmnFilesOutPort {
     getBpmnFiles(): Promise<BpmnFile[]>;
+}
+
+export interface GetTemplatesOutPort {
+    getTemplates(): Promise<Template[]>;
 }
 
 export interface CreateOrShowWebviewOutPort {
@@ -16,26 +26,14 @@ export interface CreateFileOutPort {
     createFile(fileName: string, fileContent: string): Promise<boolean>;
 }
 
-export interface GetProcessDocumentationOutPort {
-    getProcessDocumentation(prompt: string): string;
-}
-
-export interface GetFormOutPort {
-    getForm(prompt: string): string;
+export interface PostMessageOutPort {
+    postMessage(message: MiranumCopilotCommand | MiranumCopilotQuery): Promise<boolean>;
 }
 
 export interface GetAiResponseOutPort {
-    sendAiResponse(response: string): string;
-}
+    getAiResponse(prompt: PromptCreation): Promise<string>;
 
-export interface SendPromptsOutPort {
-    sendPrompts(prompts: Prompt[]): Promise<boolean>;
-}
+    getProcessDocumentation(prompt: PromptCreation, fileFormat: string): Promise<string>;
 
-export interface SendBpmnFilesOutPort {
-    sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
-}
-
-export interface SendAiResponseOutPort {
-    sendAiResponse(response: string): Promise<boolean>;
+    getForm(prompt: PromptCreation): Promise<string>;
 }

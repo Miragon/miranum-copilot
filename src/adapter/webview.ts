@@ -1,7 +1,14 @@
 import { Uri, ViewColumn, WebviewPanel, window } from "vscode";
 import { container, inject, singleton } from "tsyringe";
 
-import { Command, MiranumCopilotQuery, Query } from "../shared";
+import {
+    Command,
+    CreateFormCommand,
+    CreateProcessDocumentationCommand,
+    GetAiResponseCommand,
+    MiranumCopilotQuery,
+    Query,
+} from "../shared";
 import { EXTENSION_CONTEXT } from "../utils";
 import { WebviewAdapter } from "./in/vscode";
 
@@ -65,6 +72,10 @@ export class CopilotWebview {
 
         webview.onDidReceiveMessage(async (message: Command | Query) => {
             switch (true) {
+                case message.type === "GetTemplatesCommand": {
+                    webviewAdapter.sendTemplates();
+                    break;
+                }
                 case message.type === "GetPromptsCommand": {
                     webviewAdapter.sendPrompts();
                     break;
@@ -74,15 +85,17 @@ export class CopilotWebview {
                     break;
                 }
                 case message.type === "CreateProcessDocumentationCommand": {
-                    webviewAdapter.createProcessDocumentation();
+                    webviewAdapter.createProcessDocumentation(
+                        message as CreateProcessDocumentationCommand,
+                    );
                     break;
                 }
                 case message.type === "CreateFormCommand": {
-                    webviewAdapter.createForm();
+                    webviewAdapter.createForm(message as CreateFormCommand);
                     break;
                 }
                 case message.type === "GetAiResponseCommand": {
-                    webviewAdapter.sendAiResponse();
+                    webviewAdapter.sendAiResponse(message as GetAiResponseCommand);
                     break;
                 }
             }
