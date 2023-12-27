@@ -1,13 +1,13 @@
-import { BpmnFile, Prompt, PromptCreation } from "../model";
+import { BpmnFile, DefaultPrompt, PromptCreation, Template } from "../model";
+
 // FIXME: No dependency to shared
-import { MiranumCopilotCommand, MiranumCopilotQuery, Template } from "../../shared";
 
 export interface ReadFileOutPort {
     readFile(path: string): Promise<string>;
 }
 
 export interface GetPromptsOutPort {
-    getPrompts(): Promise<Prompt[]>;
+    getPrompts(): Promise<DefaultPrompt[]>;
 }
 
 export interface GetBpmnFilesOutPort {
@@ -15,7 +15,7 @@ export interface GetBpmnFilesOutPort {
 }
 
 export interface GetTemplatesOutPort {
-    getTemplates(): Promise<Template[]>;
+    getTemplates(): Promise<Map<string, Template[]>>;
 }
 
 export interface CreateOrShowWebviewOutPort {
@@ -27,7 +27,11 @@ export interface CreateFileOutPort {
 }
 
 export interface PostMessageOutPort {
-    postMessage(message: MiranumCopilotCommand | MiranumCopilotQuery): Promise<boolean>;
+    sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
+
+    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean>;
+
+    sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 }
 
 export interface GetAiResponseOutPort {

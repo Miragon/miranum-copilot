@@ -34,7 +34,7 @@ export class OpenAIApiAdapter implements GetAiResponseOutPort {
                 },
                 {
                     role: "user",
-                    content: prompt.createPrompt({ base: true, process: true }),
+                    content: prompt.createPrompt(),
                 },
             ];
             return getCompletionWithParameter(
@@ -50,11 +50,7 @@ export class OpenAIApiAdapter implements GetAiResponseOutPort {
                 },
                 {
                     role: "user",
-                    content: prompt.createPrompt({
-                        base: true,
-                        process: true,
-                        template: true,
-                    }),
+                    content: prompt.createPrompt(),
                 },
             ];
             return getCompletion(messages, model);

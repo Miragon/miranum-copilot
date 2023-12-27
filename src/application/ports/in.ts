@@ -1,8 +1,4 @@
-import {
-    CreateFormCommand,
-    CreateProcessDocumentationCommand,
-    GetAiResponseCommand,
-} from "../../shared";
+import { DocumentationFormat, FormFormat, PromptCreation, Template } from "../model";
 
 export interface CreateOrShowWebviewInPort {
     createOrShowWebview(): string;
@@ -24,14 +20,22 @@ export interface UpdateBpmnFilesInPort {
 
 export interface CreateProcessDocumentationInPort {
     createProcessDocumentation(
-        createProcessDocumentationCommand: CreateProcessDocumentationCommand,
+        fileName: string,
+        bpmnFilePath: string,
+        template: Template,
+        fileFormat: DocumentationFormat,
     ): Promise<boolean>;
 }
 
 export interface CreateFormInPort {
-    createForm(createFormCommand: CreateFormCommand): void;
+    createForm(
+        fileName: string,
+        prompt: PromptCreation,
+        template: Template,
+        fileFormat: FormFormat,
+    ): Promise<boolean>;
 }
 
 export interface SendAiResponseInPort {
-    sendAiResponse(getAiResponseCommand: GetAiResponseCommand): void;
+    sendAiResponse(prompt: PromptCreation): Promise<boolean>;
 }

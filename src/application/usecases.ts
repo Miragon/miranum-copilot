@@ -1,10 +1,8 @@
 import {
-    BpmnFileQuery,
-    CreateProcessDocumentationCommand,
-    PromptQuery,
-    TemplateQuery,
-} from "../shared";
-import { CreateOrShowWebviewInPort, CreateProcessDocumentationInPort } from "./ports/in";
+    CreateFormInPort,
+    CreateOrShowWebviewInPort,
+    CreateProcessDocumentationInPort,
+} from "./ports/in";
 import {
     CreateFileOutPort,
     CreateOrShowWebviewOutPort,
@@ -16,7 +14,7 @@ import {
     ReadFileOutPort,
 } from "./ports/out";
 import { inject, singleton } from "tsyringe";
-import { BpmnFile, PromptCreation } from "./model";
+import { BpmnFile, DocumentationFormat, PromptCreation, Template } from "./model";
 
 @singleton()
 export class CreateOrShowWebviewUseCase implements CreateOrShowWebviewInPort {
@@ -37,23 +35,20 @@ export class CreateOrShowWebviewUseCase implements CreateOrShowWebviewInPort {
         return this.createOrShowWebviewOutPort.createOrShowWebview();
     }
 
-    async sendTemplates(): Promise<boolean> {
-        const templateQuery = new TemplateQuery(
-            await this.getTemplatesOutPort.getTemplates(),
-        );
-        return this.postMessageOutPort.postMessage(templateQuery);
+    async sendBpmnFiles(): Promise<boolean> {
+        const bpmnFiles = await this.getBpmnFilesOutPort.getBpmnFiles();
+        const bpmnFilesSorted = BpmnFile.sortByWorkspaceName(bpmnFiles);
+        return this.postMessageOutPort.sendBpmnFiles(bpmnFilesSorted);
     }
 
     async sendPrompts(): Promise<boolean> {
-        const promptQuery = new PromptQuery(await this.getPromptsOutPort.getPrompts());
-        return this.postMessageOutPort.postMessage(promptQuery);
+        const prompts = await this.getPromptsOutPort.getPrompts();
+        return this.postMessageOutPort.sendPrompts(prompts);
     }
 
-    async sendBpmnFiles(): Promise<boolean> {
-        const bpmnFiles: BpmnFile[] = await this.getBpmnFilesOutPort.getBpmnFiles();
-        const bpmnFilesSorted = BpmnFile.sortByWorkspaceName(bpmnFiles);
-        const bpmnFileQuery = new BpmnFileQuery(bpmnFilesSorted);
-        return this.postMessageOutPort.postMessage(bpmnFileQuery);
+    async sendTemplates(): Promise<boolean> {
+        const templates = await this.getTemplatesOutPort.getTemplates();
+        return this.postMessageOutPort.sendTemplates(templates);
     }
 }
 
@@ -70,11 +65,12 @@ implements CreateProcessDocumentationInPort
     ) {}
 
     async createProcessDocumentation(
-        createProcessDocumentationCommand: CreateProcessDocumentationCommand,
+        fileName: string,
+        bpmnFilePath: string,
+        template: Template,
+        fileFormat: DocumentationFormat,
     ): Promise<boolean> {
-        const { bpmnFilePath, template } = createProcessDocumentationCommand;
-
-        // 1. Read process description from bpmn file
+        // 1. Read the bpmn file and extract the process description
         const bpmnFile = await this.readFileOutPort.readFile(bpmnFilePath);
         const processDescription = bpmnFile.match(
             /<bpmn:process[\s\S]*<\/bpmn:process>/,
@@ -86,20 +82,51 @@ implements CreateProcessDocumentationInPort
         }
 
         // 2. Read documentation template
-        const templateFile = await this.readFileOutPort.readFile(template.path);
+        const documentationTemplate = await this.readFileOutPort.readFile(template.path);
 
         // 3. Create the prompt
         const promptCreation = new PromptCreation({
-            base: templateFile,
+            base: documentationTemplate,
             process: processDescription[0],
-            template: templateFile,
+            template: documentationTemplate,
         });
 
         // 4. Get AI response
-        const res = await this.getAiResponseOutPort.getAiResponse(promptCreation);
+        const res = await this.getAiResponseOutPort.getProcessDocumentation(
+            promptCreation,
+            fileFormat,
+        );
 
         // 5. Create process documentation file
-        // FIXME: fix filename
-        return this.createFileOutPort.createFile("documentation", res);
+        return this.createFileOutPort.createFile(fileName, res);
+    }
+}
+
+@singleton()
+export class CreateFormUseCase implements CreateFormInPort {
+    constructor(
+        @inject("ReadFileOutPort") private readonly readFileOutPort: ReadFileOutPort,
+        @inject("CreateFileOutPort")
+        private readonly createFileOutPort: CreateFileOutPort,
+        @inject("GetAiResponseOutPort")
+        private readonly getAiResponseOutPort: GetAiResponseOutPort,
+    ) {}
+
+    async createForm(
+        fileName: string,
+        prompt: PromptCreation,
+        template: FormTemplate,
+    ): Promise<boolean> {
+        // 1. Read form template
+        const formTemplate = await this.readFileOutPort.readFile(template.path);
+
+        // 2. Create the prompt
+        prompt.setTemplate(formTemplate);
+
+        // 3. Get AI response
+        const res = await this.getAiResponseOutPort.getForm(prompt);
+
+        // 4. Create form file
+        return this.createFileOutPort.createFile(fileName, res);
     }
 }

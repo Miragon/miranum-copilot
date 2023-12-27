@@ -1,9 +1,9 @@
 export class BpmnFile {
-    public readonly fileName: string;
+    readonly fileName: string;
 
-    public readonly workspaceName: string;
+    readonly workspaceName: string;
 
-    public readonly fullPath: string;
+    readonly fullPath: string;
 
     constructor(fileName: string, workspaceName: string, fullPath: string) {
         this.fileName = fileName;
@@ -24,12 +24,12 @@ export class BpmnFile {
     }
 }
 
-export class Prompt {
-    public readonly prompt: string;
+export class DefaultPrompt {
+    readonly prompt: string;
 
-    public readonly process: boolean = false;
+    readonly process: boolean = false;
 
-    public readonly form: boolean = false;
+    readonly form: boolean = false;
 
     constructor(prompt: string, process?: boolean, form?: boolean) {
         this.prompt = prompt;
@@ -38,27 +38,42 @@ export class Prompt {
     }
 }
 
-interface PromptCreationParts<T extends string | boolean> {
-    base: T;
-    process?: T;
-    form?: T;
-    template?: T;
+interface PromptCreationParts {
+    base: string;
+    process?: string;
+    form?: string;
+    template?: string;
 }
 
 export class PromptCreation {
     private readonly base: string;
 
-    private readonly process?: string;
+    private process?: string;
 
-    private readonly form?: string;
+    private form?: string;
 
-    private readonly template?: string;
+    private template?: string;
 
-    constructor({ base, process, form, template }: PromptCreationParts<string>) {
+    constructor({ base, process, form, template }: PromptCreationParts) {
         this.base = base;
         this.process = process;
         this.form = form;
         this.template = template;
+    }
+
+    setProcess(process: string): PromptCreation {
+        this.process = process;
+        return this;
+    }
+
+    setForm(form: string): PromptCreation {
+        this.form = form;
+        return this;
+    }
+
+    setTemplate(template: string): PromptCreation {
+        this.template = template;
+        return this;
     }
 
     getTemplateAsJson(): JSON {
@@ -68,12 +83,10 @@ export class PromptCreation {
         return JSON.parse(this.template);
     }
 
-    createPrompt(
-        { process, form, template }: PromptCreationParts<boolean> = { base: true },
-    ): string {
+    createPrompt(): string {
         let returnValue = this.base;
 
-        if (process) {
+        if (this.process) {
             returnValue +=
                 "\n\n" +
                 "The BPMN Process is delimited by triple quotes." +
@@ -82,7 +95,7 @@ export class PromptCreation {
                 this.process +
                 "\n'''";
         }
-        if (form) {
+        if (this.form) {
             returnValue +=
                 "\n\n" +
                 "The Form is delimited by triple equal signs." +
@@ -91,7 +104,7 @@ export class PromptCreation {
                 this.form +
                 "\n===";
         }
-        if (template) {
+        if (this.template) {
             returnValue +=
                 "\n\n" +
                 "The Template is delimited by triple asterisks." +
@@ -104,3 +117,84 @@ export class PromptCreation {
         return returnValue;
     }
 }
+
+export class Template {
+    readonly path: string;
+
+    constructor(path: string) {
+        this.path = path;
+    }
+
+    getName() {
+        const name = this.path.split("/").pop();
+        if (!name) {
+            throw new Error("No name found");
+        }
+        return name;
+    }
+}
+
+abstract class FileFormat {
+    readonly extension: string;
+
+    constructor(extension: string) {
+        if (!this.isExtensionValid()) {
+            throw new Error(`Extension ${extension} is not valid`);
+        }
+        this.extension = extension;
+    }
+
+    abstract isExtensionValid(): boolean;
+}
+
+export class DocumentationFormat extends FileFormat {
+    private readonly validExtensions = new Set(["json", "md"]);
+
+    constructor(extension: string) {
+        super(extension);
+    }
+
+    isExtensionValid(): boolean {
+        return this.validExtensions.has(this.extension);
+    }
+}
+
+export class FormFormat extends FileFormat {
+    private readonly validExtensions = new Set(["form.json"]);
+
+    constructor(extension: string) {
+        super(extension);
+    }
+
+    isExtensionValid(): boolean {
+        return this.validExtensions.has(this.extension);
+    }
+}
+
+// export class DocumentationTemplate extends Template {
+//     // eslint-disable-next-line @typescript-eslint/naming-convention
+//     private Extension = class {
+//         private readonly validExtensions = new Set(["json", "md"]);
+//
+//         constructor(public readonly extension: string) {
+//             this.extension = extension;
+//         }
+//
+//         isExtensionValid(): boolean {
+//             return this.validExtensions.has(this.extension);
+//         }
+//     };
+//
+//     constructor(path: string) {
+//         super(path);
+//     }
+//
+//     getExtension() {
+//         // TODO: What about file.schema.json?
+//         const extension = this.path.split(".").pop();
+//         if (!extension) {
+//             throw new Error("No extension found");
+//         }
+//         return new this.Extension(extension);
+//     }
+// }

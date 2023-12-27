@@ -15,6 +15,7 @@ import {
     CreateProcessDocumentationCommand,
     GetAiResponseCommand,
 } from "../../shared";
+import { DocumentationTemplate, PromptCreation } from "../../application/model";
 
 @singleton()
 export class CommandAdapter {
@@ -83,17 +84,27 @@ export class WebviewAdapter {
     createProcessDocumentation(
         createProcessDocumentationCommand: CreateProcessDocumentationCommand,
     ) {
+        const bpmnFilePath = createProcessDocumentationCommand.bpmnFilePath;
+        const template = new DocumentationTemplate(
+            createProcessDocumentationCommand.template.path,
+        );
+        // FIXME: documentation name
         this.createProcessDocumentationInPort.createProcessDocumentation(
-            createProcessDocumentationCommand,
+            `documentation.${template.getExtension().extension}`,
+            bpmnFilePath,
+            template,
         );
     }
 
     createForm(createFormCommand: CreateFormCommand) {
-        this.createFormInPort.createForm(createFormCommand);
+        const prompt = new PromptCreation({ base: createFormCommand.prompt.prompt });
+        // FIXME: form name
+        this.createFormInPort.createForm("form.form.json", prompt);
     }
 
     sendAiResponse(getAiResponseCommand: GetAiResponseCommand) {
-        this.sendAiResponseInPort.sendAiResponse(getAiResponseCommand);
+        const prompt = new PromptCreation({ base: getAiResponseCommand.prompt.prompt });
+        this.sendAiResponseInPort.sendAiResponse(prompt);
     }
 }
 

@@ -28,21 +28,14 @@ export class BpmnFile {
     }
 }
 
-export enum TemplateExtension {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    JSON = "json",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    MARKDOWN = "md",
-}
-
 export class Template {
     public readonly path: string;
 
-    public readonly extension: TemplateExtension;
+    public readonly name: string;
 
-    constructor(path: string, extension: TemplateExtension) {
+    constructor(path: string, name: string) {
         this.path = path;
-        this.extension = extension;
+        this.name = name;
     }
 }
 
@@ -64,13 +57,16 @@ export class GetBpmnFilesCommand implements MiranumCopilotCommand {
 export class CreateProcessDocumentationCommand implements MiranumCopilotCommand {
     public readonly type = "CreateProcessDocumentationCommand";
 
-    public readonly bpmnFile: BpmnFile;
+    public readonly bpmnFilePath: string;
 
-    public readonly template: Template;
+    public readonly templatePath: string;
 
-    constructor(bpmnFile: BpmnFile, template: Template) {
-        this.bpmnFile = bpmnFile;
-        this.template = template;
+    public readonly fileFormat: string;
+
+    constructor(bpmnFilePath: string, templatePath: string, fileFormat: string) {
+        this.bpmnFilePath = bpmnFilePath;
+        this.templatePath = templatePath;
+        this.fileFormat = fileFormat;
     }
 }
 
@@ -81,9 +77,20 @@ export class CreateFormCommand implements MiranumCopilotCommand {
 
     public readonly formName: string;
 
-    constructor(prompt: Prompt<string>, formName: string) {
+    public readonly templatePath: string;
+
+    public readonly fileFormat: string;
+
+    constructor(
+        prompt: Prompt<string>,
+        formName: string,
+        templatePath: string,
+        fileFormat: string,
+    ) {
         this.prompt = prompt;
         this.formName = formName;
+        this.templatePath = templatePath;
+        this.fileFormat = fileFormat;
     }
 }
 
@@ -103,9 +110,9 @@ export interface MiranumCopilotQuery extends Query {}
 export class TemplateQuery implements MiranumCopilotQuery {
     public readonly type = "TemplateQuery";
 
-    public readonly templates: Template[];
+    public readonly templates: Map<string, Template[]>;
 
-    constructor(templates: Template[]) {
+    constructor(templates: Map<string, Template[]>) {
         this.templates = templates;
     }
 }

@@ -1,6 +1,11 @@
 import { Uri, workspace } from "vscode";
 
-import { Prompt } from "../../application/model";
+import {
+    BpmnFile as ApplicationBpmnFile,
+    DefaultPrompt as ApplicationPrompt,
+    DocumentationTemplate as AppDocumentationTemplate,
+    Template as AppTemplate,
+} from "../../application/model";
 import {
     CreateOrShowWebviewOutPort,
     GetBpmnFilesOutPort,
@@ -10,11 +15,12 @@ import {
     ReadFileOutPort,
 } from "../../application/ports/out";
 import {
-    BpmnFile,
-    MiranumCopilotCommand,
-    MiranumCopilotQuery,
-    Template,
-    TemplateExtension,
+    BpmnFile as WebviewBpmnFile,
+    BpmnFileQuery,
+    Prompt as WebviewPrompt,
+    PromptQuery,
+    Template as WebviewTemplate,
+    TemplateQuery,
 } from "../../shared";
 import { CopilotWebview } from "../webview";
 import { EXTENSION_CONTEXT } from "../../utils";
@@ -49,22 +55,31 @@ export class WorkspaceAdapter
         return Buffer.from(uint8Array).toString();
     }
 
-    async getTemplates(): Promise<Template[]> {
+    async getTemplates(): Promise<Map<string, AppTemplate[]>> {
+        // TODO: Make custom directories configurable
         const path: string[] = [
             EXTENSION_CONTEXT.getContext().extensionUri.path,
             "resources",
             "templates",
         ];
 
-        const files = await workspace.findFiles(path.join("/"), "**/*");
+        const documentationTemplates = await workspace.findFiles(
+            `${path.join("/")}/documentation/**/*`,
+        );
+        const formTemplates = await workspace.findFiles(`${path.join("/")}/form/**/*`);
 
-        return files.map((uri) => {
-            const file = uri.path.split("/").pop()!;
-            return new Template(file, file.split(".").pop() as TemplateExtension);
-        });
+        return new Map([
+            [
+                "documentation",
+                documentationTemplates.map(
+                    (uri) => new AppDocumentationTemplate(uri.path),
+                ),
+            ],
+            ["form", formTemplates.map((uri) => new AppTemplate(uri.path))],
+        ]);
     }
 
-    async getPrompts(): Promise<Prompt[]> {
+    async getPrompts(): Promise<ApplicationPrompt[]> {
         const path: string[] = [
             EXTENSION_CONTEXT.getContext().extensionUri.path,
             "resources",
@@ -77,14 +92,14 @@ export class WorkspaceAdapter
 
         const prompts = json.categories.map((category) => {
             return category.prompts.map((prompt) => {
-                return new Prompt(prompt.text, prompt.process, prompt.form);
+                return new ApplicationPrompt(prompt.text, prompt.process, prompt.form);
             });
         });
 
         return prompts.flat(1);
     }
 
-    async getBpmnFiles(): Promise<BpmnFile[]> {
+    async getBpmnFiles(): Promise<ApplicationBpmnFile[]> {
         if (!workspace.workspaceFolders) {
             throw new Error("No workspace folders found");
         }
@@ -94,7 +109,7 @@ export class WorkspaceAdapter
         const bpmnFiles = workspace.workspaceFolders.map((ws) => {
             return files.map((file) => {
                 if (file.path.startsWith(ws.uri.path)) {
-                    return new BpmnFile(
+                    return new ApplicationBpmnFile(
                         file.path.split("/").pop()!,
                         ws.uri.path.split("/").pop()!,
                         file.path,
@@ -103,7 +118,9 @@ export class WorkspaceAdapter
             });
         });
 
-        return bpmnFiles.flat(1).filter((file) => file !== undefined) as BpmnFile[];
+        return bpmnFiles
+            .flat(1)
+            .filter((file) => file !== undefined) as ApplicationBpmnFile[];
 
         /*const bpmnFiles: BpmnFile[] = [];
         for (const ws of workspace.workspaceFolders) {
@@ -130,7 +147,38 @@ export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOu
         return this.webview.showOrCreate();
     }
 
-    postMessage(message: MiranumCopilotCommand | MiranumCopilotQuery): Promise<boolean> {
-        return this.webview.postMessage(message);
+    sendBpmnFiles(bpmnFiles: ApplicationBpmnFile[]): Promise<boolean> {
+        const webviewBpmnFiles = bpmnFiles.map((file) => {
+            return new WebviewBpmnFile(file.fileName, file.workspaceName, file.fullPath);
+        });
+        const bpmnFileQuery = new BpmnFileQuery(webviewBpmnFiles);
+        return this.webview.postMessage(bpmnFileQuery);
+    }
+
+    sendPrompts(prompts: ApplicationPrompt[]): Promise<boolean> {
+        const webviewPrompts = prompts.map((prompt) => {
+            return new WebviewPrompt(prompt.prompt, prompt.process, prompt.form);
+        });
+        const promptQuery = new PromptQuery(webviewPrompts);
+        return this.webview.postMessage(promptQuery);
+    }
+
+    sendTemplates(templates: Map<string, AppTemplate[]>): Promise<boolean> {
+        const webviewTemplates = new Map([
+            [
+                "documentation",
+                (templates.get("documentation") as AppDocumentationTemplate[])?.map(
+                    (t) => new WebviewTemplate(t.path, t.getName()),
+                ),
+            ],
+            [
+                "form",
+                (templates.get("form") as AppTemplate[])?.map(
+                    (t) => new WebviewTemplate(t.path, t.getName()),
+                ),
+            ],
+        ]);
+        const templateQuery = new TemplateQuery(webviewTemplates);
+        return this.webview.postMessage(templateQuery);
     }
 }
