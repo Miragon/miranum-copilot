@@ -1,20 +1,26 @@
-import { Uri, workspace } from "vscode";
+import { commands, Uri, ViewColumn, window, workspace } from "vscode";
+import { Buffer } from "node:buffer";
 
+import { EXTENSION_CONTEXT } from "../../utils";
+import { CopilotWebview } from "../webview";
 import {
-    BpmnFile as ApplicationBpmnFile,
-    DefaultPrompt as ApplicationPrompt,
-    DocumentationTemplate as AppDocumentationTemplate,
-    Template as AppTemplate,
-} from "../../application/model";
-import {
+    CreateFileOutPort,
     CreateOrShowWebviewOutPort,
     GetBpmnFilesOutPort,
     GetPromptsOutPort,
     GetTemplatesOutPort,
     PostMessageOutPort,
     ReadFileOutPort,
+    ShowMessageOutPort,
 } from "../../application/ports/out";
 import {
+    BpmnFile as ApplicationBpmnFile,
+    DefaultPrompt as ApplicationPrompt,
+    FileExtension,
+    Template as AppTemplate,
+} from "../../application/model";
+import {
+    AiResponseQuery,
     BpmnFile as WebviewBpmnFile,
     BpmnFileQuery,
     Prompt as WebviewPrompt,
@@ -22,10 +28,8 @@ import {
     Template as WebviewTemplate,
     TemplateQuery,
 } from "../../shared";
-import { CopilotWebview } from "../webview";
-import { EXTENSION_CONTEXT } from "../../utils";
 
-type PromptsSchema = {
+type DefaultPromptsSchema = {
     categories: [
         {
             name: string;
@@ -45,7 +49,8 @@ export class WorkspaceAdapter
         ReadFileOutPort,
         GetPromptsOutPort,
         GetBpmnFilesOutPort,
-        GetTemplatesOutPort
+        GetTemplatesOutPort,
+        CreateFileOutPort
 {
     private readonly fs = workspace.fs;
 
@@ -71,9 +76,7 @@ export class WorkspaceAdapter
         return new Map([
             [
                 "documentation",
-                documentationTemplates.map(
-                    (uri) => new AppDocumentationTemplate(uri.path),
-                ),
+                documentationTemplates.map((uri) => new AppTemplate(uri.path)),
             ],
             ["form", formTemplates.map((uri) => new AppTemplate(uri.path))],
         ]);
@@ -88,7 +91,7 @@ export class WorkspaceAdapter
         ];
 
         const file = await this.readFile(path.join("/"));
-        const json: PromptsSchema = JSON.parse(file);
+        const json: DefaultPromptsSchema = JSON.parse(file);
 
         const prompts = json.categories.map((category) => {
             return category.prompts.map((prompt) => {
@@ -111,7 +114,7 @@ export class WorkspaceAdapter
                 if (file.path.startsWith(ws.uri.path)) {
                     return new ApplicationBpmnFile(
                         file.path.split("/").pop()!,
-                        ws.uri.path.split("/").pop()!,
+                        ws.name,
                         file.path,
                     );
                 }
@@ -138,6 +141,44 @@ export class WorkspaceAdapter
 
         return bpmnFiles;*/
     }
+
+    async createFile(
+        fileName: string,
+        fileExtension: FileExtension,
+        fileContent: string,
+        workspaceName?: string,
+    ) {
+        if (!workspace.workspaceFolders) {
+            throw new Error("No workspace open");
+        }
+
+        let ws: Uri;
+        if (!workspaceName) {
+            ws = workspace.workspaceFolders[0].uri;
+        } else {
+            ws = getWorkspaceByName(workspaceName);
+        }
+
+        const file = Uri.joinPath(ws, "docs", `${fileName}.${fileExtension.extension}`);
+        const uint8Array = Buffer.from(fileContent);
+        await this.fs.writeFile(file, uint8Array);
+        commands.executeCommand("vscode.open", file, ViewColumn.Beside);
+        return true;
+    }
+}
+
+function getWorkspaceByName(workspaceName: string): Uri {
+    if (!workspace.workspaceFolders) {
+        throw new Error("No workspace open");
+    }
+
+    const uri = workspace.workspaceFolders.find((ws) => ws.name === workspaceName)?.uri;
+
+    if (!uri) {
+        throw new Error(`Workspace ${workspaceName} not found`);
+    }
+
+    return uri;
 }
 
 export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOutPort {
@@ -164,21 +205,49 @@ export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOu
     }
 
     sendTemplates(templates: Map<string, AppTemplate[]>): Promise<boolean> {
-        const webviewTemplates = new Map([
-            [
-                "documentation",
-                (templates.get("documentation") as AppDocumentationTemplate[])?.map(
-                    (t) => new WebviewTemplate(t.path, t.getName()),
-                ),
-            ],
-            [
-                "form",
-                (templates.get("form") as AppTemplate[])?.map(
-                    (t) => new WebviewTemplate(t.path, t.getName()),
-                ),
-            ],
-        ]);
+        const webviewTemplates = new Map<string, WebviewTemplate[]>();
+
+        switch (true) {
+            case templates.has("documentation"): {
+                webviewTemplates.set(
+                    "documentation",
+                    templates
+                        .get("documentation")!
+                        .map((t) => new WebviewTemplate(t.path, t.getName())),
+                );
+            }
+            case templates.has("form"): {
+                webviewTemplates.set(
+                    "form",
+                    templates
+                        .get("form")!
+                        .map((t) => new WebviewTemplate(t.path, t.getName())),
+                );
+            }
+        }
+
+        if (webviewTemplates.size === 0) {
+            throw new Error("No templates found");
+        }
+
         const templateQuery = new TemplateQuery(webviewTemplates);
         return this.webview.postMessage(templateQuery);
+    }
+
+    sendAiResponse(response: string): Promise<boolean> {
+        const aiResponseQuery = new AiResponseQuery(response);
+        return this.webview.postMessage(aiResponseQuery);
+    }
+}
+
+export class VsCodeWindow implements ShowMessageOutPort {
+    async showInformationMessage(message: string): Promise<boolean> {
+        await window.showInformationMessage(message);
+        return true;
+    }
+
+    async showErrorMessage(message: string): Promise<boolean> {
+        await window.showErrorMessage(message);
+        return true;
     }
 }

@@ -134,40 +134,35 @@ export class Template {
     }
 }
 
-abstract class FileFormat {
+export class FileExtension {
     readonly extension: string;
 
-    constructor(extension: string) {
-        if (!this.isExtensionValid()) {
-            throw new Error(`Extension ${extension} is not valid`);
+    private validExtensions: Set<string>;
+
+    constructor(extension: string, validExtensions: Set<string>) {
+        if (!this.isValid()) {
+            throw new Error(`Invalid extension: ${extension}`);
         }
         this.extension = extension;
+        this.validExtensions = validExtensions;
     }
 
-    abstract isExtensionValid(): boolean;
-}
-
-export class DocumentationFormat extends FileFormat {
-    private readonly validExtensions = new Set(["json", "md"]);
-
-    constructor(extension: string) {
-        super(extension);
-    }
-
-    isExtensionValid(): boolean {
+    private isValid(): boolean {
         return this.validExtensions.has(this.extension);
     }
 }
 
-export class FormFormat extends FileFormat {
-    private readonly validExtensions = new Set(["form.json"]);
-
+export class DocumentationExtension extends FileExtension {
     constructor(extension: string) {
-        super(extension);
+        const validFormats = new Set(["json", "md"]);
+        super(extension, validFormats);
     }
+}
 
-    isExtensionValid(): boolean {
-        return this.validExtensions.has(this.extension);
+export class FormExtension extends FileExtension {
+    constructor(extension: string) {
+        const validFormats = new Set(["form.json"]);
+        super(extension, validFormats);
     }
 }
 

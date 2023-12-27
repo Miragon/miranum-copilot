@@ -15,7 +15,13 @@ import {
     CreateProcessDocumentationCommand,
     GetAiResponseCommand,
 } from "../../shared";
-import { DocumentationTemplate, PromptCreation } from "../../application/model";
+import {
+    BpmnFile,
+    DocumentationExtension,
+    FormExtension,
+    PromptCreation,
+    Template,
+} from "../../application/model";
 
 @singleton()
 export class CommandAdapter {
@@ -84,22 +90,32 @@ export class WebviewAdapter {
     createProcessDocumentation(
         createProcessDocumentationCommand: CreateProcessDocumentationCommand,
     ) {
-        const bpmnFilePath = createProcessDocumentationCommand.bpmnFilePath;
-        const template = new DocumentationTemplate(
-            createProcessDocumentationCommand.template.path,
+        const webviewBpmnFile = createProcessDocumentationCommand.bpmnFile;
+        const bpmnFile = new BpmnFile(
+            webviewBpmnFile.fileName,
+            webviewBpmnFile.workspaceName,
+            webviewBpmnFile.fullPath,
         );
+        const template = new Template(createProcessDocumentationCommand.templatePath);
         // FIXME: documentation name
         this.createProcessDocumentationInPort.createProcessDocumentation(
-            `documentation.${template.getExtension().extension}`,
-            bpmnFilePath,
+            `documentation.${createProcessDocumentationCommand.fileFormat}}`,
+            bpmnFile,
             template,
+            new DocumentationExtension(createProcessDocumentationCommand.fileFormat),
         );
     }
 
     createForm(createFormCommand: CreateFormCommand) {
         const prompt = new PromptCreation({ base: createFormCommand.prompt.prompt });
+        const template = new Template(createFormCommand.templatePath);
         // FIXME: form name
-        this.createFormInPort.createForm("form.form.json", prompt);
+        this.createFormInPort.createForm(
+            "form.form.json",
+            prompt,
+            template,
+            new FormExtension("form.json"),
+        );
     }
 
     sendAiResponse(getAiResponseCommand: GetAiResponseCommand) {

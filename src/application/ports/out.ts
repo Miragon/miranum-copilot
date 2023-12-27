@@ -1,10 +1,10 @@
-import { BpmnFile, DefaultPrompt, PromptCreation, Template } from "../model";
-
-// FIXME: No dependency to shared
-
-export interface ReadFileOutPort {
-    readFile(path: string): Promise<string>;
-}
+import {
+    BpmnFile,
+    DefaultPrompt,
+    FileExtension,
+    PromptCreation,
+    Template,
+} from "../model";
 
 export interface GetPromptsOutPort {
     getPrompts(): Promise<DefaultPrompt[]>;
@@ -22,8 +22,23 @@ export interface CreateOrShowWebviewOutPort {
     createOrShowWebview(): string;
 }
 
+export interface ReadFileOutPort {
+    readFile(path: string): Promise<string>;
+}
+
 export interface CreateFileOutPort {
-    createFile(fileName: string, fileContent: string): Promise<boolean>;
+    createFile(
+        fileName: string,
+        fileExtension: FileExtension,
+        fileContent: string,
+        workspaceName?: string,
+    ): Promise<boolean>;
+}
+
+export interface ShowMessageOutPort {
+    showInformationMessage(message: string): Promise<boolean>;
+
+    showErrorMessage(message: string): Promise<boolean>;
 }
 
 export interface PostMessageOutPort {
@@ -32,6 +47,8 @@ export interface PostMessageOutPort {
     sendPrompts(prompts: DefaultPrompt[]): Promise<boolean>;
 
     sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
+
+    sendAiResponse(response: string): Promise<boolean>;
 }
 
 export interface GetAiResponseOutPort {

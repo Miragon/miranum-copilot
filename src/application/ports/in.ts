@@ -1,4 +1,10 @@
-import { DocumentationFormat, FormFormat, PromptCreation, Template } from "../model";
+import {
+    BpmnFile,
+    DocumentationExtension,
+    FormExtension,
+    PromptCreation,
+    Template,
+} from "../model";
 
 export interface CreateOrShowWebviewInPort {
     createOrShowWebview(): string;
@@ -21,9 +27,9 @@ export interface UpdateBpmnFilesInPort {
 export interface CreateProcessDocumentationInPort {
     createProcessDocumentation(
         fileName: string,
-        bpmnFilePath: string,
+        bpmnFile: BpmnFile,
         template: Template,
-        fileFormat: DocumentationFormat,
+        fileFormat: DocumentationExtension,
     ): Promise<boolean>;
 }
 
@@ -32,7 +38,7 @@ export interface CreateFormInPort {
         fileName: string,
         prompt: PromptCreation,
         template: Template,
-        fileFormat: FormFormat,
+        fileFormat: FormExtension,
     ): Promise<boolean>;
 }
 
