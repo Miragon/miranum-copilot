@@ -1,15 +1,26 @@
-import { commands, Disposable, Uri, window } from "vscode";
+import {
+    commands,
+    Disposable,
+    FileSystemWatcher,
+    RelativePattern,
+    Uri,
+    window,
+    workspace,
+} from "vscode";
 import { inject, singleton } from "tsyringe";
+import { debounce } from "lodash";
 
+import { ExtensionContextHelper } from "../../utils";
 import {
     CreateFormInPort,
-    CreateOrShowWebviewInPort,
+    CreateOrShowUiInPort,
     CreateProcessDocumentationInPort,
+    GetBpmnFilesInPort,
+    GetPromptsInPort,
+    GetTemplatesInPort,
     SendAiResponseInPort,
-    UpdateBpmnFilesInPort,
-    UpdatePromptsInPort,
+    SendToUiInPort,
 } from "../../application/ports/in";
-import { EXTENSION_CONTEXT } from "../../utils";
 import {
     CreateFormCommand,
     CreateProcessDocumentationCommand,
@@ -26,16 +37,17 @@ import {
 @singleton()
 export class CommandAdapter {
     constructor(
-        @inject("CreateOrShowWebviewInPort")
-        private readonly createOrShowWebviewInPort: CreateOrShowWebviewInPort,
+        private extensionContext: ExtensionContextHelper,
+        @inject("CreateOrShowUiInPort")
+        private readonly createOrShowUiInPort: CreateOrShowUiInPort,
     ) {
-        const extensionContext = EXTENSION_CONTEXT.getContext();
-        const disposables = this.registerCommands(extensionContext.extensionUri);
-        extensionContext.subscriptions.push(...disposables);
+        // const extensionContext = EXTENSION_CONTEXT.getContext();
+        const disposables = this.registerCommands(extensionContext.context.extensionUri);
+        this.extensionContext.context.subscriptions.push(...disposables);
     }
 
     createOrShowWebview() {
-        this.createOrShowWebviewInPort.createOrShowWebview();
+        this.createOrShowUiInPort.createOrShowWebview();
     }
 
     private registerCommands(extensionUri: Uri): Disposable[] {
@@ -66,8 +78,14 @@ export class CommandAdapter {
 @singleton()
 export class WebviewAdapter {
     constructor(
-        @inject("CreateOrShowWebviewInPort")
-        private readonly createOrShowWebviewInPort: CreateOrShowWebviewInPort,
+        @inject("GetBpmnFilesInPort")
+        private readonly getBpmnFilesInPort: GetBpmnFilesInPort,
+        @inject("GetPromptsInPort")
+        private readonly getPromptsInPort: GetPromptsInPort,
+        @inject("GetTemplatesInPort")
+        private readonly getTemplatesInPort: GetTemplatesInPort,
+        @inject("SendToUiInPort")
+        private readonly sendToUiInPort: SendToUiInPort,
         @inject("CreateProcessDocumentationInPort")
         private readonly createProcessDocumentationInPort: CreateProcessDocumentationInPort,
         @inject("CreateFormInPort") private readonly createFormInPort: CreateFormInPort,
@@ -75,16 +93,19 @@ export class WebviewAdapter {
         private readonly sendAiResponseInPort: SendAiResponseInPort,
     ) {}
 
-    sendTemplates() {
-        this.createOrShowWebviewInPort.sendTemplates();
+    async sendBpmnFiles() {
+        const bpmnFiles = await this.getBpmnFilesInPort.getBpmnFiles();
+        this.sendToUiInPort.sendBpmnFiles(bpmnFiles);
     }
 
-    sendPrompts() {
-        this.createOrShowWebviewInPort.sendPrompts();
+    async sendPrompts() {
+        const prompts = await this.getPromptsInPort.getPrompts();
+        this.sendToUiInPort.sendPrompts(prompts);
     }
 
-    sendBpmnFiles() {
-        this.createOrShowWebviewInPort.sendBpmnFiles();
+    async sendTemplates() {
+        const templates = await this.getTemplatesInPort.getTemplates();
+        this.sendToUiInPort.sendTemplates(templates);
     }
 
     createProcessDocumentation(
@@ -111,7 +132,7 @@ export class WebviewAdapter {
         const template = new Template(createFormCommand.templatePath);
         // FIXME: form name
         this.createFormInPort.createForm(
-            "form.form.json",
+            "my-form.form.json",
             prompt,
             template,
             new FormExtension("form.json"),
@@ -126,18 +147,103 @@ export class WebviewAdapter {
 
 @singleton()
 export class WorkspaceWatcherAdapter {
-    constructor(
-        @inject("UpdatePromptsInPort")
-        private readonly updatePromptsInPort: UpdatePromptsInPort,
-        @inject("UpdateBpmnFilesInPort")
-        private readonly updateBpmnFilesInPort: UpdateBpmnFilesInPort,
-    ) {}
+    private readonly watchers: FileSystemWatcher[] = [];
 
-    updatePrompts() {
-        this.updatePromptsInPort.updatePrompts();
+    constructor(
+        private extensionContext: ExtensionContextHelper,
+        @inject("GetBpmnFilesInPort")
+        private readonly getBpmnFilesInPort: GetBpmnFilesInPort,
+        @inject("GetPromptsInPort")
+        private readonly getPromptsInPort: GetPromptsInPort,
+        @inject("GetTemplatesInPort")
+        private readonly getTemplatesInPort: GetTemplatesInPort,
+        @inject("SendToUiInPort")
+        private readonly sendToUiInPort: SendToUiInPort,
+    ) {
+        const extensionUri = this.extensionContext.context.extensionUri;
+
+        // Watch for new or deleted bpmn files
+        this.watchers.push(
+            this.registerOpenWorkspacesWatcher(".bpmn", this.updateBpmnFiles.bind(this)),
+        );
+
+        // Watch for new or deleted templates
+        const templateUri = Uri.joinPath(extensionUri, "resources", "templates");
+        this.watchers.push(
+            this.registerUriWatcher(
+                templateUri,
+                "**/*",
+                this.updateTemplates.bind(this),
+            ),
+        );
+
+        // Watch for new or deleted prompts
+        const promptsUri = Uri.joinPath(extensionUri, "resources", "prompts");
+        this.watchers.push(
+            this.registerUriWatcher(
+                promptsUri,
+                "prompts.json",
+                this.updatePrompts.bind(this),
+            ),
+        );
     }
 
-    updateBpmnFiles() {
-        this.updateBpmnFilesInPort.updateBpmnFiles();
+    async updatePrompts() {
+        // Read the entire prompts.json file and send it to the UI
+        const prompts = await this.getPromptsInPort.getPrompts();
+        this.sendToUiInPort.sendPrompts(prompts);
+    }
+
+    async updateBpmnFiles() {
+        const bpmnFiles = await this.getBpmnFilesInPort.getBpmnFiles();
+        this.sendToUiInPort.sendBpmnFiles(bpmnFiles);
+    }
+
+    async updateTemplates() {
+        const templates = await this.getTemplatesInPort.getTemplates();
+        this.sendToUiInPort.sendTemplates(templates);
+    }
+
+    dispose() {
+        for (const watcher of this.watchers) {
+            watcher.dispose();
+        }
+    }
+
+    private registerOpenWorkspacesWatcher(
+        extension: string,
+        cb: () => void,
+    ): FileSystemWatcher {
+        const debounced = debounce(cb, 100);
+
+        const watcher = workspace.createFileSystemWatcher(
+            `**/*${extension}`,
+            false,
+            true,
+            false,
+        );
+
+        watcher.onDidCreate(debounced);
+        watcher.onDidDelete(debounced);
+
+        return watcher;
+    }
+
+    private registerUriWatcher(
+        uri: Uri,
+        filePattern: string,
+        cb: () => void,
+    ): FileSystemWatcher {
+        const debounced = debounce(cb, 100);
+
+        const watcher = workspace.createFileSystemWatcher(
+            new RelativePattern(uri, filePattern),
+            true,
+        );
+
+        watcher.onDidCreate(debounced);
+        watcher.onDidDelete(debounced);
+
+        return watcher;
     }
 }

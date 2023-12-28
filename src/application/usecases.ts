@@ -2,13 +2,17 @@ import { inject, singleton } from "tsyringe";
 
 import {
     CreateFormInPort,
-    CreateOrShowWebviewInPort,
+    CreateOrShowUiInPort,
     CreateProcessDocumentationInPort,
+    GetBpmnFilesInPort,
+    GetPromptsInPort,
+    GetTemplatesInPort,
     SendAiResponseInPort,
+    SendToUiInPort,
 } from "./ports/in";
 import {
     CreateFileOutPort,
-    CreateOrShowWebviewOutPort,
+    CreateOrShowUiOutPort,
     GetAiResponseOutPort,
     GetBpmnFilesOutPort,
     GetPromptsOutPort,
@@ -19,6 +23,7 @@ import {
 } from "./ports/out";
 import {
     BpmnFile,
+    DefaultPrompt,
     DocumentationExtension,
     FormExtension,
     PromptCreation,
@@ -26,37 +31,70 @@ import {
 } from "./model";
 
 @singleton()
-export class CreateOrShowWebviewUseCase implements CreateOrShowWebviewInPort {
+export class CreateOrShowWebviewUseCase implements CreateOrShowUiInPort {
     constructor(
-        @inject("CreateOrShowWebviewOutPort")
-        private readonly createOrShowWebviewOutPort: CreateOrShowWebviewOutPort,
-        @inject("GetTemplatesOutPort")
-        private readonly getTemplatesOutPort: GetTemplatesOutPort,
-        @inject("GetPromptsOutPort")
-        private readonly getPromptsOutPort: GetPromptsOutPort,
+        @inject("CreateOrShowUiOutPort")
+        private readonly createOrShowUiOutPort: CreateOrShowUiOutPort,
+    ) {}
+
+    createOrShowWebview(): string {
+        return this.createOrShowUiOutPort.createOrShowWebview();
+    }
+}
+
+@singleton()
+export class GetBpmnFilesUseCase implements GetBpmnFilesInPort {
+    constructor(
         @inject("GetBpmnFilesOutPort")
         private readonly getBpmnFilesOutPort: GetBpmnFilesOutPort,
+    ) {}
+
+    async getBpmnFiles(): Promise<BpmnFile[]> {
+        const bpmnFiles = await this.getBpmnFilesOutPort.getBpmnFiles();
+        return BpmnFile.sortByWorkspaceName(bpmnFiles);
+    }
+}
+
+@singleton()
+export class GetPromptsUseCase implements GetPromptsInPort {
+    constructor(
+        @inject("GetPromptsOutPort")
+        private readonly getPromptsOutPort: GetPromptsOutPort,
+    ) {}
+
+    async getPrompts(): Promise<DefaultPrompt[]> {
+        return this.getPromptsOutPort.getPrompts();
+    }
+}
+
+@singleton()
+export class GetTemplatesUseCase implements GetTemplatesInPort {
+    constructor(
+        @inject("GetTemplatesOutPort")
+        private readonly getTemplatesOutPort: GetTemplatesOutPort,
+    ) {}
+
+    async getTemplates(): Promise<Map<string, Template[]>> {
+        return this.getTemplatesOutPort.getTemplates();
+    }
+}
+
+@singleton()
+export class SendToUiUseCase implements SendToUiInPort {
+    constructor(
         @inject("PostMessageOutPort")
         private readonly postMessageOutPort: PostMessageOutPort,
     ) {}
 
-    createOrShowWebview(): string {
-        return this.createOrShowWebviewOutPort.createOrShowWebview();
+    sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean> {
+        return this.postMessageOutPort.sendBpmnFiles(bpmnFiles);
     }
 
-    async sendBpmnFiles(): Promise<boolean> {
-        const bpmnFiles = await this.getBpmnFilesOutPort.getBpmnFiles();
-        const bpmnFilesSorted = BpmnFile.sortByWorkspaceName(bpmnFiles);
-        return this.postMessageOutPort.sendBpmnFiles(bpmnFilesSorted);
-    }
-
-    async sendPrompts(): Promise<boolean> {
-        const prompts = await this.getPromptsOutPort.getPrompts();
+    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean> {
         return this.postMessageOutPort.sendPrompts(prompts);
     }
 
-    async sendTemplates(): Promise<boolean> {
-        const templates = await this.getTemplatesOutPort.getTemplates();
+    sendTemplates(templates: Map<string, Template[]>): Promise<boolean> {
         return this.postMessageOutPort.sendTemplates(templates);
     }
 }

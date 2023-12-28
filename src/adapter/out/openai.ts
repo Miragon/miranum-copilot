@@ -7,7 +7,9 @@ import {
     ChatCompletionMessageParam,
 } from "openai/resources/chat";
 import { PromptCreation } from "../../application/model";
+import { singleton } from "tsyringe";
 
+@singleton()
 export class OpenAIApiAdapter implements GetAiResponseOutPort {
     getAiResponse(prompt: PromptCreation): Promise<string> {
         const messages: ChatCompletionMessageParam[] = [

@@ -87,7 +87,7 @@
         "test": "npm run unit && npm run integration && nyc report",
         "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
         "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
-        "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+        "esbuild": "esbuild src/main.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
         "vite": "vite build --config src/web/vite.config.js",
         "vite:browser": "cd ./src/web && vite --open true"
     },

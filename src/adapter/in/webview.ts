@@ -1,6 +1,8 @@
-import { Uri, ViewColumn, WebviewPanel, window } from "vscode";
+import { Disposable, Uri, ViewColumn, WebviewPanel, window } from "vscode";
 import { container, inject, singleton } from "tsyringe";
 
+import { ExtensionContextHelper } from "../../utils";
+import { WebviewAdapter, WorkspaceWatcherAdapter } from "./vscode";
 import {
     Command,
     CreateFormCommand,
@@ -8,9 +10,7 @@ import {
     GetAiResponseCommand,
     MiranumCopilotQuery,
     Query,
-} from "../shared";
-import { EXTENSION_CONTEXT } from "../utils";
-import { WebviewAdapter } from "./in/vscode";
+} from "../../shared";
 
 @singleton()
 export class CopilotWebview {
@@ -20,7 +20,12 @@ export class CopilotWebview {
 
     private panel?: WebviewPanel;
 
-    constructor(@inject("WebviewPath") webviewPath: string) {
+    private disposables: Disposable[] = [];
+
+    constructor(
+        private extensionContext: ExtensionContextHelper,
+        @inject("WebviewPath") webviewPath: string,
+    ) {
         this.webviewPath = webviewPath;
     }
 
@@ -46,7 +51,7 @@ export class CopilotWebview {
     }
 
     private create() {
-        const extensionUri = EXTENSION_CONTEXT.getContext().extensionUri;
+        const extensionUri = this.extensionContext.context.extensionUri;
         this.panel = window.createWebviewPanel(
             this.viewType,
             "Miranum IDE",
@@ -58,8 +63,28 @@ export class CopilotWebview {
         );
 
         this.onDidReceiveMessage(); // have to be called before setting the html otherwise we may miss the first message
-        // this.panel.webview.options = {};
+
+        // Configure the webview
+        this.panel.title = "Miranum Copilot";
+        this.panel.iconPath = Uri.joinPath(extensionUri, "images", "miranum_icon.png");
         this.panel.webview.html = this.getHtml(extensionUri);
+
+        this.panel.onDidDispose(() => {
+            container.resolve(WorkspaceWatcherAdapter).dispose();
+            this.dispose();
+        });
+    }
+
+    private dispose(): void {
+        this.panel!.dispose();
+        this.panel = undefined;
+
+        while (this.disposables.length) {
+            const x = this.disposables.pop();
+            if (x) {
+                x.dispose();
+            }
+        }
     }
 
     private onDidReceiveMessage() {
@@ -70,36 +95,40 @@ export class CopilotWebview {
 
         const webviewAdapter = container.resolve(WebviewAdapter);
 
-        webview.onDidReceiveMessage(async (message: Command | Query) => {
-            switch (true) {
-                case message.type === "GetTemplatesCommand": {
-                    webviewAdapter.sendTemplates();
-                    break;
+        webview.onDidReceiveMessage(
+            async (message: Command | Query) => {
+                switch (true) {
+                    case message.type === "GetTemplatesCommand": {
+                        webviewAdapter.sendTemplates();
+                        break;
+                    }
+                    case message.type === "GetPromptsCommand": {
+                        webviewAdapter.sendPrompts();
+                        break;
+                    }
+                    case message.type === "GetBpmnFilesCommand": {
+                        webviewAdapter.sendBpmnFiles();
+                        break;
+                    }
+                    case message.type === "CreateProcessDocumentationCommand": {
+                        webviewAdapter.createProcessDocumentation(
+                            message as CreateProcessDocumentationCommand,
+                        );
+                        break;
+                    }
+                    case message.type === "CreateFormCommand": {
+                        webviewAdapter.createForm(message as CreateFormCommand);
+                        break;
+                    }
+                    case message.type === "GetAiResponseCommand": {
+                        webviewAdapter.sendAiResponse(message as GetAiResponseCommand);
+                        break;
+                    }
                 }
-                case message.type === "GetPromptsCommand": {
-                    webviewAdapter.sendPrompts();
-                    break;
-                }
-                case message.type === "GetBpmnFilesCommand": {
-                    webviewAdapter.sendBpmnFiles();
-                    break;
-                }
-                case message.type === "CreateProcessDocumentationCommand": {
-                    webviewAdapter.createProcessDocumentation(
-                        message as CreateProcessDocumentationCommand,
-                    );
-                    break;
-                }
-                case message.type === "CreateFormCommand": {
-                    webviewAdapter.createForm(message as CreateFormCommand);
-                    break;
-                }
-                case message.type === "GetAiResponseCommand": {
-                    webviewAdapter.sendAiResponse(message as GetAiResponseCommand);
-                    break;
-                }
-            }
-        });
+            },
+            undefined,
+            this.disposables,
+        );
     }
 
     private getHtml(extensionUri: Uri): string {

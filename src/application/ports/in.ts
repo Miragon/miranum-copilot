@@ -1,27 +1,34 @@
 import {
     BpmnFile,
+    DefaultPrompt,
     DocumentationExtension,
     FormExtension,
     PromptCreation,
     Template,
 } from "../model";
 
-export interface CreateOrShowWebviewInPort {
+export interface CreateOrShowUiInPort {
     createOrShowWebview(): string;
-
-    sendTemplates(): Promise<boolean>;
-
-    sendPrompts(): Promise<boolean>;
-
-    sendBpmnFiles(): Promise<boolean>;
 }
 
-export interface UpdatePromptsInPort {
-    updatePrompts(): void;
+export interface GetBpmnFilesInPort {
+    getBpmnFiles(): Promise<BpmnFile[]>;
 }
 
-export interface UpdateBpmnFilesInPort {
-    updateBpmnFiles(): void;
+export interface GetPromptsInPort {
+    getPrompts(): Promise<DefaultPrompt[]>;
+}
+
+export interface GetTemplatesInPort {
+    getTemplates(): Promise<Map<string, Template[]>>;
+}
+
+export interface SendToUiInPort {
+    sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
+
+    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean>;
+
+    sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
 }
 
 export interface CreateProcessDocumentationInPort {

@@ -1,11 +1,11 @@
-import { commands, Uri, ViewColumn, window, workspace } from "vscode";
+import { commands, FileType, Uri, ViewColumn, window, workspace } from "vscode";
 import { Buffer } from "node:buffer";
 
-import { EXTENSION_CONTEXT } from "../../utils";
-import { CopilotWebview } from "../webview";
+import { ExtensionContextHelper } from "../../utils";
+import { CopilotWebview } from "../in/webview";
 import {
     CreateFileOutPort,
-    CreateOrShowWebviewOutPort,
+    CreateOrShowUiOutPort,
     GetBpmnFilesOutPort,
     GetPromptsOutPort,
     GetTemplatesOutPort,
@@ -28,6 +28,7 @@ import {
     Template as WebviewTemplate,
     TemplateQuery,
 } from "../../shared";
+import { singleton } from "tsyringe";
 
 type DefaultPromptsSchema = {
     categories: [
@@ -44,6 +45,7 @@ type DefaultPromptsSchema = {
     ];
 };
 
+@singleton()
 export class WorkspaceAdapter
     implements
         ReadFileOutPort,
@@ -54,6 +56,8 @@ export class WorkspaceAdapter
 {
     private readonly fs = workspace.fs;
 
+    constructor(private extensionContext: ExtensionContextHelper) {}
+
     async readFile(filePath: string): Promise<string> {
         const uri = Uri.file(filePath);
         const uint8Array = await this.fs.readFile(uri);
@@ -63,28 +67,43 @@ export class WorkspaceAdapter
     async getTemplates(): Promise<Map<string, AppTemplate[]>> {
         // TODO: Make custom directories configurable
         const path: string[] = [
-            EXTENSION_CONTEXT.getContext().extensionUri.path,
+            this.extensionContext.context.extensionUri.path,
             "resources",
             "templates",
         ];
 
-        const documentationTemplates = await workspace.findFiles(
-            `${path.join("/")}/documentation/**/*`,
-        );
-        const formTemplates = await workspace.findFiles(`${path.join("/")}/form/**/*`);
+        const templateDirs = await this.fs.readDirectory(Uri.file(path.join("/")));
 
-        return new Map([
-            [
-                "documentation",
-                documentationTemplates.map((uri) => new AppTemplate(uri.path)),
-            ],
-            ["form", formTemplates.map((uri) => new AppTemplate(uri.path))],
-        ]);
+        const returnMap = new Map<string, AppTemplate[]>();
+        for (const [dir, type] of templateDirs) {
+            if (type === FileType.Directory) {
+                const uris = await workspace.findFiles(`${path.join("/")}/${dir}/**/*`);
+                returnMap.set(
+                    dir,
+                    uris.map((uri) => new AppTemplate(uri.path)),
+                );
+            }
+        }
+
+        return returnMap;
+
+        // const documentationTemplates = await workspace.findFiles(
+        //     `${path.join("/")}/documentation/**/*`,
+        // );
+        // const formTemplates = await workspace.findFiles(`${path.join("/")}/form/**/*`);
+
+        // return new Map([
+        //     [
+        //         "documentation",
+        //         documentationTemplates.map((uri) => new AppTemplate(uri.path)),
+        //     ],
+        //     ["form", formTemplates.map((uri) => new AppTemplate(uri.path))],
+        // ]);
     }
 
     async getPrompts(): Promise<ApplicationPrompt[]> {
         const path: string[] = [
-            EXTENSION_CONTEXT.getContext().extensionUri.path,
+            this.extensionContext.context.extensionUri.path,
             "resources",
             "prompts",
             "prompts.json",
@@ -181,7 +200,8 @@ function getWorkspaceByName(workspaceName: string): Uri {
     return uri;
 }
 
-export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOutPort {
+@singleton()
+export class WebviewAdapter implements CreateOrShowUiOutPort, PostMessageOutPort {
     constructor(private readonly webview: CopilotWebview) {}
 
     createOrShowWebview(): string {
@@ -240,6 +260,7 @@ export class WebviewAdapter implements CreateOrShowWebviewOutPort, PostMessageOu
     }
 }
 
+@singleton()
 export class VsCodeWindow implements ShowMessageOutPort {
     async showInformationMessage(message: string): Promise<boolean> {
         await window.showInformationMessage(message);

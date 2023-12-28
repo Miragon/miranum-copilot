@@ -18,7 +18,7 @@ export interface GetTemplatesOutPort {
     getTemplates(): Promise<Map<string, Template[]>>;
 }
 
-export interface CreateOrShowWebviewOutPort {
+export interface CreateOrShowUiOutPort {
     createOrShowWebview(): string;
 }
 
