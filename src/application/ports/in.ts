@@ -16,7 +16,7 @@ export interface GetBpmnFilesInPort {
 }
 
 export interface GetPromptsInPort {
-    getPrompts(): Promise<DefaultPrompt[]>;
+    getPrompts(): Promise<Map<string, DefaultPrompt[]>>;
 }
 
 export interface GetTemplatesInPort {
@@ -26,7 +26,7 @@ export interface GetTemplatesInPort {
 export interface SendToUiInPort {
     sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 
-    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean>;
+    sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
 
     sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
 }

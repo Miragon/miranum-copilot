@@ -31,18 +31,14 @@ import {
 import { singleton } from "tsyringe";
 
 type DefaultPromptsSchema = {
-    categories: [
-        {
-            name: string;
-            prompts: [
-                {
-                    text: string;
-                    process?: boolean;
-                    form?: boolean;
-                },
-            ];
-        },
-    ];
+    categories: {
+        name: string;
+        prompts: {
+            text: string;
+            process?: boolean;
+            form?: boolean;
+        }[];
+    }[];
 };
 
 @singleton()
@@ -101,7 +97,7 @@ export class WorkspaceAdapter
         // ]);
     }
 
-    async getPrompts(): Promise<ApplicationPrompt[]> {
+    async getPrompts(): Promise<Map<string, ApplicationPrompt[]>> {
         const path: string[] = [
             this.extensionContext.context.extensionUri.path,
             "resources",
@@ -112,13 +108,15 @@ export class WorkspaceAdapter
         const file = await this.readFile(path.join("/"));
         const json: DefaultPromptsSchema = JSON.parse(file);
 
-        const prompts = json.categories.map((category) => {
-            return category.prompts.map((prompt) => {
+        const returnMap = new Map<string, ApplicationPrompt[]>();
+        for (const category of json.categories) {
+            const prompts = category.prompts.map((prompt) => {
                 return new ApplicationPrompt(prompt.text, prompt.process, prompt.form);
             });
-        });
+            returnMap.set(category.name, prompts);
+        }
 
-        return prompts.flat(1);
+        return returnMap;
     }
 
     async getBpmnFiles(): Promise<ApplicationBpmnFile[]> {
@@ -216,10 +214,14 @@ export class WebviewAdapter implements CreateOrShowUiOutPort, PostMessageOutPort
         return this.webview.postMessage(bpmnFileQuery);
     }
 
-    sendPrompts(prompts: ApplicationPrompt[]): Promise<boolean> {
-        const webviewPrompts = prompts.map((prompt) => {
-            return new WebviewPrompt(prompt.prompt, prompt.process, prompt.form);
-        });
+    sendPrompts(prompts: Map<string, ApplicationPrompt[]>): Promise<boolean> {
+        const webviewPrompts = new Map<string, WebviewPrompt<boolean>[]>();
+        for (const [category, appPrompts] of prompts) {
+            webviewPrompts.set(
+                category,
+                appPrompts.map((p) => new WebviewPrompt(p.prompt, p.process, p.form)),
+            );
+        }
         const promptQuery = new PromptQuery(webviewPrompts);
         return this.webview.postMessage(promptQuery);
     }

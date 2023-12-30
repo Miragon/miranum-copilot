@@ -2,10 +2,7 @@
 import { computed, ref } from "vue";
 import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
 
-import { DefaultPrompt } from "../../../shared";
-import { TemplatePrompts } from "@/helpers";
-
-import "../css/style.css";
+import { TemplatePrompts } from "@/utils";
 
 provideVSCodeDesignSystem().register(vsCodeButton());
 

@@ -1,25 +1,3 @@
-import { DefaultPrompt } from "../../../shared";
-
-/**
- * The structure of the pre-defined prompts file.
- * @interface TemplatePrompts
- * @field categories - An array of different categories containing prompts.
- */
-export interface TemplatePrompts {
-    categories: Category[];
-}
-
-/**
- * A category with its prompts.
- * @interface Category
- * @field name - The name of the category.
- * @field prompts - An array of prompts.
- */
-interface Category {
-    name: string;
-    prompts: DefaultPrompt[];
-}
-
 /**
  * Create a way to resolve a Promise manually.
  * @returns - {

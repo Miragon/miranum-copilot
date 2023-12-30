@@ -8,7 +8,7 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import { getVsCode, VsCode } from "@/vscode";
+import { getVsCodeApi, VsCode } from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -26,7 +26,7 @@ interface Props {
     processDropdown: string[];
 }
 
-const vscode: VsCode = getVsCode();
+const vscode: VsCode = getVsCodeApi();
 const emits = defineEmits(["sendPrompt", "updateSelectedBpmn"]);
 const props = defineProps<Props>();
 

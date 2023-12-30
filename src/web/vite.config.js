@@ -1,11 +1,15 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "node:path";
+import { createHtmlPlugin } from "vite-plugin-html";
 
 export default defineConfig(({ command }) => {
     let root = "";
+    let indexHtml = "index.html";
     if (command === "build") {
         root = "src/web";
+    } else {
+        indexHtml = "index_dev.html";
     }
     return {
         resolve: {
@@ -25,6 +29,7 @@ export default defineConfig(({ command }) => {
                     },
                 },
             }),
+            createHtmlPlugin({ template: indexHtml }),
         ],
         build: {
             target: "es2021",

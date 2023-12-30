@@ -120,9 +120,9 @@ export class TemplateQuery implements MiranumCopilotQuery {
 export class PromptQuery implements MiranumCopilotQuery {
     public readonly type = "PromptQuery";
 
-    public readonly prompts: Prompt<boolean>[];
+    public readonly prompts: Map<string, Prompt<boolean>[]>;
 
-    constructor(prompts: Prompt<boolean>[]) {
+    constructor(prompts: Map<string, Prompt<boolean>[]>) {
         this.prompts = prompts;
     }
 }

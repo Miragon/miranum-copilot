@@ -7,7 +7,7 @@ import {
 } from "../model";
 
 export interface GetPromptsOutPort {
-    getPrompts(): Promise<DefaultPrompt[]>;
+    getPrompts(): Promise<Map<string, DefaultPrompt[]>>;
 }
 
 export interface GetBpmnFilesOutPort {
@@ -44,7 +44,7 @@ export interface ShowMessageOutPort {
 export interface PostMessageOutPort {
     sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
 
-    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean>;
+    sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
 
     sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 

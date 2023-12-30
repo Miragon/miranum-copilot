@@ -62,7 +62,7 @@ export class GetPromptsUseCase implements GetPromptsInPort {
         private readonly getPromptsOutPort: GetPromptsOutPort,
     ) {}
 
-    async getPrompts(): Promise<DefaultPrompt[]> {
+    async getPrompts(): Promise<Map<string, DefaultPrompt[]>> {
         return this.getPromptsOutPort.getPrompts();
     }
 }
@@ -90,7 +90,7 @@ export class SendToUiUseCase implements SendToUiInPort {
         return this.postMessageOutPort.sendBpmnFiles(bpmnFiles);
     }
 
-    sendPrompts(prompts: DefaultPrompt[]): Promise<boolean> {
+    sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean> {
         return this.postMessageOutPort.sendPrompts(prompts);
     }
 

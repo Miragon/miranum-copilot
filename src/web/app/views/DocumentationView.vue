@@ -9,7 +9,7 @@ import {
 } from "@vscode/webview-ui-toolkit";
 
 import { OutputFormat } from "../../../shared";
-import { getVsCode, VsCode } from "@/vscode";
+import { getVsCodeApi, VsCode } from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -25,7 +25,7 @@ interface Props {
     selectedBpmn: string;
 }
 
-const vscode: VsCode = getVsCode();
+const vscode: VsCode = getVsCodeApi();
 const props = defineProps<Props>();
 const emits = defineEmits(["sendPrompt"]);
 

@@ -1,37 +1,25 @@
 <script lang="ts" setup>
 import { onBeforeMount, ref } from "vue";
 
-import {
-    DefaultPrompt,
-    isInstanceOfDefaultPrompt,
-    isInstanceOfDocumentationPrompt,
-    MessageToWebview,
-    MessageType,
-    OutputFormat,
-    Prompt,
-    VscMessage,
-} from "../../shared";
-import { createResolver, TemplatePrompts } from "@/helpers";
+import { BpmnFile, Prompt, Template } from "../../shared";
+import { createResolver } from "@/utils";
 
-import { createVsCode, MissingStateError, VsCode } from "./vscode";
+import { initVsCodeApi, MissingStateError, VsCode } from "./vscode";
 import SidebarMenu from "./components/SidebarMenu.vue";
 import DefaultView from "@/views/DefaultView.vue";
 import DocumentationView from "@/views/DocumentationView.vue";
-
-import "./css/style.css";
 
 //
 // Vars
 //
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const process: { env: { NODE_ENV: string } };
-declare const globalViewType: string;
 
 let vscode: VsCode;
 if (process.env.NODE_ENV === "development") {
-    vscode = createVsCode("development");
+    vscode = initVsCodeApi("development");
 } else {
-    vscode = createVsCode("production");
+    vscode = initVsCodeApi("production");
 }
 
 /* The prompt entered by the user. */
@@ -44,9 +32,10 @@ let selectedBpmn = ref("");
 let processDropdown = ref<string[]>([]);
 
 /* The predefined prompts sent by the backend. */
-const prompts = ref<TemplatePrompts>({ categories: [] });
+const prompts = ref<Map<string, Prompt<boolean>[]>>();
 /* The list of BPMN files in the workspace sent by the backend. */
-const bpmnFiles = ref<string[]>([]);
+const bpmnFiles = ref<BpmnFile[]>();
+const templates = ref<Map<string, Template[]>>();
 
 /* The current view. */
 const viewState = ref("DefaultView");
@@ -59,7 +48,9 @@ let shrunk = ref(false);
 // Logic
 //
 
-const resolver = createResolver<MessageToWebview>();
+const promptsResolver = createResolver<Map<string, Prompt<boolean>[]>>();
+const bpmnFilesResolver = createResolver<BpmnFile[]>();
+const templateResolver = createResolver<Map<string, Template[]>>();
 
 /**
  * The "main" method.

@@ -1,19 +1,24 @@
 import { WebviewApi } from "vscode-webview";
 
 import {
-    isInstanceOfDefaultPrompt,
-    isInstanceOfDocumentationPrompt,
-    MessageType,
+    BpmnFile,
+    BpmnFileQuery,
+    Command,
+    GetBpmnFilesCommand,
+    GetPromptsCommand,
+    GetTemplatesCommand,
+    LogErrorCommand,
+    LogInfoCommand,
     Prompt,
-    VscMessage,
+    PromptQuery,
+    Query,
+    Template,
+    TemplateQuery,
 } from "../../shared";
-import { TemplatePrompts } from "@/helpers";
-
-declare const globalViewType: string;
 
 let vscode: VsCode | undefined;
 
-export function createVsCode(env: string): VsCode {
+export function initVsCodeApi(env: string): VsCode {
     if (vscode) {
         return vscode;
     }
@@ -27,13 +32,15 @@ export function createVsCode(env: string): VsCode {
     return vscode;
 }
 
-export function getVsCode(): VsCode {
+export function getVsCodeApi(): VsCode {
     if (!vscode) {
         throw new Error("VsCode not initialized.");
     }
 
     return vscode;
 }
+
+type MessageType = Command | Query;
 
 export interface VsCode {
     getState(): CopilotState;
@@ -42,14 +49,15 @@ export interface VsCode {
 
     updateState(state: Partial<CopilotState>): void;
 
-    postMessage(message: VscMessage<Prompt>): void;
+    postMessage(message: MessageType): void;
 }
 
 export interface CopilotState {
     viewState: string;
-    prompts: TemplatePrompts;
-    bpmnFiles: string[];
-    currentPrompt: Prompt;
+    templates: Map<string, Template[]>;
+    bpmnFiles: BpmnFile[];
+    prompts: Map<string, Prompt<boolean>[]>;
+    currentPrompt: Prompt<string>;
     response: string;
 }
 
@@ -84,10 +92,9 @@ class VsCodeImpl implements VsCode {
             ...this.getState(),
             ...state,
         });
-        console.log("[Log] updateState()", this.vscode.getState());
     }
 
-    public postMessage(message: VscMessage<Prompt>) {
+    public postMessage(message: MessageType) {
         this.vscode.postMessage(message);
     }
 }
@@ -107,74 +114,41 @@ class VsCodeMock implements VsCode {
         return this.state;
     }
 
-    async postMessage(message: VscMessage<Prompt>): Promise<void> {
-        const { type, data, logger } = message;
-        switch (type) {
-            case `${globalViewType}.${MessageType.initialize}`: {
-                console.log("[Log]", logger);
+    async postMessage(message: MessageType): Promise<void> {
+        switch (true) {
+            case message instanceof GetPromptsCommand: {
+                const promptQuery = new PromptQuery(mockedPrompts);
                 window.dispatchEvent(
                     new MessageEvent("message", {
-                        data: {
-                            type: `${globalViewType}.${MessageType.initialize}`,
-                            data: {
-                                prompts: JSON.stringify(mockedInitData),
-                                bpmnFiles: ["file1.bpmn", "file2.bpmn"],
-                            },
-                        },
+                        data: promptQuery,
                     }),
                 );
                 break;
             }
-            case `${globalViewType}.${MessageType.msgFromWebview}`: {
-                console.log("[Log]", data);
-
-                if (!data) {
-                    console.error("No data to send.");
-                    return;
-                }
-
-                if (isInstanceOfDefaultPrompt(data)) {
-                    // We use a Postman Mock Server to mock the OpenAI API Call.
-                    // The server simulates a fixed network delay of 1000 seconds.
-                    const url: string =
-                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
-                    const res = await fetch(url);
-                    const json = await res.json();
-                    window.dispatchEvent(
-                        new MessageEvent("message", {
-                            data: {
-                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                                data: {
-                                    response: json.data,
-                                },
-                            },
-                        }),
-                    );
-                } else if (isInstanceOfDocumentationPrompt(data)) {
-                    const url: string =
-                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createDocumentation";
-                    const res = await fetch(url);
-                    const json = await res.json();
-                    window.dispatchEvent(
-                        new MessageEvent("message", {
-                            data: {
-                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                                data: {
-                                    response: json.created,
-                                },
-                            },
-                        }),
-                    );
-                }
-
+            case message instanceof GetBpmnFilesCommand: {
+                const bpmnFileQuery = new BpmnFileQuery(mockedBpmnFiles);
+                window.dispatchEvent(
+                    new MessageEvent("message", {
+                        data: bpmnFileQuery,
+                    }),
+                );
                 break;
             }
-            case `${globalViewType}.${MessageType.error}`: {
-                console.error("[Log]", logger);
+            case message instanceof GetTemplatesCommand: {
+                const templatesQuery = new TemplateQuery(mockedTemplates);
+                window.dispatchEvent(
+                    new MessageEvent("message", {
+                        data: templatesQuery,
+                    }),
+                );
                 break;
             }
-            case `${globalViewType}.${MessageType.info}`: {
-                console.log("[Log]", logger);
+            case message instanceof LogInfoCommand: {
+                console.log("[Log]", (message as LogInfoCommand).message);
+                break;
+            }
+            case message instanceof LogErrorCommand: {
+                console.error("[Log]", (message as LogInfoCommand).message);
                 break;
             }
         }
@@ -193,19 +167,25 @@ class VsCodeMock implements VsCode {
         } else {
             viewState = currentState.viewState;
         }
-        let prompts: TemplatePrompts;
-        if (state?.prompts) {
-            prompts = state.prompts;
+        let templates: Map<string, Template[]>;
+        if (state?.templates) {
+            templates = state.templates;
         } else {
-            prompts = currentState.prompts;
+            templates = currentState.templates;
         }
-        let bpmnFiles: string[];
+        let bpmnFiles: BpmnFile[];
         if (state?.bpmnFiles) {
             bpmnFiles = state.bpmnFiles;
         } else {
             bpmnFiles = currentState.bpmnFiles;
         }
-        let currentPrompt: Prompt;
+        let prompts: Map<string, Prompt<boolean>[]>;
+        if (state?.prompts) {
+            prompts = state.prompts;
+        } else {
+            prompts = currentState.prompts;
+        }
+        let currentPrompt: Prompt<string>;
         if (state?.currentPrompt) {
             currentPrompt = state.currentPrompt;
         } else {
@@ -220,8 +200,9 @@ class VsCodeMock implements VsCode {
 
         this.state = {
             viewState,
-            prompts,
+            templates,
             bpmnFiles,
+            prompts,
             currentPrompt,
             response,
         };
@@ -230,30 +211,57 @@ class VsCodeMock implements VsCode {
     }
 }
 
-const mockedInitData: TemplatePrompts = {
-    categories: [
-        {
-            name: "General Question",
-            prompts: [
-                {
-                    text: "What is business process modeling, and why is it important for organizations?",
-                },
-                {
-                    text: "What does this process do?",
-                    process: true,
-                },
-            ],
-        },
-        {
-            name: "BPMN Help",
-            prompts: [
-                {
-                    text: "How can I represent decision points in a BPMN Diagram?",
-                },
-                {
-                    text: "What's the best way to depict parallel activities in BPMN?",
-                },
-            ],
-        },
+// Mocked Data
+const mockedPrompts = new Map<string, Prompt<boolean>[]>([
+    [
+        "General Question",
+        [
+            new Prompt<boolean>(
+                "What is business process modeling, and why is it important for organizations?",
+            ),
+            new Prompt<boolean>("What does this process do?", true),
+        ],
     ],
-};
+    [
+        "BPMN Help",
+        [
+            new Prompt<boolean>(
+                "How can I represent decision points in a BPMN Diagram?",
+            ),
+            new Prompt<boolean>(
+                "What's the best way to depict parallel activities in BPMN?",
+            ),
+        ],
+    ],
+]);
+
+const mockedBpmnFiles = [
+    new BpmnFile("test1.bpmn", "workspace1", "/full/path/to/workspace1/test1.bpmn"),
+    new BpmnFile("test2.bpmn", "workspace2", "/full/path/to/workspace2/test2.bpmn"),
+    new BpmnFile("test3.bpmn", "workspace3", "/full/path/to/workspace3/test3.bpmn"),
+    new BpmnFile("test4.bpmn", "workspace4", "/full/path/to/workspace4/test4.bpmn"),
+];
+
+const mockedTemplates = new Map<string, Template[]>([
+    [
+        "documentation",
+        [
+            new Template("/full/path/to/documentation/template1", "template1"),
+            new Template("/full/path/to/documentation/template2", "template2"),
+        ],
+    ],
+    [
+        "form",
+        [
+            new Template("/full/path/to/form/template1", "template1"),
+            new Template("/full/path/to/form/template2", "template2"),
+        ],
+    ],
+    [
+        "custom",
+        [
+            new Template("/full/path/to/custom/template1", "template1"),
+            new Template("/full/path/to/custom/template2", "template2"),
+        ],
+    ],
+]);
