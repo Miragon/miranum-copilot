@@ -119,7 +119,7 @@
         "vite": "^5.0.10"
     },
     "dependencies": {
-        "@vscode/webview-ui-toolkit": "^1.2.2",
+        "@vscode/webview-ui-toolkit": "^1.4.0",
         "lodash": "^4.17.21",
         "openai": "^4.20.1",
         "vue": "^3.3.13"
