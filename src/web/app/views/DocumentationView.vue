@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import {computed, ref} from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,8 @@ import {
     vsCodeTextField,
 } from "@vscode/webview-ui-toolkit";
 
-import { OutputFormat } from "../../../shared";
-import { getVsCodeApi, VsCode } from "@/vscode";
+import {BpmnFile, CreateProcessDocumentationCommand, Template} from "../../../shared";
+import {getVsCodeApi, VsCode} from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
 
 provideVSCodeDesignSystem().register(
@@ -21,54 +21,60 @@ provideVSCodeDesignSystem().register(
 
 interface Props {
     loading: boolean;
-    processDropdown: string[];
-    selectedBpmn: string;
+    templates: Template[];
+    bpmnFiles: BpmnFile[];
+    selectedBpmn: BpmnFile;
 }
 
 const vscode: VsCode = getVsCodeApi();
 const props = defineProps<Props>();
-const emits = defineEmits(["sendPrompt"]);
 
-const processDropdown = computed(() => props.processDropdown);
-const bpmnDropdown = ref([]);
+const bpmnFiles = computed(() => props.bpmnFiles);
 const selectedBpmn = computed({
     get() {
         return props.selectedBpmn;
     },
-    set(processName: string) {
-        return processName;
+    set(bpmnFile: BpmnFile) {
+        return bpmnFile;
     },
 });
-let templatePath = ref("");
-const outputFormats = ref<OutputFormat[]>([OutputFormat.md, OutputFormat.json]);
+const templates = computed(() => props.templates);
+const selectedTemplate = ref<Template>(templates.value[0]);
+const documentationFormat = ref(["Markdown", "JSON"]);
+const selectedFormat = ref(documentationFormat.value[0]);
 
 const loading = computed(() => props.loading);
 
 function generateDocumentation() {
-    emits("sendPrompt");
+    const createProcessDocumentationCommand = new CreateProcessDocumentationCommand(
+        selectedBpmn.value,
+        selectedTemplate.value.path,
+        selectedFormat.value,
+    );
+    vscode.postMessage(createProcessDocumentationCommand);
 }
 
 function updatePath() {
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            template: templatePath.value,
+            template: templates.value,
         },
     });
 }
 
-function selectBpmn(element: HTMLOptionElement, processName: string) {
-    if (processName === selectedBpmn.value) {
+function selectBpmn(element: HTMLOptionElement, bpmnFile: BpmnFile) {
+    if (bpmnFile.fullPath === selectedBpmn.value.fullPath) {
         element.setAttribute("selected", "selected");
     }
 }
 
-function handleSelectedBpmn(processName: string) {
-    selectedBpmn.value = processName;
+function handleSelectedBpmn(bpmnFile: BpmnFile) {
+    selectedBpmn.value = bpmnFile;
     vscode.updateState({
         currentPrompt: {
             ...vscode.getState().currentPrompt,
-            process: processName,
+            process: bpmnFile,
         },
     });
 }
@@ -84,22 +90,31 @@ function handleSelectedFormat(format: OutputFormat) {
 </script>
 
 <template>
-    <vscode-dropdown v-if="processDropdown?.length > 0">
+    <vscode-dropdown v-if="bpmnFiles?.length > 0">
         <vscode-option
-            v-for="processName in processDropdown"
-            :key="processName"
-            :ref="(el: HTMLOptionElement) => selectBpmn(el, processName)"
-            @click="handleSelectedBpmn(processName)"
+            v-for="bpmnFile in bpmnFiles"
+            :key="bpmnFile.fullPath"
+            :ref="(el: HTMLOptionElement) => selectBpmn(el, bpmnFile)"
+            @click="handleSelectedBpmn(bpmnFile)"
         >
-            {{ processName }}
+            <div>
+                <span>{{ bpmnFile.workspaceName }}: </span>
+                <span>{{ bpmnFile.fileName }}</span>
+            </div>
         </vscode-option>
     </vscode-dropdown>
-    <vscode-text-field v-model="templatePath" @input="updatePath">
-        Path to the template (keep empty to use the default)
-    </vscode-text-field>
     <vscode-dropdown>
         <vscode-option
-            v-for="format in outputFormats"
+            v-for="template in templates"
+            :key="template.path"
+            @click="handleSelectedFormat(template)"
+        >
+            {{ template.name }}
+        </vscode-option>
+    </vscode-dropdown>
+    <vscode-dropdown>
+        <vscode-option
+            v-for="format in documentationFormat"
             :key="format"
             @click="handleSelectedFormat(format)"
         >
@@ -110,7 +125,7 @@ function handleSelectedFormat(format: OutputFormat) {
         <vscode-button @click="generateDocumentation">Generate</vscode-button>
     </div>
     <div v-else class="loading">
-        <LoadingAnimation />
+        <LoadingAnimation/>
     </div>
 </template>
 

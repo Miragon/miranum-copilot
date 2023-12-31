@@ -43,22 +43,84 @@ export function getVsCodeApi(): VsCode {
 type MessageType = Command | Query;
 
 export interface VsCode {
-    getState(): CopilotState;
+    getState(stateId?: string): CopilotState;
 
     setState(state: CopilotState): void;
 
-    updateState(state: Partial<CopilotState>): void;
+    // updateState(state: Partial<CopilotState>): void;
 
     postMessage(message: MessageType): void;
 }
 
-export interface CopilotState {
-    viewState: string;
-    templates: Map<string, Template[]>;
-    bpmnFiles: BpmnFile[];
-    prompts: Map<string, Prompt<boolean>[]>;
-    currentPrompt: Prompt<string>;
-    response: string;
+// export interface CopilotState {
+//     viewState: string;
+//     templates: Map<string, Template[]>;
+//     bpmnFiles: BpmnFile[];
+//     prompts: Map<string, Prompt<boolean>[]>;
+//     currentPrompt: Prompt<string>;
+//     response: string;
+// }
+
+type State = {
+    lastViewState: string;
+    defaultViewState: DefaultViewState;
+    documentationViewState: DocumentationViewState;
+};
+
+class CopilotState {
+    public templates: Map<string, Template[]>;
+    public bpmnFiles: BpmnFile[];
+    public prompts: Map<string, Prompt<boolean>[]>;
+
+    constructor(
+        templates: Map<string, Template[]>,
+        bpmnFiles: BpmnFile[],
+        prompts: Map<string, Prompt<boolean>[]>,
+    ) {
+        this.templates = templates;
+        this.bpmnFiles = bpmnFiles;
+        this.prompts = prompts;
+    }
+}
+
+export class DefaultViewState extends CopilotState {
+    public currentPrompt: Prompt<string>;
+    public aiResponse: string;
+    public selectedBpmnFile: BpmnFile;
+
+    constructor(
+        templates: Map<string, Template[]>,
+        bpmnFiles: BpmnFile[],
+        prompts: Map<string, Prompt<boolean>[]>,
+        currentPrompt: Prompt<string>,
+        aiResponse: string,
+        selectedBpmnFile: BpmnFile,
+    ) {
+        super(templates, bpmnFiles, prompts);
+        this.currentPrompt = currentPrompt;
+        this.aiResponse = aiResponse;
+        this.selectedBpmnFile = selectedBpmnFile;
+    }
+}
+
+export class DocumentationViewState extends CopilotState {
+    public selectedBpmnFile: BpmnFile;
+    public selectedTemplate: Template;
+    public selectedFormat: string;
+
+    constructor(
+        templates: Map<string, Template[]>,
+        bpmnFiles: BpmnFile[],
+        prompts: Map<string, Prompt<boolean>[]>,
+        selectedBpmnFile: BpmnFile,
+        selectedTemplate: Template,
+        selectedFormat: string,
+    ) {
+        super(templates, bpmnFiles, prompts);
+        this.selectedBpmnFile = selectedBpmnFile;
+        this.selectedTemplate = selectedTemplate;
+        this.selectedFormat = selectedFormat;
+    }
 }
 
 export class MissingStateError extends Error {
@@ -68,31 +130,62 @@ export class MissingStateError extends Error {
 }
 
 class VsCodeImpl implements VsCode {
-    private vscode: WebviewApi<CopilotState>;
+    private vscode: WebviewApi<State>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): CopilotState {
+    public getState(stateId?: string): CopilotState {
         const state = this.vscode.getState();
         if (!state) {
             throw new MissingStateError();
         }
 
-        return state;
+        if (!stateId) {
+            switch (state.lastViewState) {
+                case "DocumentationViewState": {
+                    return state.documentationViewState;
+                }
+                default: {
+                    return state.defaultViewState;
+                }
+            }
+        } else {
+            switch (stateId) {
+                case "DocumentationViewState": {
+                    return state.documentationViewState;
+                }
+                default: {
+                    return state.defaultViewState;
+                }
+            }
+        }
     }
 
     public setState(state: CopilotState) {
-        this.vscode.setState(state);
+        const currentState = this.vscode.getState();
+        if (state instanceof DefaultViewState) {
+            this.vscode.setState({
+                ...currentState!,
+                defaultViewState: state,
+                lastViewState: "DefaultViewState",
+            });
+        } else if (state instanceof DocumentationViewState) {
+            this.vscode.setState({
+                ...currentState!,
+                documentationViewState: state,
+                lastViewState: "DocumentationViewState",
+            });
+        }
     }
 
-    public updateState(state: Partial<CopilotState>) {
-        this.setState({
-            ...this.getState(),
-            ...state,
-        });
-    }
+    // public updateState(state: Partial<CopilotState>) {
+    //     this.setState({
+    //         ...this.getState(),
+    //         ...state,
+    //     });
+    // }
 
     public postMessage(message: MessageType) {
         this.vscode.postMessage(message);
@@ -104,14 +197,32 @@ class VsCodeImpl implements VsCode {
  * For this purpose, the functionality of the extension/backend is mocked.
  */
 class VsCodeMock implements VsCode {
-    private state: CopilotState | undefined;
+    private state: State | undefined;
 
-    getState(): CopilotState {
+    getState(stateId?: string): CopilotState {
         if (!this.state) {
             throw new MissingStateError();
         }
 
-        return this.state;
+        if (!stateId) {
+            switch (this.state.lastViewState) {
+                case "DocumentationViewState": {
+                    return this.state.documentationViewState;
+                }
+                default: {
+                    return this.state.defaultViewState;
+                }
+            }
+        } else {
+            switch (stateId) {
+                case "DocumentationViewState": {
+                    return this.state.documentationViewState;
+                }
+                default: {
+                    return this.state.defaultViewState;
+                }
+            }
+        }
     }
 
     async postMessage(message: MessageType): Promise<void> {
@@ -155,60 +266,73 @@ class VsCodeMock implements VsCode {
     }
 
     setState(state: CopilotState): void {
-        this.state = state;
+        const currentState = this.state;
+        if (state instanceof DefaultViewState) {
+            this.state = {
+                ...currentState!,
+                defaultViewState: state,
+                lastViewState: "DefaultViewState",
+            };
+        } else if (state instanceof DocumentationViewState) {
+            this.state = {
+                ...currentState!,
+                documentationViewState: state,
+                lastViewState: "DocumentationViewState",
+            };
+        }
         console.log("[Log] setState()", this.getState());
     }
 
-    updateState(state: Partial<CopilotState>): void {
-        const currentState = this.getState();
-        let viewState: string;
-        if (state?.viewState) {
-            viewState = state.viewState;
-        } else {
-            viewState = currentState.viewState;
-        }
-        let templates: Map<string, Template[]>;
-        if (state?.templates) {
-            templates = state.templates;
-        } else {
-            templates = currentState.templates;
-        }
-        let bpmnFiles: BpmnFile[];
-        if (state?.bpmnFiles) {
-            bpmnFiles = state.bpmnFiles;
-        } else {
-            bpmnFiles = currentState.bpmnFiles;
-        }
-        let prompts: Map<string, Prompt<boolean>[]>;
-        if (state?.prompts) {
-            prompts = state.prompts;
-        } else {
-            prompts = currentState.prompts;
-        }
-        let currentPrompt: Prompt<string>;
-        if (state?.currentPrompt) {
-            currentPrompt = state.currentPrompt;
-        } else {
-            currentPrompt = currentState.currentPrompt;
-        }
-        let response: string;
-        if (state?.response) {
-            response = state.response;
-        } else {
-            response = currentState.response;
-        }
+    // updateState(state: Partial<CopilotState>): void {
+    //     const currentState = this.getState();
+    //     let viewState: string;
+    //     if (state?.viewState) {
+    //         viewState = state.viewState;
+    //     } else {
+    //         viewState = currentState.viewState;
+    //     }
+    //     let templates: Map<string, Template[]>;
+    //     if (state?.templates) {
+    //         templates = state.templates;
+    //     } else {
+    //         templates = currentState.templates;
+    //     }
+    //     let bpmnFiles: BpmnFile[];
+    //     if (state?.bpmnFiles) {
+    //         bpmnFiles = state.bpmnFiles;
+    //     } else {
+    //         bpmnFiles = currentState.bpmnFiles;
+    //     }
+    //     let prompts: Map<string, Prompt<boolean>[]>;
+    //     if (state?.prompts) {
+    //         prompts = state.prompts;
+    //     } else {
+    //         prompts = currentState.prompts;
+    //     }
+    //     let currentPrompt: Prompt<string>;
+    //     if (state?.currentPrompt) {
+    //         currentPrompt = state.currentPrompt;
+    //     } else {
+    //         currentPrompt = currentState.currentPrompt;
+    //     }
+    //     let response: string;
+    //     if (state?.response) {
+    //         response = state.response;
+    //     } else {
+    //         response = currentState.response;
+    //     }
 
-        this.state = {
-            viewState,
-            templates,
-            bpmnFiles,
-            prompts,
-            currentPrompt,
-            response,
-        };
+    //     this.state = {
+    //         viewState,
+    //         templates,
+    //         bpmnFiles,
+    //         prompts,
+    //         currentPrompt,
+    //         response,
+    //     };
 
-        console.log("[Log] updateState()", this.getState());
-    }
+    //     console.log("[Log] updateState()", this.getState());
+    // }
 }
 
 // Mocked Data

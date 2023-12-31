@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from "vue";
+import {computed} from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,8 +8,9 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import { getVsCodeApi, VsCode } from "@/vscode";
+import {getVsCodeApi, VsCode} from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
+import {BpmnFile, GetAiResponseCommand, Prompt} from "../../../shared";
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
@@ -20,54 +21,51 @@ provideVSCodeDesignSystem().register(
 
 interface Props {
     loading: boolean;
-    inputText: string;
-    outputText: string;
-    selectedBpmn: string;
-    processDropdown: string[];
+    prompt: string;
+    aiResponse: string;
+    selectedBpmn: BpmnFile | undefined;
+    bpmnFiles: BpmnFile[];
 }
 
 const vscode: VsCode = getVsCodeApi();
-const emits = defineEmits(["sendPrompt", "updateSelectedBpmn"]);
+const emits = defineEmits(["updateSelectedBpmn"]);
 const props = defineProps<Props>();
 
-let inputText = computed(() => props.inputText);
-let outputText = computed(() => props.outputText);
+let prompt = computed(() => props.prompt);
+let aiResponse = computed(() => props.aiResponse);
 let selectedBpmn = computed({
     get() {
         return props.selectedBpmn;
     },
-    set(processName: string) {
-        return processName;
+    set(bpmnFile?: BpmnFile) {
+        return bpmnFile;
     },
 });
-let processDropdown = computed(() => props.processDropdown);
+let bpmnFiles = computed(() => props.bpmnFiles);
 
 let loading = computed(() => props.loading);
 
-function selectBpmn(element: HTMLOptionElement, processName: string) {
-    if (processName === selectedBpmn.value) {
+function selectBpmn(element: HTMLOptionElement, bpmnFile: BpmnFile) {
+    if (bpmnFile.fullPath === selectedBpmn.value?.fullPath) {
         element.setAttribute("selected", "selected");
     }
 }
 
 function updatePrompt() {
-    vscode.updateState({ currentPrompt: { text: inputText.value } });
+    const currentPrompt = new Prompt<string>(prompt.value, vscode.getState().currentPrompt.process);
+    vscode.updateState({currentPrompt});
+}
+
+function updateSelectedBpmn(bpmnFile: BpmnFile) {
+    const currentPrompt = new Prompt(vscode.getState().currentPrompt.prompt, bpmnFile.fullPath);
+    vscode.updateState({currentPrompt});
+
+    emits("updateSelectedBpmn", bpmnFile);
 }
 
 function sendPrompt() {
-    emits("sendPrompt");
-}
-
-function handleSelectedBpmn(bpmnName: string) {
-    // selectedBpmn.value = bpmnName;
-    vscode.updateState({
-        currentPrompt: {
-            ...vscode.getState().currentPrompt,
-            process: bpmnName,
-        },
-    });
-
-    emits("updateSelectedBpmn", bpmnName);
+    const getAiResponse = new GetAiResponseCommand(vscode.getState().currentPrompt);
+    vscode.postMessage(getAiResponse);
 }
 </script>
 
@@ -75,7 +73,7 @@ function handleSelectedBpmn(bpmnName: string) {
     <div class="input">
         <vscode-text-area
             id="inputText"
-            v-model="inputText"
+            v-model="prompt"
             cols="40"
             maxlength="1000"
             placeholder="Enter your prompt here"
@@ -85,14 +83,17 @@ function handleSelectedBpmn(bpmnName: string) {
         >
             Your question:
         </vscode-text-area>
-        <vscode-dropdown v-if="processDropdown?.length > 0">
+        <vscode-dropdown v-if="bpmnFiles?.length > 0">
             <vscode-option
-                v-for="processName in processDropdown"
-                :key="processName"
-                :ref="(el: HTMLOptionElement) => selectBpmn(el, processName)"
-                @click="handleSelectedBpmn(processName)"
+                v-for="bpmnFile in bpmnFiles"
+                :key="bpmnFile"
+                :ref="(el: HTMLOptionElement) => selectBpmn(el, bpmnFile)"
+                @click="updateSelectedBpmn(bpmnFile)"
             >
-                {{ processName }}
+                <div class="bpmn-file">
+                    <span class="workspace">{{ bpmnFile.workspaceName }}:</span>
+                    <span class="file">{{ bpmnFile.fileName }}</span>
+                </div>
             </vscode-option>
         </vscode-dropdown>
         <vscode-button
@@ -107,13 +108,13 @@ function handleSelectedBpmn(bpmnName: string) {
 
     <div class="output">
         <div v-if="loading" class="output-loading">
-            <LoadingAnimation />
+            <LoadingAnimation/>
         </div>
 
         <div v-if="!loading" class="output-loaded">
             <vscode-text-area
                 id="outputText"
-                v-model="outputText"
+                v-model="aiResponse"
                 cols="60"
                 placeholder="Your answer will be printed here"
                 readonly
@@ -146,6 +147,16 @@ vscode-button {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.bpmn-file {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.workspace {
+    color: darkgray;
 }
 
 .output {
