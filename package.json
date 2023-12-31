@@ -120,6 +120,7 @@
         "vite-plugin-html": "^3.2.1"
     },
     "dependencies": {
+        "@vscode/codicons": "^0.0.35",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "lodash": "^4.17.21",
         "openai": "^4.24.1",
