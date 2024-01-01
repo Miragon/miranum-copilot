@@ -1,11 +1,4 @@
-import {
-    BpmnFile,
-    DefaultPrompt,
-    DocumentationExtension,
-    FormExtension,
-    PromptCreation,
-    Template,
-} from "../model";
+import { BpmnFile, DefaultPrompt, PromptCreation, Template } from "../model";
 
 export interface CreateOrShowUiInPort {
     createOrShowWebview(): string;
@@ -24,7 +17,7 @@ export interface GetTemplatesInPort {
 }
 
 export interface SendToUiInPort {
-    sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
+    // sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 
     sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
 
@@ -33,22 +26,29 @@ export interface SendToUiInPort {
 
 export interface CreateProcessDocumentationInPort {
     createProcessDocumentation(
-        fileName: string,
-        bpmnFile: BpmnFile,
-        template: Template,
-        fileFormat: DocumentationExtension,
+        bpmnFiles: BpmnFile[],
+        templates: Template[],
     ): Promise<boolean>;
+
+    // createProcessDocumentation(
+    //     fileName: string,
+    //     bpmnFile: BpmnFile,
+    //     template: Template,
+    //     fileFormat: DocumentationExtension,
+    // ): Promise<boolean>;
 }
 
 export interface CreateFormInPort {
-    createForm(
-        fileName: string,
-        prompt: PromptCreation,
-        template: Template,
-        fileFormat: FormExtension,
-    ): Promise<boolean>;
+    createForm(templates: Template[]): Promise<boolean>;
+
+    // createForm(
+    //     fileName: string,
+    //     prompt: PromptCreation,
+    //     template: Template,
+    //     fileFormat: FormExtension,
+    // ): Promise<boolean>;
 }
 
 export interface SendAiResponseInPort {
-    sendAiResponse(prompt: PromptCreation): Promise<boolean>;
+    sendAiResponse(prompt: PromptCreation, bpmnFile?: BpmnFile): Promise<boolean>;
 }

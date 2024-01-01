@@ -3,14 +3,7 @@ import { container, inject, singleton } from "tsyringe";
 
 import { ExtensionContextHelper } from "../../utils";
 import { WebviewAdapter, WorkspaceWatcherAdapter } from "./vscode";
-import {
-    Command,
-    CreateFormCommand,
-    CreateProcessDocumentationCommand,
-    GetAiResponseCommand,
-    MiranumCopilotQuery,
-    Query,
-} from "../../shared";
+import { Command, GetAiResponseCommand, MiranumCopilotQuery, Query } from "../../shared";
 
 @singleton()
 export class CopilotWebview {
@@ -23,7 +16,8 @@ export class CopilotWebview {
     private disposables: Disposable[] = [];
 
     constructor(
-        private extensionContext: ExtensionContextHelper,
+        @inject(ExtensionContextHelper)
+        private readonly extensionContextHelper: ExtensionContextHelper,
         @inject("WebviewPath") webviewPath: string,
     ) {
         this.webviewPath = webviewPath;
@@ -51,7 +45,7 @@ export class CopilotWebview {
     }
 
     private create() {
-        const extensionUri = this.extensionContext.context.extensionUri;
+        const extensionUri = this.extensionContextHelper.context.extensionUri;
         this.panel = window.createWebviewPanel(
             this.viewType,
             "Miranum IDE",
@@ -98,10 +92,10 @@ export class CopilotWebview {
         webview.onDidReceiveMessage(
             async (message: Command | Query) => {
                 switch (true) {
-                    case message.type === "GetTemplatesCommand": {
-                        webviewAdapter.sendTemplates();
-                        break;
-                    }
+                    // case message.type === "GetTemplatesCommand": {
+                    //     webviewAdapter.sendTemplates();
+                    //     break;
+                    // }
                     case message.type === "GetPromptsCommand": {
                         webviewAdapter.sendPrompts();
                         break;
@@ -110,16 +104,16 @@ export class CopilotWebview {
                         webviewAdapter.sendBpmnFiles();
                         break;
                     }
-                    case message.type === "CreateProcessDocumentationCommand": {
-                        webviewAdapter.createProcessDocumentation(
-                            message as CreateProcessDocumentationCommand,
-                        );
-                        break;
-                    }
-                    case message.type === "CreateFormCommand": {
-                        webviewAdapter.createForm(message as CreateFormCommand);
-                        break;
-                    }
+                    // case message.type === "CreateProcessDocumentationCommand": {
+                    //     webviewAdapter.createProcessDocumentation(
+                    //         message as CreateProcessDocumentationCommand,
+                    //     );
+                    //     break;
+                    // }
+                    // case message.type === "CreateFormCommand": {
+                    //     webviewAdapter.createForm(message as CreateFormCommand);
+                    //     break;
+                    // }
                     case message.type === "GetAiResponseCommand": {
                         webviewAdapter.sendAiResponse(message as GetAiResponseCommand);
                         break;
@@ -139,8 +133,8 @@ export class CopilotWebview {
 
         const baseUri = Uri.joinPath(extensionUri, this.webviewPath);
 
-        const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.js"));
-        const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "index.css"));
+        const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "main.js"));
+        const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "main.css"));
 
         const nonce = getNonce();
 

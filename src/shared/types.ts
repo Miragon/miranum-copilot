@@ -1,13 +1,13 @@
 import { Command, Query } from "./common";
 
-export class Prompt<T extends string | boolean> {
+export class DefaultPrompt {
     public readonly prompt: string;
 
-    public readonly process?: T;
+    public readonly process?: boolean;
 
-    public readonly form?: T;
+    public readonly form?: boolean;
 
-    constructor(prompt: string, process?: T, form?: T) {
+    constructor(prompt: string, process?: boolean, form?: boolean) {
         this.prompt = prompt;
         this.process = process;
         this.form = form;
@@ -70,10 +70,11 @@ export class CreateProcessDocumentationCommand implements MiranumCopilotCommand 
     }
 }
 
+// TODO: In which workspace should the form be created?
 export class CreateFormCommand implements MiranumCopilotCommand {
     public readonly type = "CreateFormCommand";
 
-    public readonly prompt: Prompt<string>;
+    public readonly prompt: string;
 
     public readonly formName: string;
 
@@ -82,7 +83,7 @@ export class CreateFormCommand implements MiranumCopilotCommand {
     public readonly fileFormat: string;
 
     constructor(
-        prompt: Prompt<string>,
+        prompt: string,
         formName: string,
         templatePath: string,
         fileFormat: string,
@@ -97,10 +98,13 @@ export class CreateFormCommand implements MiranumCopilotCommand {
 export class GetAiResponseCommand implements MiranumCopilotCommand {
     public readonly type = "GetAiResponseCommand";
 
-    public readonly prompt: Prompt<string>;
+    public readonly prompt: string;
 
-    constructor(prompt: Prompt<string>) {
+    public readonly bpmnFile?: BpmnFile;
+
+    constructor(prompt: string, bpmnFile?: BpmnFile) {
         this.prompt = prompt;
+        this.bpmnFile = bpmnFile;
     }
 }
 
@@ -120,9 +124,9 @@ export class TemplateQuery implements MiranumCopilotQuery {
 export class PromptQuery implements MiranumCopilotQuery {
     public readonly type = "PromptQuery";
 
-    public readonly prompts: Map<string, Prompt<boolean>[]>;
+    public readonly prompts: Map<string, DefaultPrompt[]>;
 
-    constructor(prompts: Map<string, Prompt<boolean>[]>) {
+    constructor(prompts: Map<string, DefaultPrompt[]>) {
         this.prompts = prompts;
     }
 }

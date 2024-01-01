@@ -21,57 +21,92 @@ import {
     SendAiResponseInPort,
     SendToUiInPort,
 } from "../../application/ports/in";
-import {
-    CreateFormCommand,
-    CreateProcessDocumentationCommand,
-    GetAiResponseCommand,
-} from "../../shared";
-import {
-    BpmnFile,
-    DocumentationExtension,
-    FormExtension,
-    PromptCreation,
-    Template,
-} from "../../application/model";
+import { GetAiResponseCommand } from "../../shared";
+import { BpmnFile, PromptCreation } from "../../application/model";
 
 @singleton()
 export class CommandAdapter {
     constructor(
-        private extensionContext: ExtensionContextHelper,
+        @inject(ExtensionContextHelper)
+        private readonly extensionContext: ExtensionContextHelper,
         @inject("CreateOrShowUiInPort")
         private readonly createOrShowUiInPort: CreateOrShowUiInPort,
+        @inject("CreateProcessDocumentationInPort")
+        private readonly createProcessDocumentationInPort: CreateProcessDocumentationInPort,
+        @inject("CreateFormInPort") private readonly createFormInPort: CreateFormInPort,
+        @inject("GetBpmnFilesInPort")
+        private readonly getBpmnFilesInPort: GetBpmnFilesInPort,
+        @inject("GetTemplatesInPort")
+        private readonly getTemplatesInPort: GetTemplatesInPort,
     ) {
-        // const extensionContext = EXTENSION_CONTEXT.getContext();
-        const disposables = this.registerCommands(extensionContext.context.extensionUri);
-        this.extensionContext.context.subscriptions.push(...disposables);
+        const commands = [
+            this.createOrShowUi(),
+            this.editPrompts(extensionContext.context.extensionUri),
+            this.showCreateDocumentationDialog(),
+            this.showCreateFormDialog(),
+        ];
+
+        this.extensionContext.context.subscriptions.push(...commands);
     }
 
     createOrShowWebview() {
         this.createOrShowUiInPort.createOrShowWebview();
     }
 
-    private registerCommands(extensionUri: Uri): Disposable[] {
-        const disposables: Disposable[] = [];
-
-        disposables.push(
-            commands.registerCommand("miranum-copilot.createOrShow", () => {
-                this.createOrShowWebview();
-            }),
+    async createProcessDocumentation() {
+        const bpmnFiles = await this.getBpmnFilesInPort.getBpmnFiles();
+        const templates = (await this.getTemplatesInPort.getTemplates()).get(
+            "documentation",
         );
 
-        disposables.push(
-            commands.registerCommand("miranum.copilot.editPrompts", () => {
-                const uri = Uri.joinPath(
-                    extensionUri,
-                    "resources",
-                    "prompts",
-                    "prompts.json",
-                );
-                window.showTextDocument(uri);
-            }),
-        );
+        if (!templates) {
+            throw new Error("No documentation templates found");
+        }
 
-        return disposables;
+        this.createProcessDocumentationInPort.createProcessDocumentation(
+            bpmnFiles,
+            templates,
+        );
+    }
+
+    async createForm() {
+        const templates = (await this.getTemplatesInPort.getTemplates()).get("form");
+
+        if (!templates) {
+            throw new Error("No documentation templates found");
+        }
+
+        this.createFormInPort.createForm(templates);
+    }
+
+    private createOrShowUi(): Disposable {
+        return commands.registerCommand("miranum-copilot.createOrShow", () => {
+            this.createOrShowWebview();
+        });
+    }
+
+    private editPrompts(extensionUri: Uri): Disposable {
+        return commands.registerCommand("miranum-copilot.editPrompts", () => {
+            const uri = Uri.joinPath(
+                extensionUri,
+                "resources",
+                "prompts",
+                "prompts.json",
+            );
+            window.showTextDocument(uri);
+        });
+    }
+
+    private showCreateDocumentationDialog(): Disposable {
+        return commands.registerCommand("miranum-copilot.createDocumentation", () => {
+            this.createProcessDocumentation();
+        });
+    }
+
+    private showCreateFormDialog(): Disposable {
+        return commands.registerCommand("miranum-copilot.createForm", () => {
+            this.createForm();
+        });
     }
 }
 
@@ -103,45 +138,54 @@ export class WebviewAdapter {
         this.sendToUiInPort.sendPrompts(prompts);
     }
 
-    async sendTemplates() {
-        const templates = await this.getTemplatesInPort.getTemplates();
-        this.sendToUiInPort.sendTemplates(templates);
-    }
+    // async sendTemplates() {
+    //     const templates = await this.getTemplatesInPort.getTemplates();
+    //     this.sendToUiInPort.sendTemplates(templates);
+    // }
 
-    createProcessDocumentation(
-        createProcessDocumentationCommand: CreateProcessDocumentationCommand,
-    ) {
-        const webviewBpmnFile = createProcessDocumentationCommand.bpmnFile;
-        const bpmnFile = new BpmnFile(
-            webviewBpmnFile.fileName,
-            webviewBpmnFile.workspaceName,
-            webviewBpmnFile.fullPath,
-        );
-        const template = new Template(createProcessDocumentationCommand.templatePath);
-        // FIXME: documentation name
-        this.createProcessDocumentationInPort.createProcessDocumentation(
-            `documentation.${createProcessDocumentationCommand.fileFormat}}`,
-            bpmnFile,
-            template,
-            new DocumentationExtension(createProcessDocumentationCommand.fileFormat),
-        );
-    }
+    // createProcessDocumentation(
+    //     createProcessDocumentationCommand: CreateProcessDocumentationCommand,
+    // ) {
+    //     const webviewBpmnFile = createProcessDocumentationCommand.bpmnFile;
+    //     const bpmnFile = new BpmnFile(
+    //         webviewBpmnFile.fileName,
+    //         webviewBpmnFile.workspaceName,
+    //         webviewBpmnFile.fullPath,
+    //     );
+    //     const template = new Template(createProcessDocumentationCommand.templatePath);
+    //     // FIXME: documentation name
+    //     this.createProcessDocumentationInPort.createProcessDocumentation(
+    //         `documentation.${createProcessDocumentationCommand.fileFormat}}`,
+    //         bpmnFile,
+    //         template,
+    //         new DocumentationExtension(createProcessDocumentationCommand.fileFormat),
+    //     );
+    // }
 
-    createForm(createFormCommand: CreateFormCommand) {
-        const prompt = new PromptCreation({ base: createFormCommand.prompt.prompt });
-        const template = new Template(createFormCommand.templatePath);
-        // FIXME: form name
-        this.createFormInPort.createForm(
-            "my-form.form.json",
-            prompt,
-            template,
-            new FormExtension("form.json"),
-        );
-    }
+    // createForm(createFormCommand: CreateFormCommand) {
+    //     const prompt = new PromptCreation({ base: createFormCommand.prompt });
+    //     const template = new Template(createFormCommand.templatePath);
+    //     // FIXME: form name
+    //     this.createFormInPort.createForm(
+    //         "my-form.form.json",
+    //         prompt,
+    //         template,
+    //         new FormExtension("form.json"),
+    //     );
+    // }
 
     sendAiResponse(getAiResponseCommand: GetAiResponseCommand) {
-        const prompt = new PromptCreation({ base: getAiResponseCommand.prompt.prompt });
-        this.sendAiResponseInPort.sendAiResponse(prompt);
+        const prompt = new PromptCreation({
+            base: getAiResponseCommand.prompt,
+        });
+        const bpmnFile = getAiResponseCommand.bpmnFile
+            ? new BpmnFile(
+                getAiResponseCommand.bpmnFile.fileName,
+                getAiResponseCommand.bpmnFile.workspaceName,
+                getAiResponseCommand.bpmnFile.fullPath,
+            )
+            : undefined;
+        this.sendAiResponseInPort.sendAiResponse(prompt, bpmnFile);
     }
 }
 
@@ -150,7 +194,8 @@ export class WorkspaceWatcherAdapter {
     private readonly watchers: FileSystemWatcher[] = [];
 
     constructor(
-        private extensionContext: ExtensionContextHelper,
+        @inject(ExtensionContextHelper)
+        private readonly extensionContext: ExtensionContextHelper,
         @inject("GetBpmnFilesInPort")
         private readonly getBpmnFilesInPort: GetBpmnFilesInPort,
         @inject("GetPromptsInPort")
@@ -168,14 +213,14 @@ export class WorkspaceWatcherAdapter {
         );
 
         // Watch for new or deleted templates
-        const templateUri = Uri.joinPath(extensionUri, "resources", "templates");
-        this.watchers.push(
-            this.registerUriWatcher(
-                templateUri,
-                "**/*",
-                this.updateTemplates.bind(this),
-            ),
-        );
+        // const templateUri = Uri.joinPath(extensionUri, "resources", "templates");
+        // this.watchers.push(
+        //     this.registerUriWatcher(
+        //         templateUri,
+        //         "**/*",
+        //         this.updateTemplates.bind(this),
+        //     ),
+        // );
 
         // Watch for new or deleted prompts
         const promptsUri = Uri.joinPath(extensionUri, "resources", "prompts");
@@ -199,10 +244,10 @@ export class WorkspaceWatcherAdapter {
         this.sendToUiInPort.sendBpmnFiles(bpmnFiles);
     }
 
-    async updateTemplates() {
-        const templates = await this.getTemplatesInPort.getTemplates();
-        this.sendToUiInPort.sendTemplates(templates);
-    }
+    // async updateTemplates() {
+    //     const templates = await this.getTemplatesInPort.getTemplates();
+    //     this.sendToUiInPort.sendTemplates(templates);
+    // }
 
     dispose() {
         for (const watcher of this.watchers) {

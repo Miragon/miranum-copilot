@@ -33,35 +33,46 @@
         "Copilot"
     ],
     "activationEvents": [
-        "onWebviewPanel:copilot"
+        "onStartupFinished"
     ],
     "main": "./dist/main.js",
     "contributes": {
         "commands": [
             {
-                "command": "miranum.copilot.start",
+                "command": "miranum-copilot.createOrShow",
                 "title": "Open Copilot",
                 "category": "Miranum Copilot"
             },
             {
-                "command": "miranum.copilot.editPrompts",
+                "command": "miranum-copilot.editPrompts",
                 "title": "Edit Prompts",
                 "category": "Miranum Copilot"
             },
             {
-                "command": "miranum.copilot.testReturnValue",
-                "title": "Test Return Value",
+                "command": "miranum-copilot.createDocumentation",
+                "title": "Create Process Documentation",
+                "category": "Miranum Copilot"
+            },
+            {
+                "command": "miranum-copilot.createForm",
+                "title": "Create Form",
                 "category": "Miranum Copilot"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
-                    "command": "miranum.copilot.start",
+                    "command": "miranum-copilot.createOrShow"
+                },
+                {
+                    "command": "miranum-copilot.editPrompts"
+                },
+                {
+                    "command": "miranum-copilot.createDocumentation",
                     "when": "workspaceFolderCount > 0"
                 },
                 {
-                    "command": "miranum.copilot.editPrompts"
+                    "command": "miranum-copilot.createForm"
                 }
             ]
         },
@@ -124,6 +135,7 @@
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "lodash": "^4.17.21",
         "openai": "^4.24.1",
+        "reflect-metadata": "^0.2.1",
         "tsyringe": "^4.8.0",
         "vue": "^3.3.13"
     }

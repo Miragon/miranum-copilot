@@ -4,17 +4,18 @@ import {
     BpmnFile,
     BpmnFileQuery,
     Command,
+    DefaultPrompt,
     GetBpmnFilesCommand,
     GetPromptsCommand,
     GetTemplatesCommand,
     LogErrorCommand,
     LogInfoCommand,
-    Prompt,
     PromptQuery,
     Query,
     Template,
     TemplateQuery,
 } from "../../shared";
+import { ConcreteState, DefaultViewState, State } from "./state";
 
 let vscode: VsCode | undefined;
 
@@ -43,84 +44,11 @@ export function getVsCodeApi(): VsCode {
 type MessageType = Command | Query;
 
 export interface VsCode {
-    getState(stateId?: string): CopilotState;
+    getState(stateId: string): ConcreteState;
 
-    setState(state: CopilotState): void;
-
-    // updateState(state: Partial<CopilotState>): void;
+    setState(state: ConcreteState): void;
 
     postMessage(message: MessageType): void;
-}
-
-// export interface CopilotState {
-//     viewState: string;
-//     templates: Map<string, Template[]>;
-//     bpmnFiles: BpmnFile[];
-//     prompts: Map<string, Prompt<boolean>[]>;
-//     currentPrompt: Prompt<string>;
-//     response: string;
-// }
-
-type State = {
-    lastViewState: string;
-    defaultViewState: DefaultViewState;
-    documentationViewState: DocumentationViewState;
-};
-
-class CopilotState {
-    public templates: Map<string, Template[]>;
-    public bpmnFiles: BpmnFile[];
-    public prompts: Map<string, Prompt<boolean>[]>;
-
-    constructor(
-        templates: Map<string, Template[]>,
-        bpmnFiles: BpmnFile[],
-        prompts: Map<string, Prompt<boolean>[]>,
-    ) {
-        this.templates = templates;
-        this.bpmnFiles = bpmnFiles;
-        this.prompts = prompts;
-    }
-}
-
-export class DefaultViewState extends CopilotState {
-    public currentPrompt: Prompt<string>;
-    public aiResponse: string;
-    public selectedBpmnFile: BpmnFile;
-
-    constructor(
-        templates: Map<string, Template[]>,
-        bpmnFiles: BpmnFile[],
-        prompts: Map<string, Prompt<boolean>[]>,
-        currentPrompt: Prompt<string>,
-        aiResponse: string,
-        selectedBpmnFile: BpmnFile,
-    ) {
-        super(templates, bpmnFiles, prompts);
-        this.currentPrompt = currentPrompt;
-        this.aiResponse = aiResponse;
-        this.selectedBpmnFile = selectedBpmnFile;
-    }
-}
-
-export class DocumentationViewState extends CopilotState {
-    public selectedBpmnFile: BpmnFile;
-    public selectedTemplate: Template;
-    public selectedFormat: string;
-
-    constructor(
-        templates: Map<string, Template[]>,
-        bpmnFiles: BpmnFile[],
-        prompts: Map<string, Prompt<boolean>[]>,
-        selectedBpmnFile: BpmnFile,
-        selectedTemplate: Template,
-        selectedFormat: string,
-    ) {
-        super(templates, bpmnFiles, prompts);
-        this.selectedBpmnFile = selectedBpmnFile;
-        this.selectedTemplate = selectedTemplate;
-        this.selectedFormat = selectedFormat;
-    }
 }
 
 export class MissingStateError extends Error {
@@ -136,56 +64,28 @@ class VsCodeImpl implements VsCode {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(stateId?: string): CopilotState {
+    public getState(stateId: string): ConcreteState {
         const state = this.vscode.getState();
         if (!state) {
             throw new MissingStateError();
         }
 
-        if (!stateId) {
-            switch (state.lastViewState) {
-                case "DocumentationViewState": {
-                    return state.documentationViewState;
-                }
-                default: {
-                    return state.defaultViewState;
-                }
-            }
-        } else {
-            switch (stateId) {
-                case "DocumentationViewState": {
-                    return state.documentationViewState;
-                }
-                default: {
-                    return state.defaultViewState;
-                }
+        switch (stateId) {
+            default: {
+                return DefaultViewState.createFrom({
+                    ...state.defaultViewState,
+                });
             }
         }
     }
 
-    public setState(state: CopilotState) {
-        const currentState = this.vscode.getState();
-        if (state instanceof DefaultViewState) {
-            this.vscode.setState({
-                ...currentState!,
-                defaultViewState: state,
-                lastViewState: "DefaultViewState",
-            });
-        } else if (state instanceof DocumentationViewState) {
-            this.vscode.setState({
-                ...currentState!,
-                documentationViewState: state,
-                lastViewState: "DocumentationViewState",
-            });
-        }
+    public setState(state: ConcreteState) {
+        // if there are multiple views with different state ids, we need to check which one has changed
+        this.vscode.setState({
+            lastViewStateId: "DefaultViewState",
+            defaultViewState: state,
+        });
     }
-
-    // public updateState(state: Partial<CopilotState>) {
-    //     this.setState({
-    //         ...this.getState(),
-    //         ...state,
-    //     });
-    // }
 
     public postMessage(message: MessageType) {
         this.vscode.postMessage(message);
@@ -199,30 +99,26 @@ class VsCodeImpl implements VsCode {
 class VsCodeMock implements VsCode {
     private state: State | undefined;
 
-    getState(stateId?: string): CopilotState {
+    getState(stateId: string): ConcreteState {
         if (!this.state) {
             throw new MissingStateError();
         }
 
-        if (!stateId) {
-            switch (this.state.lastViewState) {
-                case "DocumentationViewState": {
-                    return this.state.documentationViewState;
-                }
-                default: {
-                    return this.state.defaultViewState;
-                }
-            }
-        } else {
-            switch (stateId) {
-                case "DocumentationViewState": {
-                    return this.state.documentationViewState;
-                }
-                default: {
-                    return this.state.defaultViewState;
-                }
+        switch (stateId) {
+            default: {
+                return DefaultViewState.createFrom({
+                    ...this.state.defaultViewState,
+                });
             }
         }
+    }
+
+    public setState(state: ConcreteState) {
+        // if there are multiple views with different state ids, we need to check which one has changed
+        this.state = {
+            defaultViewState: state,
+        };
+        console.log("[Log] setState()", this.getState("DefaultViewState"));
     }
 
     async postMessage(message: MessageType): Promise<void> {
@@ -264,95 +160,24 @@ class VsCodeMock implements VsCode {
             }
         }
     }
-
-    setState(state: CopilotState): void {
-        const currentState = this.state;
-        if (state instanceof DefaultViewState) {
-            this.state = {
-                ...currentState!,
-                defaultViewState: state,
-                lastViewState: "DefaultViewState",
-            };
-        } else if (state instanceof DocumentationViewState) {
-            this.state = {
-                ...currentState!,
-                documentationViewState: state,
-                lastViewState: "DocumentationViewState",
-            };
-        }
-        console.log("[Log] setState()", this.getState());
-    }
-
-    // updateState(state: Partial<CopilotState>): void {
-    //     const currentState = this.getState();
-    //     let viewState: string;
-    //     if (state?.viewState) {
-    //         viewState = state.viewState;
-    //     } else {
-    //         viewState = currentState.viewState;
-    //     }
-    //     let templates: Map<string, Template[]>;
-    //     if (state?.templates) {
-    //         templates = state.templates;
-    //     } else {
-    //         templates = currentState.templates;
-    //     }
-    //     let bpmnFiles: BpmnFile[];
-    //     if (state?.bpmnFiles) {
-    //         bpmnFiles = state.bpmnFiles;
-    //     } else {
-    //         bpmnFiles = currentState.bpmnFiles;
-    //     }
-    //     let prompts: Map<string, Prompt<boolean>[]>;
-    //     if (state?.prompts) {
-    //         prompts = state.prompts;
-    //     } else {
-    //         prompts = currentState.prompts;
-    //     }
-    //     let currentPrompt: Prompt<string>;
-    //     if (state?.currentPrompt) {
-    //         currentPrompt = state.currentPrompt;
-    //     } else {
-    //         currentPrompt = currentState.currentPrompt;
-    //     }
-    //     let response: string;
-    //     if (state?.response) {
-    //         response = state.response;
-    //     } else {
-    //         response = currentState.response;
-    //     }
-
-    //     this.state = {
-    //         viewState,
-    //         templates,
-    //         bpmnFiles,
-    //         prompts,
-    //         currentPrompt,
-    //         response,
-    //     };
-
-    //     console.log("[Log] updateState()", this.getState());
-    // }
 }
 
 // Mocked Data
-const mockedPrompts = new Map<string, Prompt<boolean>[]>([
+const mockedPrompts = new Map<string, DefaultPrompt[]>([
     [
         "General Question",
         [
-            new Prompt<boolean>(
+            new DefaultPrompt(
                 "What is business process modeling, and why is it important for organizations?",
             ),
-            new Prompt<boolean>("What does this process do?", true),
+            new DefaultPrompt("What does this process do?", true),
         ],
     ],
     [
         "BPMN Help",
         [
-            new Prompt<boolean>(
-                "How can I represent decision points in a BPMN Diagram?",
-            ),
-            new Prompt<boolean>(
+            new DefaultPrompt("How can I represent decision points in a BPMN Diagram?"),
+            new DefaultPrompt(
                 "What's the best way to depict parallel activities in BPMN?",
             ),
         ],

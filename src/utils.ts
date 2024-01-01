@@ -4,6 +4,8 @@ import { singleton } from "tsyringe";
 // eslint-disable-next-line @typescript-eslint/naming-convention
 @singleton()
 export class ExtensionContextHelper {
+    constructor() {}
+
     private _context?: ExtensionContext;
 
     get context(): ExtensionContext {

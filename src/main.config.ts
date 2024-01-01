@@ -1,6 +1,5 @@
 import { container } from "tsyringe";
 
-import { VsCodeWindow, WebviewAdapter, WorkspaceAdapter } from "./adapter/out/vscode";
 import {
     CreateFormUseCase,
     CreateOrShowWebviewUseCase,
@@ -11,6 +10,12 @@ import {
     SendAiResponseUseCase,
     SendToUiUseCase,
 } from "./application/usecases";
+import {
+    CreateDocumentationDialog,
+    VsCodeWindow,
+    WebviewAdapter,
+    WorkspaceAdapter,
+} from "./adapter/out/vscode";
 import { OpenAIApiAdapter } from "./adapter/out/openai";
 
 export async function config(): Promise<boolean> {
@@ -36,11 +41,17 @@ async function registerOutAdapter(): Promise<void> {
     container.register("ReadFileOutPort", { useClass: WorkspaceAdapter });
     container.register("GetPromptsOutPort", { useClass: WorkspaceAdapter });
     container.register("GetBpmnFilesOutPort", { useClass: WorkspaceAdapter });
-    container.register("GetTemplatesPort", { useClass: WorkspaceAdapter });
+    container.register("GetTemplatesOutPort", { useClass: WorkspaceAdapter });
     container.register("CreateFileOutPort", { useClass: WorkspaceAdapter });
     container.register("CreateOrShowUiOutPort", { useClass: WebviewAdapter });
+
     container.register("PostMessageOutPort", { useClass: WebviewAdapter });
+
     container.register("ShowMessageOutPort", { useClass: VsCodeWindow });
+
+    container.register("CreateDocumentationDialogOutPort", {
+        useClass: CreateDocumentationDialog,
+    });
 
     // OpenAI
     container.register("GetAiResponseOutPort", { useClass: OpenAIApiAdapter });

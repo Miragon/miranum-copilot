@@ -46,7 +46,7 @@ export interface PostMessageOutPort {
 
     sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
 
-    sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
+    // sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 
     sendAiResponse(response: string): Promise<boolean>;
 }
@@ -57,4 +57,14 @@ export interface GetAiResponseOutPort {
     getProcessDocumentation(prompt: PromptCreation, fileFormat: string): Promise<string>;
 
     getForm(prompt: PromptCreation): Promise<string>;
+}
+
+export interface CreateDocumentationDialogOutPort {
+    getBpmnFile(bpmnFiles: BpmnFile[]): Promise<BpmnFile>;
+
+    getFormat(): Promise<string>;
+
+    getTemplate(templates: Template[]): Promise<string>;
+
+    getName(): Promise<string>;
 }

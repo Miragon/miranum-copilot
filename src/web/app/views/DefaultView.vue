@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed} from "vue";
+import { computed } from "vue";
 import {
     provideVSCodeDesignSystem,
     vsCodeButton,
@@ -8,9 +8,10 @@ import {
     vsCodeTextArea,
 } from "@vscode/webview-ui-toolkit";
 
-import {getVsCodeApi, VsCode} from "@/vscode";
+import { getVsCodeApi, VsCode } from "@/vscode";
 import LoadingAnimation from "@/components/LoadingAnimation.vue";
-import {BpmnFile, GetAiResponseCommand, Prompt} from "../../../shared";
+import { BpmnFile, GetAiResponseCommand } from "../../../shared";
+import { getGlobalState } from "@/state";
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
@@ -52,19 +53,26 @@ function selectBpmn(element: HTMLOptionElement, bpmnFile: BpmnFile) {
 }
 
 function updatePrompt() {
-    const currentPrompt = new Prompt<string>(prompt.value, vscode.getState().currentPrompt.process);
-    vscode.updateState({currentPrompt});
+    const state = getGlobalState();
+    state.currentPrompt = prompt.value;
+    vscode.setState(state);
 }
 
 function updateSelectedBpmn(bpmnFile: BpmnFile) {
-    const currentPrompt = new Prompt(vscode.getState().currentPrompt.prompt, bpmnFile.fullPath);
-    vscode.updateState({currentPrompt});
+    selectedBpmn.value = bpmnFile;
+    const state = getGlobalState();
+    state.selectedBpmnFile = bpmnFile;
+    vscode.setState(state);
 
     emits("updateSelectedBpmn", bpmnFile);
 }
 
 function sendPrompt() {
-    const getAiResponse = new GetAiResponseCommand(vscode.getState().currentPrompt);
+    const state = getGlobalState();
+    const getAiResponse = new GetAiResponseCommand(
+        state.currentPrompt,
+        state.selectedBpmnFile,
+    );
     vscode.postMessage(getAiResponse);
 }
 </script>
@@ -108,7 +116,7 @@ function sendPrompt() {
 
     <div class="output">
         <div v-if="loading" class="output-loading">
-            <LoadingAnimation/>
+            <LoadingAnimation />
         </div>
 
         <div v-if="!loading" class="output-loaded">
