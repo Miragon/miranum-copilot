@@ -1,0 +1,83 @@
+{
+    "schema": {
+        "type": "object",
+        "properties": {
+            "orderNumber": {
+                "type": "string",
+                "title": "Order Number"
+            },
+            "customerName": {
+                "type": "string",
+                "title": "Customer Name"
+            },
+            "email": {
+                "type": "string",
+                "format": "email",
+                "title": "Email"
+            },
+            "phoneNumber": {
+                "type": "string",
+                "title": "Phone Number"
+            },
+            "address": {
+                "type": "object",
+                "properties": {
+                    "street": {
+                        "type": "string",
+                        "title": "Street"
+                    },
+                    "city": {
+                        "type": "string",
+                        "title": "City"
+                    },
+                    "state": {
+                        "type": "string",
+                        "title": "State"
+                    },
+                    "zip": {
+                        "type": "string",
+                        "title": "Zip"
+                    }
+                },
+                "required": ["street", "city", "state", "zip"],
+                "title": "Address"
+            },
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "itemCode": {
+                            "type": "string",
+                            "title": "Item Code"
+                        },
+                        "quantity": {
+                            "type": "number",
+                            "title": "Quantity"
+                        },
+                        "price": {
+                            "type": "number",
+                            "title": "Price"
+                        }
+                    },
+                    "required": ["itemCode", "quantity", "price"],
+                    "title": "Items"
+                }
+            }
+        },
+        "required": [
+            "orderNumber",
+            "customerName",
+            "email",
+            "phoneNumber",
+            "address",
+            "items"
+        ],
+        "title": "Order Form"
+    },
+    "uischema": {
+        "type": "VerticalLayout",
+        "elements": []
+    },
+    "data": {}
+}
