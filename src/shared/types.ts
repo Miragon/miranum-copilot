@@ -124,10 +124,11 @@ export class TemplateQuery implements MiranumCopilotQuery {
 export class PromptQuery implements MiranumCopilotQuery {
     public readonly type = "PromptQuery";
 
-    public readonly prompts: Map<string, DefaultPrompt[]>;
+    public readonly prompts: string;
 
     constructor(prompts: Map<string, DefaultPrompt[]>) {
-        this.prompts = prompts;
+        // a map is not serializable, so we have to an string
+        this.prompts = JSON.stringify(Array.from(prompts.entries()));
     }
 }
 

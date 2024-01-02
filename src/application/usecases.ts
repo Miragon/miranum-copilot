@@ -153,9 +153,7 @@ implements CreateProcessDocumentationInPort
             }
 
             const base =
-                format === "Markdown"
-                    ? documentationMarkdownPrompt
-                    : documentationJsonPrompt;
+                format === "md" ? documentationMarkdownPrompt : documentationJsonPrompt;
             const promptCreation = new PromptCreation({
                 base,
                 process: processDescription[0],

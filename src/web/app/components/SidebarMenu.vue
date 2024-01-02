@@ -1,22 +1,20 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
-
-import { TemplatePrompts } from "@/utils";
+import { DefaultPrompt } from "../../../shared";
 
 provideVSCodeDesignSystem().register(vsCodeButton());
 
 interface Props {
-    prompts: TemplatePrompts;
+    prompts: Map<string, DefaultPrompt[]>;
 }
 
 const props = defineProps<Props>();
-const emits = defineEmits(["sidebarToggled", "promptSelected", "documentationSelected"]);
+const emits = defineEmits(["sidebarToggled", "promptSelected"]);
 
 const isSidebarVisible = ref(false);
 const selectedCategory = ref("");
 
-const categories = computed(() => props.prompts.categories);
 const buttonStyle = computed(() => {
     return {
         left: isSidebarVisible.value ? "33%" : "0",
@@ -54,28 +52,25 @@ const toggleSidebar = () => {
             <!-- Sidebar content -->
             <ul>
                 <li
-                    v-for="category in categories"
-                    :key="category.name"
-                    @click="selectCategory(category.name)"
+                    v-for="category in props.prompts.keys()"
+                    :key="category"
+                    @click="selectCategory(category)"
                 >
-                    {{ category.name }}
+                    {{ category }}
                     <span class="expand-icon">{{
-                        selectedCategory === category.name ? "▼" : "▶"
+                        selectedCategory === category ? "▼" : "▶"
                     }}</span>
-                    <ul v-if="selectedCategory === category.name">
+                    <ul v-if="selectedCategory === category">
                         <li
-                            v-for="prompt in category.prompts"
-                            :key="prompt.text"
+                            v-for="prompt in props.prompts.get(category)"
+                            :key="prompt.prompt"
                             @click="selectPrompt(prompt)"
                         >
-                            {{ prompt.text }}
+                            {{ prompt.prompt }}
                         </li>
                     </ul>
                 </li>
             </ul>
-            <vscode-button @click="$emit('documentationSelected')">
-                Process Documentation
-            </vscode-button>
         </div>
     </div>
 </template>

@@ -22,11 +22,10 @@ const name = computed(() => props.name);
 <style scoped>
 .item {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: start;
-    padding: 0.5rem;
-    cursor: pointer;
+    flex-direction: row;
+    gap: 0.3rem;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
 }
 
 .prefix {

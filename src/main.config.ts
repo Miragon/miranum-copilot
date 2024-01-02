@@ -33,7 +33,7 @@ export async function config(): Promise<boolean> {
 }
 
 async function registerPrimitiveValues(): Promise<void> {
-    container.register("WebviewPath", { useValue: "client" });
+    container.register("WebviewPath", { useValue: "dist/client" });
 }
 
 async function registerOutAdapter(): Promise<void> {

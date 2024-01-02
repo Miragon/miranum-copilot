@@ -138,42 +138,6 @@ export class WebviewAdapter {
         this.sendToUiInPort.sendPrompts(prompts);
     }
 
-    // async sendTemplates() {
-    //     const templates = await this.getTemplatesInPort.getTemplates();
-    //     this.sendToUiInPort.sendTemplates(templates);
-    // }
-
-    // createProcessDocumentation(
-    //     createProcessDocumentationCommand: CreateProcessDocumentationCommand,
-    // ) {
-    //     const webviewBpmnFile = createProcessDocumentationCommand.bpmnFile;
-    //     const bpmnFile = new BpmnFile(
-    //         webviewBpmnFile.fileName,
-    //         webviewBpmnFile.workspaceName,
-    //         webviewBpmnFile.fullPath,
-    //     );
-    //     const template = new Template(createProcessDocumentationCommand.templatePath);
-    //     // FIXME: documentation name
-    //     this.createProcessDocumentationInPort.createProcessDocumentation(
-    //         `documentation.${createProcessDocumentationCommand.fileFormat}}`,
-    //         bpmnFile,
-    //         template,
-    //         new DocumentationExtension(createProcessDocumentationCommand.fileFormat),
-    //     );
-    // }
-
-    // createForm(createFormCommand: CreateFormCommand) {
-    //     const prompt = new PromptCreation({ base: createFormCommand.prompt });
-    //     const template = new Template(createFormCommand.templatePath);
-    //     // FIXME: form name
-    //     this.createFormInPort.createForm(
-    //         "my-form.form.json",
-    //         prompt,
-    //         template,
-    //         new FormExtension("form.json"),
-    //     );
-    // }
-
     sendAiResponse(getAiResponseCommand: GetAiResponseCommand) {
         const prompt = new PromptCreation({
             base: getAiResponseCommand.prompt,
@@ -212,16 +176,6 @@ export class WorkspaceWatcherAdapter {
             this.registerOpenWorkspacesWatcher(".bpmn", this.updateBpmnFiles.bind(this)),
         );
 
-        // Watch for new or deleted templates
-        // const templateUri = Uri.joinPath(extensionUri, "resources", "templates");
-        // this.watchers.push(
-        //     this.registerUriWatcher(
-        //         templateUri,
-        //         "**/*",
-        //         this.updateTemplates.bind(this),
-        //     ),
-        // );
-
         // Watch for new or deleted prompts
         const promptsUri = Uri.joinPath(extensionUri, "resources", "prompts");
         this.watchers.push(
@@ -243,11 +197,6 @@ export class WorkspaceWatcherAdapter {
         const bpmnFiles = await this.getBpmnFilesInPort.getBpmnFiles();
         this.sendToUiInPort.sendBpmnFiles(bpmnFiles);
     }
-
-    // async updateTemplates() {
-    //     const templates = await this.getTemplatesInPort.getTemplates();
-    //     this.sendToUiInPort.sendTemplates(templates);
-    // }
 
     dispose() {
         for (const watcher of this.watchers) {

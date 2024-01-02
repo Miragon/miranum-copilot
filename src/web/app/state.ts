@@ -21,22 +21,11 @@ export function setGlobalState(newState: ConcreteState): void {
 }
 
 interface CopilotStateParams {
-    // templates: Map<string, Template[]>;
     bpmnFiles: BpmnFile[];
     prompts: Map<string, DefaultPrompt[]>;
 }
 
 class CopilotState {
-    // private _templates = new Map<string, Template[]>();
-
-    // get templates(): Map<string, Template[]> {
-    //     return this._templates;
-    // }
-
-    // set templates(templates: Map<string, Template[]>) {
-    //     this._templates = templates;
-    // }
-
     private _bpmnFiles: BpmnFile[] = [];
 
     get bpmnFiles(): BpmnFile[] {
@@ -57,13 +46,8 @@ class CopilotState {
         this._prompts = prompts;
     }
 
-    static createFrom({
-        //templates,
-        bpmnFiles,
-        prompts,
-    }: CopilotStateParams): CopilotState {
+    static createFrom({ bpmnFiles, prompts }: CopilotStateParams): CopilotState {
         const state = new CopilotState();
-        // state.templates = templates;
         state.bpmnFiles = bpmnFiles;
         state.prompts = prompts;
         return state;
@@ -72,7 +56,7 @@ class CopilotState {
 
 interface DefaultViewStateParams extends CopilotStateParams {
     currentPrompt: string;
-    selectedBpmnFile: BpmnFile;
+    selectedBpmnFile?: BpmnFile;
     aiResponse: string;
 }
 
@@ -87,13 +71,13 @@ export class DefaultViewState extends CopilotState {
         this._currentPrompt = currentPrompt;
     }
 
-    private _selectedBpmnFile = new BpmnFile("", "", "");
+    private _selectedBpmnFile?: BpmnFile;
 
-    get selectedBpmnFile(): BpmnFile {
+    get selectedBpmnFile(): BpmnFile | undefined {
         return this._selectedBpmnFile;
     }
 
-    set selectedBpmnFile(selectedBpmnFile: BpmnFile) {
+    set selectedBpmnFile(selectedBpmnFile: BpmnFile | undefined) {
         this._selectedBpmnFile = selectedBpmnFile;
     }
 
@@ -108,7 +92,6 @@ export class DefaultViewState extends CopilotState {
     }
 
     static createFrom({
-        // templates,
         bpmnFiles,
         prompts,
         currentPrompt,
@@ -116,12 +99,21 @@ export class DefaultViewState extends CopilotState {
         aiResponse,
     }: DefaultViewStateParams): DefaultViewState {
         const state = new DefaultViewState();
-        // state.templates = templates;
         state.bpmnFiles = bpmnFiles;
         state.prompts = prompts;
         state.currentPrompt = currentPrompt;
         state.selectedBpmnFile = selectedBpmnFile;
         state.aiResponse = aiResponse;
         return state;
+    }
+
+    serialize(): DefaultViewStateParams {
+        return {
+            bpmnFiles: this.bpmnFiles,
+            prompts: this.prompts,
+            currentPrompt: this.currentPrompt,
+            selectedBpmnFile: this.selectedBpmnFile,
+            aiResponse: this.aiResponse,
+        };
     }
 }

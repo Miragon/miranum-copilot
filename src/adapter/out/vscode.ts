@@ -83,11 +83,18 @@ export class WorkspaceAdapter
         const returnMap = new Map<string, AppTemplate[]>();
         for (const [dir, type] of templateDirs) {
             if (type === FileType.Directory) {
-                const uris = await workspace.findFiles(`${path.join("/")}/${dir}/**/*`);
-                returnMap.set(
-                    dir,
-                    uris.map((uri) => new AppTemplate(uri.path)),
-                );
+                const pathString = `${path.join("/")}/${dir}`;
+                const files = await this.fs.readDirectory(Uri.file(pathString));
+
+                const templateMap = files
+                    .map((file) => {
+                        if (file[1] === FileType.File) {
+                            return new AppTemplate(`${pathString}/${file[0]}`);
+                        }
+                    })
+                    .filter((file) => file !== undefined) as AppTemplate[];
+
+                returnMap.set(dir, templateMap);
             }
         }
 
@@ -205,36 +212,6 @@ export class WebviewAdapter implements CreateOrShowUiOutPort, PostMessageOutPort
         return this.webview.postMessage(promptQuery);
     }
 
-    // sendTemplates(templates: Map<string, AppTemplate[]>): Promise<boolean> {
-    //     const webviewTemplates = new Map<string, WebviewTemplate[]>();
-
-    //     switch (true) {
-    //         case templates.has("documentation"): {
-    //             webviewTemplates.set(
-    //                 "documentation",
-    //                 templates
-    //                     .get("documentation")!
-    //                     .map((t) => new WebviewTemplate(t.path, t.getName())),
-    //             );
-    //         }
-    //         case templates.has("form"): {
-    //             webviewTemplates.set(
-    //                 "form",
-    //                 templates
-    //                     .get("form")!
-    //                     .map((t) => new WebviewTemplate(t.path, t.getName())),
-    //             );
-    //         }
-    //     }
-
-    //     if (webviewTemplates.size === 0) {
-    //         throw new Error("No templates found");
-    //     }
-
-    //     const templateQuery = new TemplateQuery(webviewTemplates);
-    //     return this.webview.postMessage(templateQuery);
-    // }
-
     sendAiResponse(response: string): Promise<boolean> {
         const aiResponseQuery = new AiResponseQuery(response);
         return this.webview.postMessage(aiResponseQuery);
@@ -286,6 +263,7 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
                         resolve(new AppBpmnFile(data.label, data.workspace, data.path));
                     }),
                 );
+                quickPick.show();
             });
         } finally {
             disposables.forEach((d) => d.dispose());
@@ -311,6 +289,7 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
                         resolve(selection[0].label),
                     ),
                 );
+                quickPick.show();
             });
         } finally {
             disposables.forEach((d) => d.dispose());
@@ -344,6 +323,7 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
                         resolve(selection[0].path),
                     ),
                 );
+                quickPick.show();
             });
         } finally {
             disposables.forEach((d) => d.dispose());
@@ -364,6 +344,8 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
 
                 // TODO: Validate input
                 disposables.push(inputBox.onDidAccept(() => resolve(inputBox.value)));
+
+                inputBox.show();
             });
         } finally {
             disposables.forEach((d) => d.dispose());

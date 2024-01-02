@@ -137,18 +137,15 @@ export class Template {
 export class FileExtension {
     readonly extension: string;
 
-    private validExtensions: Set<string>;
-
     constructor(extension: string, validExtensions: Set<string>) {
-        if (!this.isValid()) {
+        if (!this.isValid(extension, validExtensions)) {
             throw new Error(`Invalid extension: ${extension}`);
         }
         this.extension = extension;
-        this.validExtensions = validExtensions;
     }
 
-    private isValid(): boolean {
-        return this.validExtensions.has(this.extension);
+    private isValid(extension: string, validExtensions: Set<string>): boolean {
+        return validExtensions.has(extension);
     }
 }
 

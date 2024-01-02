@@ -92,10 +92,6 @@ export class CopilotWebview {
         webview.onDidReceiveMessage(
             async (message: Command | Query) => {
                 switch (true) {
-                    // case message.type === "GetTemplatesCommand": {
-                    //     webviewAdapter.sendTemplates();
-                    //     break;
-                    // }
                     case message.type === "GetPromptsCommand": {
                         webviewAdapter.sendPrompts();
                         break;
@@ -104,16 +100,6 @@ export class CopilotWebview {
                         webviewAdapter.sendBpmnFiles();
                         break;
                     }
-                    // case message.type === "CreateProcessDocumentationCommand": {
-                    //     webviewAdapter.createProcessDocumentation(
-                    //         message as CreateProcessDocumentationCommand,
-                    //     );
-                    //     break;
-                    // }
-                    // case message.type === "CreateFormCommand": {
-                    //     webviewAdapter.createForm(message as CreateFormCommand);
-                    //     break;
-                    // }
                     case message.type === "GetAiResponseCommand": {
                         webviewAdapter.sendAiResponse(message as GetAiResponseCommand);
                         break;
@@ -146,8 +132,8 @@ export class CopilotWebview {
 
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
                     style-src ${webview.cspSource} https: 'unsafe-inline';
-                    img-src ${webview.cspSource} data:;
-                    font-src ${webview.cspSource} https:;
+                    img-src ${webview.cspSource};
+                    font-src ${webview.cspSource};
                     script-src 'nonce-${nonce}' 'unsafe-eval';"/>
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>

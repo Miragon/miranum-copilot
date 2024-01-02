@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { onBeforeMount, ref } from "vue";
+import "./css/style.css";
 
 import {
     AiResponseQuery,
@@ -33,8 +34,6 @@ if (process.env.NODE_ENV === "development") {
 } else {
     vscode = initVsCodeApi("production");
 }
-
-let isInitialized = false;
 
 // The initial data send from the backend
 const prompts = ref<Map<string, DefaultPrompt[]>>(new Map());
@@ -88,21 +87,15 @@ onBeforeMount(async () => {
         loading.value = false;
     } catch (error) {
         if (error instanceof MissingStateError) {
-            isInitialized = true;
-
             vscode.postMessage(new GetBpmnFilesCommand());
             vscode.postMessage(new GetPromptsCommand());
-            // vscode.postMessage(new GetTemplatesCommand());
 
-            const [
-                bpmnFilesData,
-                promptsData,
-                // templatesData
-            ] = [
+            const [bpmnFilesData, promptsData] = [
                 await bpmnFilesResolver.wait(),
                 await promptsResolver.wait(),
-                // await templateResolver.wait(),
             ];
+
+            console.debug("[Debug] Initial data received", bpmnFilesData, promptsData);
 
             loading.value = false;
 
@@ -128,44 +121,32 @@ onBeforeMount(async () => {
 function receiveMessage(message: MessageEvent<MiranumCopilotQuery>): void {
     const query = message.data;
 
+    console.debug("[Debug] receiveMessage", query);
+
     switch (true) {
-        // case query.type === "TemplateQuery": {
-        //     const templateQueryData = (query as TemplateQuery).templates;
-        //     if (isInitialized) {
-        //         templateResolver.done(templateQueryData);
-        //     } else {
-        //         templates.value = templateQueryData;
-        //     }
-        //     break;
-        // }
         case query.type === "BpmnFileQuery": {
             const bpmnFileQueryData = (query as BpmnFileQuery).bpmnFiles;
-            if (isInitialized) {
-                bpmnFilesResolver.done(bpmnFileQueryData);
-            } else {
-                bpmnFiles.value = bpmnFileQueryData;
-            }
+            bpmnFiles.value = bpmnFileQueryData;
+            bpmnFilesResolver.done(bpmnFileQueryData);
             break;
         }
         case query.type === "PromptQuery": {
-            const promptQueryData = (query as PromptQuery).prompts;
-            if (isInitialized) {
-                promptsResolver.done(promptQueryData);
-            } else {
-                prompts.value = promptQueryData;
-            }
+            const promptQueryData = new Map<string, DefaultPrompt[]>(
+                JSON.parse((query as PromptQuery).prompts),
+            );
+            prompts.value = promptQueryData;
+            promptsResolver.done(promptQueryData);
             break;
         }
         case query.type === "AiResponseQuery": {
-            aiResponse.value = (query as AiResponseQuery).response;
             const state = getGlobalState();
+            userPrompt.value = state.currentPrompt;
+            aiResponse.value = (query as AiResponseQuery).response;
             state.aiResponse = aiResponse.value;
             vscode.setState(state);
             break;
         }
     }
-
-    isInitialized = false;
 }
 
 function handleSidebarToggle(isVisible: boolean) {
@@ -176,19 +157,9 @@ function handleSelectedPrompt(prompt: DefaultPrompt) {
     viewState.value = "DefaultView";
     userPrompt.value = prompt.prompt;
 
-    const defaultViewState = vscode.getState("DefaultViewState") as DefaultViewState;
     const state = getGlobalState();
     state.currentPrompt = userPrompt.value;
     vscode.setState(state);
-}
-
-function switchToDocumentationView() {
-    viewState.value = "DocumentationView";
-}
-
-function updateSelectedBpmn(bpmnFile: BpmnFile) {
-    // FIXME: Instead of Child -> Parent -> Child, it should be Child -> Child
-    selectedBpmn.value = bpmnFile;
 }
 </script>
 
@@ -200,24 +171,12 @@ function updateSelectedBpmn(bpmnFile: BpmnFile) {
             :bpmn-files="bpmnFiles"
             :loading="loading"
             :prompt="userPrompt"
-            :selected-bpmn="selectedBpmn"
-            @update-selected-bpmn="updateSelectedBpmn"
         />
-        <!--
-        <DocumentationView
-            v-if="viewState === 'DocumentationView'"
-            :bpmn-files="bpmnFiles"
-            :loading="loading"
-            :selected-bpmn="selectedBpmn"
-            :templates="templates?.get('documentation') ?? []"
-        />
-        -->
     </main>
     <SidebarMenu
         :prompts="prompts"
         @sidebar-toggled="handleSidebarToggle"
         @prompt-selected="handleSelectedPrompt"
-        @documentation-selected="switchToDocumentationView"
     />
 </template>
 

@@ -1,19 +1,18 @@
 import { WebviewApi } from "vscode-webview";
 
 import {
+    AiResponseQuery,
     BpmnFile,
     BpmnFileQuery,
     Command,
     DefaultPrompt,
+    GetAiResponseCommand,
     GetBpmnFilesCommand,
     GetPromptsCommand,
-    GetTemplatesCommand,
     LogErrorCommand,
     LogInfoCommand,
     PromptQuery,
     Query,
-    Template,
-    TemplateQuery,
 } from "../../shared";
 import { ConcreteState, DefaultViewState, State } from "./state";
 
@@ -116,15 +115,16 @@ class VsCodeMock implements VsCode {
     public setState(state: ConcreteState) {
         // if there are multiple views with different state ids, we need to check which one has changed
         this.state = {
-            defaultViewState: state,
+            defaultViewState: state.serialize(),
         };
-        console.log("[Log] setState()", this.getState("DefaultViewState"));
+        console.debug("[Debug] setState()", this.getState("DefaultViewState"));
     }
 
     async postMessage(message: MessageType): Promise<void> {
         switch (true) {
             case message instanceof GetPromptsCommand: {
                 const promptQuery = new PromptQuery(mockedPrompts);
+                console.debug("[Debug] postMessage() GetPromptsCommand", promptQuery);
                 window.dispatchEvent(
                     new MessageEvent("message", {
                         data: promptQuery,
@@ -134,6 +134,10 @@ class VsCodeMock implements VsCode {
             }
             case message instanceof GetBpmnFilesCommand: {
                 const bpmnFileQuery = new BpmnFileQuery(mockedBpmnFiles);
+                console.debug(
+                    "[Debug] postMessage() GetBpmnFilesCommand",
+                    bpmnFileQuery,
+                );
                 window.dispatchEvent(
                     new MessageEvent("message", {
                         data: bpmnFileQuery,
@@ -141,11 +145,15 @@ class VsCodeMock implements VsCode {
                 );
                 break;
             }
-            case message instanceof GetTemplatesCommand: {
-                const templatesQuery = new TemplateQuery(mockedTemplates);
+            case message instanceof GetAiResponseCommand: {
+                const aiResponseQuery = new AiResponseQuery("The command was executed");
+                console.debug(
+                    "[Debug] postMessage() GetAiResponseCommand",
+                    aiResponseQuery,
+                );
                 window.dispatchEvent(
                     new MessageEvent("message", {
-                        data: templatesQuery,
+                        data: aiResponseQuery,
                     }),
                 );
                 break;
@@ -188,29 +196,5 @@ const mockedBpmnFiles = [
     new BpmnFile("test1.bpmn", "workspace1", "/full/path/to/workspace1/test1.bpmn"),
     new BpmnFile("test2.bpmn", "workspace2", "/full/path/to/workspace2/test2.bpmn"),
     new BpmnFile("test3.bpmn", "workspace3", "/full/path/to/workspace3/test3.bpmn"),
-    new BpmnFile("test4.bpmn", "workspace4", "/full/path/to/workspace4/test4.bpmn"),
+    new BpmnFile("test4.bpmn", "workspace3", "/full/path/to/workspace3/test4.bpmn"),
 ];
-
-const mockedTemplates = new Map<string, Template[]>([
-    [
-        "documentation",
-        [
-            new Template("/full/path/to/documentation/template1", "template1"),
-            new Template("/full/path/to/documentation/template2", "template2"),
-        ],
-    ],
-    [
-        "form",
-        [
-            new Template("/full/path/to/form/template1", "template1"),
-            new Template("/full/path/to/form/template2", "template2"),
-        ],
-    ],
-    [
-        "custom",
-        [
-            new Template("/full/path/to/custom/template1", "template1"),
-            new Template("/full/path/to/custom/template2", "template2"),
-        ],
-    ],
-]);
