@@ -1,4 +1,4 @@
-import { GetAiResponseOutPort } from "../../application/ports/out";
+import { GetAiResponseOutPort, ShowProgressOutPort } from "../../application/ports/out";
 import OpenAI from "openai";
 import { window, workspace } from "vscode";
 import {
@@ -7,10 +7,15 @@ import {
     ChatCompletionMessageParam,
 } from "openai/resources/chat";
 import { PromptCreation } from "../../application/model";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 @singleton()
 export class OpenAIApiAdapter implements GetAiResponseOutPort {
+    constructor(
+        @inject("ShowProgressOutPort")
+        private readonly showProgressOutPort: ShowProgressOutPort,
+    ) {}
+
     getAiResponse(prompt: PromptCreation): Promise<string> {
         const messages: ChatCompletionMessageParam[] = [
             {
@@ -19,7 +24,13 @@ export class OpenAIApiAdapter implements GetAiResponseOutPort {
             },
         ];
 
-        return getCompletion(messages);
+        const completion = getCompletion(messages);
+
+        return this.showProgressOutPort.showProgress(
+            "Miranum Copilot",
+            "Generating...",
+            completion,
+        );
     }
 
     getProcessDocumentation(
@@ -55,7 +66,13 @@ export class OpenAIApiAdapter implements GetAiResponseOutPort {
                     content: prompt.createPrompt(),
                 },
             ];
-            return getCompletion(messages, model);
+            const completion = getCompletion(messages, model);
+
+            return this.showProgressOutPort.showProgress(
+                "Create Documentation",
+                "Generating...",
+                completion,
+            );
         } else {
             throw new Error(`File format ${fileFormat} not supported`);
         }
@@ -74,7 +91,17 @@ export class OpenAIApiAdapter implements GetAiResponseOutPort {
             },
         ];
 
-        return getCompletionWithParameter(messages, prompt.getTemplateAsJson(), model);
+        const completion = getCompletionWithParameter(
+            messages,
+            prompt.getTemplateAsJson(),
+            model,
+        );
+
+        return this.showProgressOutPort.showProgress(
+            "Create Form",
+            "Generating...",
+            completion,
+        );
     }
 }
 

@@ -41,12 +41,19 @@ export interface ShowMessageOutPort {
     showErrorMessage(message: string): Promise<boolean>;
 }
 
+export interface ShowProgressOutPort {
+    showProgress<T>(
+        titel: string,
+        message: string,
+        promise: Promise<T>,
+        increment?: number,
+    ): Promise<T>;
+}
+
 export interface PostMessageOutPort {
     sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
 
     sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
-
-    // sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
 
     sendAiResponse(response: string): Promise<boolean>;
 }
@@ -64,7 +71,17 @@ export interface CreateDocumentationDialogOutPort {
 
     getFormat(): Promise<string>;
 
-    getTemplate(templates: Template[]): Promise<string>;
+    getTemplate(templates: Template[]): Promise<Template>;
+
+    getName(): Promise<string>;
+}
+
+export interface CreateFormOutPort {
+    getFields(): Promise<string[]>;
+
+    getFormat(): Promise<string>;
+
+    getTemplate(templates: Template[]): Promise<Template>;
 
     getName(): Promise<string>;
 }

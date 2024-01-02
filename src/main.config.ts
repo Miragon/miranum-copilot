@@ -10,13 +10,9 @@ import {
     SendAiResponseUseCase,
     SendToUiUseCase,
 } from "./application/usecases";
-import {
-    CreateDocumentationDialog,
-    VsCodeWindow,
-    WebviewAdapter,
-    WorkspaceAdapter,
-} from "./adapter/out/vscode";
+import { VsCodeWindow, WebviewAdapter, WorkspaceAdapter } from "./adapter/out/vscode";
 import { OpenAIApiAdapter } from "./adapter/out/openai";
+import { CreateDocumentationDialog, CreateFormDialog } from "./adapter/out/quickPick";
 
 export async function config(): Promise<boolean> {
     try {
@@ -48,9 +44,13 @@ async function registerOutAdapter(): Promise<void> {
     container.register("PostMessageOutPort", { useClass: WebviewAdapter });
 
     container.register("ShowMessageOutPort", { useClass: VsCodeWindow });
+    container.register("ShowProgressOutPort", { useClass: VsCodeWindow });
 
     container.register("CreateDocumentationDialogOutPort", {
         useClass: CreateDocumentationDialog,
+    });
+    container.register("CreateFormDialogOutPort", {
+        useClass: CreateFormDialog,
     });
 
     // OpenAI

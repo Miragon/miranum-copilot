@@ -1,7 +1,7 @@
 import {
     commands,
-    Disposable,
     FileType,
+    ProgressLocation,
     Uri,
     ViewColumn,
     window,
@@ -13,7 +13,6 @@ import { Buffer } from "node:buffer";
 import { ExtensionContextHelper } from "../../utils";
 import { CopilotWebview } from "../in/webview";
 import {
-    CreateDocumentationDialogOutPort,
     CreateFileOutPort,
     CreateOrShowUiOutPort,
     GetBpmnFilesOutPort,
@@ -22,6 +21,7 @@ import {
     PostMessageOutPort,
     ReadFileOutPort,
     ShowMessageOutPort,
+    ShowProgressOutPort,
 } from "../../application/ports/out";
 import {
     BpmnFile as AppBpmnFile,
@@ -219,7 +219,7 @@ export class WebviewAdapter implements CreateOrShowUiOutPort, PostMessageOutPort
 }
 
 @singleton()
-export class VsCodeWindow implements ShowMessageOutPort {
+export class VsCodeWindow implements ShowMessageOutPort, ShowProgressOutPort {
     async showInformationMessage(message: string): Promise<boolean> {
         await window.showInformationMessage(message);
         return true;
@@ -229,126 +229,23 @@ export class VsCodeWindow implements ShowMessageOutPort {
         await window.showErrorMessage(message);
         return true;
     }
-}
 
-@singleton()
-export class CreateDocumentationDialog implements CreateDocumentationDialogOutPort {
-    async getBpmnFile(bpmnFiles: AppBpmnFile[]): Promise<AppBpmnFile> {
-        const disposables: Disposable[] = [];
-        try {
-            return await new Promise((resolve, reject) => {
-                const quickPick = window.createQuickPick<{
-                    label: string;
-                    path: string;
-                    workspace: string;
-                }>();
-                const bpmnFileItems = bpmnFiles.map((file) => {
-                    return {
-                        label: file.fileName,
-                        path: file.fullPath,
-                        workspace: file.workspaceName,
-                    };
-                });
-
-                quickPick.title = "Select a BPMN file";
-                quickPick.step = 1;
-                quickPick.totalSteps = 4;
-                quickPick.items = bpmnFileItems;
-                quickPick.placeholder = "Select a BPMN file";
-                quickPick.busy = true;
-
-                disposables.push(
-                    quickPick.onDidChangeSelection((selection) => {
-                        const data = selection[0];
-                        resolve(new AppBpmnFile(data.label, data.workspace, data.path));
-                    }),
-                );
-                quickPick.show();
-            });
-        } finally {
-            disposables.forEach((d) => d.dispose());
-        }
-    }
-
-    async getFormat(): Promise<string> {
-        const disposables: Disposable[] = [];
-        try {
-            return await new Promise((resolve, reject) => {
-                const quickPick = window.createQuickPick();
-                const formatItems = ["md", "json"].map((label) => ({ label }));
-
-                quickPick.title = "Select a file format";
-                quickPick.step = 2;
-                quickPick.totalSteps = 4;
-                quickPick.items = formatItems;
-                quickPick.placeholder = "Select a file format";
-                quickPick.busy = true;
-
-                disposables.push(
-                    quickPick.onDidChangeSelection((selection) =>
-                        resolve(selection[0].label),
-                    ),
-                );
-                quickPick.show();
-            });
-        } finally {
-            disposables.forEach((d) => d.dispose());
-        }
-    }
-
-    async getTemplate(templates: AppTemplate[]): Promise<string> {
-        const disposables: Disposable[] = [];
-        try {
-            return await new Promise((resolve, reject) => {
-                const quickPick = window.createQuickPick<{
-                    label: string;
-                    path: string;
-                }>();
-                const templateItems = templates.map((template) => {
-                    return {
-                        label: template.getName(),
-                        path: template.path,
-                    };
-                });
-
-                quickPick.title = "Select a template";
-                quickPick.step = 3;
-                quickPick.totalSteps = 4;
-                quickPick.items = templateItems;
-                quickPick.placeholder = "Select a template";
-                quickPick.busy = true;
-
-                disposables.push(
-                    quickPick.onDidChangeSelection((selection) =>
-                        resolve(selection[0].path),
-                    ),
-                );
-                quickPick.show();
-            });
-        } finally {
-            disposables.forEach((d) => d.dispose());
-        }
-    }
-
-    async getName(): Promise<string> {
-        const disposables: Disposable[] = [];
-        try {
-            return await new Promise((resolve, reject) => {
-                const inputBox = window.createInputBox();
-                inputBox.title = "Enter a name";
-                inputBox.step = 4;
-                inputBox.totalSteps = 4;
-                inputBox.placeholder = "Enter a name";
-                inputBox.prompt = "Enter a name";
-                inputBox.busy = true;
-
-                // TODO: Validate input
-                disposables.push(inputBox.onDidAccept(() => resolve(inputBox.value)));
-
-                inputBox.show();
-            });
-        } finally {
-            disposables.forEach((d) => d.dispose());
-        }
+    async showProgress<T>(
+        titel: string,
+        message: string,
+        promise: Promise<T>,
+        increment?: number,
+    ): Promise<T> {
+        return window.withProgress(
+            {
+                location: ProgressLocation.Notification,
+                title: titel,
+                cancellable: false,
+            },
+            async (progress) => {
+                progress.report({ message, increment });
+                return await promise;
+            },
+        );
     }
 }
