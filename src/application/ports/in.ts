@@ -17,8 +17,6 @@ export interface GetTemplatesInPort {
 }
 
 export interface SendToUiInPort {
-    // sendTemplates(templates: Map<string, Template[]>): Promise<boolean>;
-
     sendPrompts(prompts: Map<string, DefaultPrompt[]>): Promise<boolean>;
 
     sendBpmnFiles(bpmnFiles: BpmnFile[]): Promise<boolean>;
@@ -29,24 +27,10 @@ export interface CreateProcessDocumentationInPort {
         bpmnFiles: BpmnFile[],
         templates: Template[],
     ): Promise<boolean>;
-
-    // createProcessDocumentation(
-    //     fileName: string,
-    //     bpmnFile: BpmnFile,
-    //     template: Template,
-    //     fileFormat: DocumentationExtension,
-    // ): Promise<boolean>;
 }
 
 export interface CreateFormInPort {
     createForm(templates: Template[]): Promise<boolean>;
-
-    // createForm(
-    //     fileName: string,
-    //     prompt: PromptCreation,
-    //     template: Template,
-    //     fileFormat: FormExtension,
-    // ): Promise<boolean>;
 }
 
 export interface SendAiResponseInPort {

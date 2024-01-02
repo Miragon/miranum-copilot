@@ -28,23 +28,8 @@ export class BpmnFile {
     }
 }
 
-export class Template {
-    public readonly path: string;
-
-    public readonly name: string;
-
-    constructor(path: string, name: string) {
-        this.path = path;
-        this.name = name;
-    }
-}
-
 // Commands
 export interface MiranumCopilotCommand extends Command {}
-
-export class GetTemplatesCommand implements MiranumCopilotCommand {
-    public readonly type = "GetTemplatesCommand";
-}
 
 export class GetPromptsCommand implements MiranumCopilotCommand {
     public readonly type = "GetPromptsCommand";
@@ -52,47 +37,6 @@ export class GetPromptsCommand implements MiranumCopilotCommand {
 
 export class GetBpmnFilesCommand implements MiranumCopilotCommand {
     public readonly type = "GetBpmnFilesCommand";
-}
-
-export class CreateProcessDocumentationCommand implements MiranumCopilotCommand {
-    public readonly type = "CreateProcessDocumentationCommand";
-
-    public readonly bpmnFile: BpmnFile;
-
-    public readonly templatePath: string;
-
-    public readonly fileFormat: string;
-
-    constructor(bpmnFile: BpmnFile, templatePath: string, fileFormat: string) {
-        this.bpmnFile = bpmnFile;
-        this.templatePath = templatePath;
-        this.fileFormat = fileFormat;
-    }
-}
-
-// TODO: In which workspace should the form be created?
-export class CreateFormCommand implements MiranumCopilotCommand {
-    public readonly type = "CreateFormCommand";
-
-    public readonly prompt: string;
-
-    public readonly formName: string;
-
-    public readonly templatePath: string;
-
-    public readonly fileFormat: string;
-
-    constructor(
-        prompt: string,
-        formName: string,
-        templatePath: string,
-        fileFormat: string,
-    ) {
-        this.prompt = prompt;
-        this.formName = formName;
-        this.templatePath = templatePath;
-        this.fileFormat = fileFormat;
-    }
 }
 
 export class GetAiResponseCommand implements MiranumCopilotCommand {
@@ -111,23 +55,13 @@ export class GetAiResponseCommand implements MiranumCopilotCommand {
 // Queries
 export interface MiranumCopilotQuery extends Query {}
 
-export class TemplateQuery implements MiranumCopilotQuery {
-    public readonly type = "TemplateQuery";
-
-    public readonly templates: Map<string, Template[]>;
-
-    constructor(templates: Map<string, Template[]>) {
-        this.templates = templates;
-    }
-}
-
 export class PromptQuery implements MiranumCopilotQuery {
     public readonly type = "PromptQuery";
 
     public readonly prompts: string;
 
     constructor(prompts: Map<string, DefaultPrompt[]>) {
-        // a map is not serializable, so we have to an string
+        // a map is not serializable, so we have to convert it to a string
         this.prompts = JSON.stringify(Array.from(prompts.entries()));
     }
 }
