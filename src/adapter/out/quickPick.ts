@@ -1,9 +1,9 @@
-import { Disposable, QuickPickItem, window } from "vscode";
+import { Disposable, QuickPickItem, window, workspace } from "vscode";
 import { inject, singleton } from "tsyringe";
 
 import {
     CreateDocumentationDialogOutPort,
-    CreateFormOutPort,
+    CreateFormDialogOutPort,
     ShowProgressOutPort,
 } from "../../application/ports/out";
 import {
@@ -52,16 +52,11 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
     async getFormat(): Promise<string> {
         const step = 2;
 
-        type FormatQuickPickItem = QuickPickItem & { format: string };
-
-        const promise = showQuickPick<FormatQuickPickItem>({
+        const promise = showQuickPick({
             title: "Select a file format",
             step,
             totalSteps: this.totalSteps,
-            items: ["md", "json"].map((format) => ({
-                label: format,
-                format,
-            })),
+            items: ["md", "json"].map((label) => ({ label })),
             placeholder: "Select a file format",
             busy: true,
         });
@@ -73,7 +68,7 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
             this.progressIncrement(step),
         );
 
-        return formatQuickPickItem.format;
+        return formatQuickPickItem.label;
     }
 
     async getTemplate(templates: AppTemplate[]): Promise<AppTemplate> {
@@ -129,21 +124,41 @@ export class CreateDocumentationDialog implements CreateDocumentationDialogOutPo
 }
 
 @singleton()
-export class CreateFormDialog implements CreateFormOutPort {
+export class CreateFormDialog implements CreateFormDialogOutPort {
     private readonly progressTitle = "Create Documentation";
 
-    private readonly totalSteps = 4;
+    private readonly totalSteps = 6;
 
     constructor(
         @inject("ShowProgressOutPort")
         private readonly showProgressOutPort: ShowProgressOutPort,
     ) {}
 
-    async getFields(): Promise<string[]> {
+    async getPrompt(): Promise<string> {
         const step = 1;
 
         const promise = showInputBox({
-            title: "Insert the fields the form should contain separated by a comma",
+            title: "Enter a prompt",
+            step,
+            totalSteps: this.totalSteps,
+            placeholder: "Enter a prompt",
+            prompt: "Enter a prompt",
+            busy: true,
+        });
+
+        return await this.showProgressOutPort.showProgress(
+            this.progressTitle,
+            "Enter a prompt...",
+            promise,
+            this.progressIncrement(step),
+        );
+    }
+
+    async getFields(): Promise<string[]> {
+        const step = 2;
+
+        const promise = showInputBox({
+            title: "(Optional) Insert the fields the form should contain separated by a comma",
             step,
             totalSteps: this.totalSteps,
             placeholder:
@@ -154,7 +169,7 @@ export class CreateFormDialog implements CreateFormOutPort {
 
         const fields = await this.showProgressOutPort.showProgress(
             this.progressTitle,
-            "Enter a filename...",
+            "Enter fields...",
             promise,
             this.progressIncrement(step),
         );
@@ -163,18 +178,13 @@ export class CreateFormDialog implements CreateFormOutPort {
     }
 
     async getFormat(): Promise<string> {
-        const step = 2;
+        const step = 3;
 
-        type FormatQuickPickItem = QuickPickItem & { format: string };
-
-        const promise = showQuickPick<FormatQuickPickItem>({
+        const promise = showQuickPick({
             title: "Select a file format",
             step,
             totalSteps: this.totalSteps,
-            items: ["form.json"].map((format) => ({
-                label: format,
-                format,
-            })),
+            items: ["form.json"].map((label) => ({ label })),
             placeholder: "Select a file format",
             busy: true,
         });
@@ -186,11 +196,11 @@ export class CreateFormDialog implements CreateFormOutPort {
             this.progressIncrement(step),
         );
 
-        return formatQuickPickItem.format;
+        return formatQuickPickItem.label;
     }
 
     async getTemplate(templates: AppTemplate[]): Promise<AppTemplate> {
-        const step = 3;
+        const step = 4;
 
         type TemplateQuickPickItem = QuickPickItem & { template: AppTemplate };
 
@@ -216,8 +226,36 @@ export class CreateFormDialog implements CreateFormOutPort {
         return templateQuickPickItem.template;
     }
 
+    async getWorkspace(): Promise<string> {
+        if (!workspace.workspaceFolders) {
+            throw new Error("No workspace folders found");
+        } else if (workspace.workspaceFolders.length === 1) {
+            return workspace.workspaceFolders[0].name;
+        }
+
+        const step = 5;
+
+        const promise = showQuickPick({
+            title: "Select a workspace where the form will get saved",
+            step,
+            totalSteps: this.totalSteps,
+            items: workspace.workspaceFolders.map((ws) => ({ label: ws.name })),
+            placeholder: "Select a workspace where the form will get saved",
+            busy: true,
+        });
+
+        const templateQuickPickItem = await this.showProgressOutPort.showProgress(
+            this.progressTitle,
+            "Selecting the workspace...",
+            promise,
+            this.progressIncrement(step),
+        );
+
+        return templateQuickPickItem.label;
+    }
+
     async getName(): Promise<string> {
-        const step = 4;
+        const step = 6;
 
         const promise = showInputBox({
             title: "Enter a filename",
@@ -281,6 +319,7 @@ async function showQuickPick<T extends QuickPickItem>({
 
             disposables.push(
                 quickPick.onDidChangeSelection((selection) => resolve(selection[0])),
+                quickPick.onDidHide(() => reject()),
             );
 
             quickPick.show();
@@ -310,7 +349,10 @@ async function showInputBox({
             inputBox.busy = busy;
 
             // TODO: Validate input
-            disposables.push(inputBox.onDidAccept(() => resolve(inputBox.value)));
+            disposables.push(
+                inputBox.onDidAccept(() => resolve(inputBox.value)),
+                inputBox.onDidHide(() => reject()),
+            );
 
             inputBox.show();
         });

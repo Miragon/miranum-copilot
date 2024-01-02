@@ -32,6 +32,7 @@ export interface CreateFileOutPort {
         fileExtension: FileExtension,
         fileContent: string,
         workspaceName?: string,
+        relativePath?: string,
     ): Promise<boolean>;
 }
 
@@ -76,12 +77,16 @@ export interface CreateDocumentationDialogOutPort {
     getName(): Promise<string>;
 }
 
-export interface CreateFormOutPort {
+export interface CreateFormDialogOutPort {
+    getPrompt(): Promise<string>;
+
     getFields(): Promise<string[]>;
 
     getFormat(): Promise<string>;
 
     getTemplate(templates: Template[]): Promise<Template>;
+
+    getWorkspace(): Promise<string>;
 
     getName(): Promise<string>;
 }

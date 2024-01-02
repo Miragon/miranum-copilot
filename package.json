@@ -72,7 +72,8 @@
                     "when": "workspaceFolderCount > 0"
                 },
                 {
-                    "command": "miranum-copilot.createForm"
+                    "command": "miranum-copilot.createForm",
+                    "when": "workspaceFolderCount > 0"
                 }
             ]
         },

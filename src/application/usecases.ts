@@ -13,7 +13,7 @@ import {
 import {
     CreateDocumentationDialogOutPort,
     CreateFileOutPort,
-    CreateFormOutPort,
+    CreateFormDialogOutPort,
     CreateOrShowUiOutPort,
     GetAiResponseOutPort,
     GetBpmnFilesOutPort,
@@ -28,6 +28,7 @@ import {
     BpmnFile,
     DefaultPrompt,
     DocumentationExtension,
+    FormExtension,
     PromptCreation,
     Template,
 } from "./model";
@@ -172,6 +173,7 @@ implements CreateProcessDocumentationInPort
                 documentationExtension,
                 res,
                 bpmnFile.workspaceName,
+                "docs",
             );
 
             // 6. Show a message to user
@@ -191,8 +193,8 @@ implements CreateProcessDocumentationInPort
 @singleton()
 export class CreateFormUseCase implements CreateFormInPort {
     constructor(
-        @inject("CreateFormOutPort")
-        private readonly createFormOutPort: CreateFormOutPort,
+        @inject("CreateFormDialogOutPort")
+        private readonly createFormDialogOutPort: CreateFormDialogOutPort,
         @inject("ReadFileOutPort") private readonly readFileOutPort: ReadFileOutPort,
         @inject("CreateFileOutPort")
         private readonly createFileOutPort: CreateFileOutPort,
@@ -204,25 +206,52 @@ export class CreateFormUseCase implements CreateFormInPort {
 
     async createForm(templates: Template[]): Promise<boolean> {
         try {
-            // 1. Get the fields
-            const fields = await this.createFormOutPort.getFields();
+            // 1. Get base prompt
+            let base = await this.createFormDialogOutPort.getPrompt();
 
-            // 2. Get the file format
-            const format = await this.createFormOutPort.getFormat();
-            const formExtension = new DocumentationExtension(format);
+            // 2. (Optional) Get the fields
+            const fields = await this.createFormDialogOutPort.getFields();
 
-            // 3. Read form template
-            const template = await this.createFormOutPort.getTemplate(templates);
-            const formTemplate = await this.readFileOutPort.readFile(template.path);
+            // 3. Get the file format
+            const format = await this.createFormDialogOutPort.getFormat();
+            const formExtension = new FormExtension(format);
 
-            // 4. Get file name
-            const fileName = await this.createFormOutPort.getName();
+            // 4. Read form template
+            const template = await this.createFormDialogOutPort.getTemplate(templates);
+            const formTemplate = this.readFileOutPort.readFile(template.path);
 
-            // 5. Create the prompt
+            // 5. Get workspace name
+            const workspaceName = await this.createFormDialogOutPort.getWorkspace();
 
-            // 6. Get AI response
+            // 6. Get file name
+            const fileName = await this.createFormDialogOutPort.getName();
 
-            // 7. Show a message to user
+            // 7. Create the prompt
+            if (fields.length > 0) {
+                const list = fields.map((field) => `- ${field}`).join("\n");
+                base =
+                    base +
+                    `\n\nThe following fields has to be present in the final form:\n${list}`;
+            }
+
+            const promptCreation = new PromptCreation({
+                base,
+                template: await formTemplate,
+            });
+
+            // 8. Get AI response
+            const res = await this.getAiResponseOutPort.getForm(promptCreation);
+
+            // 9. Create process documentation file
+            await this.createFileOutPort.createFile(
+                fileName,
+                formExtension,
+                res,
+                workspaceName,
+                "forms",
+            );
+
+            // 9. Show a message to user
             return this.showMessageOutPort.showInformationMessage("Form created!");
         } catch (error) {
             const errorMessage =

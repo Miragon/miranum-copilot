@@ -150,6 +150,7 @@ export class WorkspaceAdapter
         fileExtension: FileExtension,
         fileContent: string,
         workspaceName?: string,
+        relativePath?: string,
     ) {
         if (!workspace.workspaceFolders) {
             throw new Error("No workspace open");
@@ -162,7 +163,11 @@ export class WorkspaceAdapter
             ws = getWorkspaceByName(workspaceName);
         }
 
-        const file = Uri.joinPath(ws, "docs", `${fileName}.${fileExtension.extension}`);
+        const file = Uri.joinPath(
+            ws,
+            relativePath ?? "",
+            `${fileName}.${fileExtension.extension}`,
+        );
         const uint8Array = Buffer.from(fileContent);
         await this.fs.writeFile(file, uint8Array);
         commands.executeCommand("vscode.open", file, ViewColumn.Beside);
@@ -240,9 +245,15 @@ export class VsCodeWindow implements ShowMessageOutPort, ShowProgressOutPort {
             {
                 location: ProgressLocation.Notification,
                 title: titel,
-                cancellable: false,
+                cancellable: true,
             },
-            async (progress) => {
+            async (progress, token) => {
+                token.onCancellationRequested(() => {
+                    this.showInformationMessage(
+                        "User canceled the long running operation",
+                    );
+                });
+
                 progress.report({ message, increment });
                 return await promise;
             },
