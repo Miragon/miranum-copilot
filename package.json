@@ -19,7 +19,7 @@
         "url": "https://github.com/Miragon/miranum-copilot/issues"
     },
     "engines": {
-        "vscode": "^1.76.0"
+        "vscode": "^1.82.0"
     },
     "icon": "images/miranum_logo.png",
     "categories": [
@@ -33,22 +33,50 @@
         "Copilot"
     ],
     "activationEvents": [
-        "onWebviewPanel:copilot"
+        "onStartupFinished"
     ],
     "main": "./dist/main.js",
     "contributes": {
         "commands": [
             {
-                "command": "copilot.start",
+                "command": "miranum-copilot.createOrShow",
                 "title": "Open Copilot",
                 "category": "Miranum Copilot"
             },
             {
-                "command": "copilot.editPrompts",
+                "command": "miranum-copilot.editPrompts",
                 "title": "Edit Prompts",
+                "category": "Miranum Copilot"
+            },
+            {
+                "command": "miranum-copilot.createDocumentation",
+                "title": "Create Process Documentation",
+                "category": "Miranum Copilot"
+            },
+            {
+                "command": "miranum-copilot.createForm",
+                "title": "Create Form",
                 "category": "Miranum Copilot"
             }
         ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "miranum-copilot.createOrShow"
+                },
+                {
+                    "command": "miranum-copilot.editPrompts"
+                },
+                {
+                    "command": "miranum-copilot.createDocumentation",
+                    "when": "workspaceFolderCount > 0"
+                },
+                {
+                    "command": "miranum-copilot.createForm",
+                    "when": "workspaceFolderCount > 0"
+                }
+            ]
+        },
         "configuration": {
             "title": "MiranumCopilot",
             "properties": {
@@ -63,41 +91,54 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "pretest": "npm run compile && npm run lint",
+        "pretest": "npm run lint && npm run compile",
+        "compile": "tsc --skipLibCheck -p ./",
         "lint": "eslint src --ext ts",
-        "test": "node ./dist/test/runTest.js",
+        "unit": "nyc --silent ts-mocha -p ./tsconfig.json ./src/**/*.spec.ts",
+        "integration": "nyc --silent --clean false node ./dist/test/runTest.js",
+        "test": "npm run unit && npm run integration && nyc report",
         "build": "npm run esbuild -- --minify && npm run vite -- --minify esbuild",
         "dev": "conc -c \"cyan,yellow\" \"npm run esbuild -- --sourcemap --watch\" \"npm run vite -- --sourcemap true --watch\"",
-        "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+        "esbuild": "esbuild src/main.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
         "vite": "vite build --config src/web/vite.config.js",
         "vite:browser": "cd ./src/web && vite --open true"
     },
     "devDependencies": {
+        "@istanbuljs/nyc-config-typescript": "^1.0.2",
+        "@types/chai": "^4.3.11",
         "@types/glob": "^8.1.0",
-        "@types/lodash": "^4.14.199",
-        "@types/mocha": "^10.0.2",
-        "@types/node": "16.x",
-        "@types/vscode": "^1.76.0",
-        "@types/vscode-webview": "^1.57.2",
-        "@typescript-eslint/eslint-plugin": "^6.7.4",
-        "@typescript-eslint/parser": "^6.7.4",
-        "@vitejs/plugin-vue": "^4.3.4",
-        "@vscode/test-electron": "^2.3.4",
-        "concurrently": "^8.2.1",
-        "esbuild": "^0.19.3",
-        "eslint": "^8.50.0",
-        "eslint-config-prettier": "^9.0.0",
-        "eslint-plugin-vue": "^9.17.0",
+        "@types/lodash": "^4.14.202",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "18.x",
+        "@types/vscode": "^1.82.0",
+        "@types/vscode-webview": "^1.57.4",
+        "@typescript-eslint/eslint-plugin": "^6.16.0",
+        "@typescript-eslint/parser": "^6.16.0",
+        "@vitejs/plugin-vue": "^5.0.2",
+        "@vscode/test-electron": "^2.3.8",
+        "chai": "^4.3.10",
+        "concurrently": "^8.2.2",
+        "esbuild": "^0.19.10",
+        "eslint": "^8.56.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-vue": "^9.19.2",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
-        "prettier": "^3.0.3",
-        "typescript": "^5.2.2",
-        "vite": "^4.4.9"
+        "nyc": "^15.1.0",
+        "prettier": "^3.1.1",
+        "ts-mocha": "^10.0.0",
+        "typescript": "^5.3.3",
+        "vite": "^5.0.10",
+        "vite-plugin-html": "^3.2.1",
+        "vite-plugin-static-copy": "^0.17.0"
     },
     "dependencies": {
-        "@vscode/webview-ui-toolkit": "^1.2.2",
+        "@vscode/codicons": "^0.0.35",
+        "@vscode/webview-ui-toolkit": "^1.4.0",
         "lodash": "^4.17.21",
-        "openai": "^3.3.0",
-        "vue": "^3.3.4"
+        "openai": "^4.24.1",
+        "reflect-metadata": "^0.2.1",
+        "tsyringe": "^4.8.0",
+        "vue": "^3.3.13"
     }
 }

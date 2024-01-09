@@ -15,7 +15,7 @@
                     "text": "In the role of a BPM Consultant name common mistakes to avoid when creating BPMN diagrams."
                 },
                 {
-                    "text": "Please create a basic text-based BPMN diagram for the following process:",             
+                    "text": "Please create a basic text-based BPMN diagram for the following process:",
                     "process": true
                 }
             ]
@@ -62,7 +62,7 @@
             ]
         },
         {
-            "name": "forms",
+            "name": "Forms",
             "prompts": [
                 {
                     "text": "What benefits does the creation and usage of forms in the realm of BPMN have?"
@@ -82,21 +82,6 @@
                 {
                     "text": "Design a visually appealing form layout for the provided process.",
                     "process": true
-                }
-            ]
-        },
-        {
-            "name": "processDocumentation",
-            "prompts": [
-                {
-                    "text": "Generate a process documentation as a valid JSON Object file using the a template.",
-                    "process": true,
-                    "template": true
-                },
-                {
-                    "text": "Generate a process documentation as a valid Markdown file using the a template.",
-                    "process": true,
-                    "template": true
                 }
             ]
         }
