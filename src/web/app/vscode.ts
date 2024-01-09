@@ -1,19 +1,24 @@
 import { WebviewApi } from "vscode-webview";
 
 import {
-    isInstanceOfDefaultPrompt,
-    isInstanceOfDocumentationPrompt,
-    MessageType,
-    Prompt,
-    VscMessage,
+    AiResponseQuery,
+    BpmnFile,
+    BpmnFileQuery,
+    Command,
+    DefaultPrompt,
+    GetAiResponseCommand,
+    GetBpmnFilesCommand,
+    GetPromptsCommand,
+    LogErrorCommand,
+    LogInfoCommand,
+    PromptQuery,
+    Query,
 } from "../../shared";
-import { TemplatePrompts } from "@/helpers";
-
-declare const globalViewType: string;
+import { ConcreteState, DefaultViewState, State } from "./state";
 
 let vscode: VsCode | undefined;
 
-export function createVsCode(env: string): VsCode {
+export function initVsCodeApi(env: string): VsCode {
     if (vscode) {
         return vscode;
     }
@@ -27,7 +32,7 @@ export function createVsCode(env: string): VsCode {
     return vscode;
 }
 
-export function getVsCode(): VsCode {
+export function getVsCodeApi(): VsCode {
     if (!vscode) {
         throw new Error("VsCode not initialized.");
     }
@@ -35,22 +40,14 @@ export function getVsCode(): VsCode {
     return vscode;
 }
 
+type MessageType = Command | Query;
+
 export interface VsCode {
-    getState(): CopilotState;
+    getState(stateId: string): ConcreteState;
 
-    setState(state: CopilotState): void;
+    setState(state: ConcreteState): void;
 
-    updateState(state: Partial<CopilotState>): void;
-
-    postMessage(message: VscMessage<Prompt>): void;
-}
-
-export interface CopilotState {
-    viewState: string;
-    prompts: TemplatePrompts;
-    bpmnFiles: string[];
-    currentPrompt: Prompt;
-    response: string;
+    postMessage(message: MessageType): void;
 }
 
 export class MissingStateError extends Error {
@@ -60,34 +57,36 @@ export class MissingStateError extends Error {
 }
 
 class VsCodeImpl implements VsCode {
-    private vscode: WebviewApi<CopilotState>;
+    private vscode: WebviewApi<State>;
 
     constructor() {
         this.vscode = acquireVsCodeApi();
     }
 
-    public getState(): CopilotState {
+    public getState(stateId: string): ConcreteState {
         const state = this.vscode.getState();
         if (!state) {
             throw new MissingStateError();
         }
 
-        return state;
+        switch (stateId) {
+            default: {
+                return DefaultViewState.createFrom({
+                    ...state.defaultViewState,
+                });
+            }
+        }
     }
 
-    public setState(state: CopilotState) {
-        this.vscode.setState(state);
-    }
-
-    public updateState(state: Partial<CopilotState>) {
-        this.setState({
-            ...this.getState(),
-            ...state,
+    public setState(state: ConcreteState) {
+        // if there are multiple views with different state ids, we need to check which one has changed
+        this.vscode.setState({
+            lastViewStateId: "DefaultViewState",
+            defaultViewState: state.serialize(),
         });
-        console.log("[Log] updateState()", this.vscode.getState());
     }
 
-    public postMessage(message: VscMessage<Prompt>) {
+    public postMessage(message: MessageType) {
         this.vscode.postMessage(message);
     }
 }
@@ -97,163 +96,105 @@ class VsCodeImpl implements VsCode {
  * For this purpose, the functionality of the extension/backend is mocked.
  */
 class VsCodeMock implements VsCode {
-    private state: CopilotState | undefined;
+    private state: State | undefined;
 
-    getState(): CopilotState {
+    getState(stateId: string): ConcreteState {
         if (!this.state) {
             throw new MissingStateError();
         }
 
-        return this.state;
+        switch (stateId) {
+            default: {
+                return DefaultViewState.createFrom({
+                    ...this.state.defaultViewState,
+                });
+            }
+        }
     }
 
-    async postMessage(message: VscMessage<Prompt>): Promise<void> {
-        const { type, data, logger } = message;
-        switch (type) {
-            case `${globalViewType}.${MessageType.initialize}`: {
-                console.log("[Log]", logger);
+    public setState(state: ConcreteState) {
+        // if there are multiple views with different state ids, we need to check which one has changed
+        this.state = {
+            defaultViewState: state.serialize(),
+        };
+        console.debug("[Debug] setState()", this.getState("DefaultViewState"));
+    }
+
+    async postMessage(message: MessageType): Promise<void> {
+        switch (true) {
+            case message instanceof GetPromptsCommand: {
+                const promptQuery = new PromptQuery(mockedPrompts);
+                console.debug("[Debug] postMessage() GetPromptsCommand", promptQuery);
                 window.dispatchEvent(
                     new MessageEvent("message", {
-                        data: {
-                            type: `${globalViewType}.${MessageType.initialize}`,
-                            data: {
-                                prompts: JSON.stringify(mockedInitData),
-                                bpmnFiles: ["file1.bpmn", "file2.bpmn"],
-                            },
-                        },
+                        data: promptQuery,
                     }),
                 );
                 break;
             }
-            case `${globalViewType}.${MessageType.msgFromWebview}`: {
-                console.log("[Log]", data);
-
-                if (!data) {
-                    console.error("No data to send.");
-                    return;
-                }
-
-                if (isInstanceOfDefaultPrompt(data)) {
-                    // We use a Postman Mock Server to mock the OpenAI API Call.
-                    // The server simulates a fixed network delay of 1000 seconds.
-                    const url: string =
-                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createChatCompletion";
-                    const res = await fetch(url);
-                    const json = await res.json();
-                    window.dispatchEvent(
-                        new MessageEvent("message", {
-                            data: {
-                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                                data: {
-                                    response: json.data,
-                                },
-                            },
-                        }),
-                    );
-                } else if (isInstanceOfDocumentationPrompt(data)) {
-                    const url: string =
-                        "https://c3f762bd-e999-47ca-b3bf-1e723bd4ec76.mock.pstmn.io/createDocumentation";
-                    const res = await fetch(url);
-                    const json = await res.json();
-                    window.dispatchEvent(
-                        new MessageEvent("message", {
-                            data: {
-                                type: `${globalViewType}.${MessageType.msgFromExtension}`,
-                                data: {
-                                    response: json.created,
-                                },
-                            },
-                        }),
-                    );
-                }
-
+            case message instanceof GetBpmnFilesCommand: {
+                const bpmnFileQuery = new BpmnFileQuery(mockedBpmnFiles);
+                console.debug(
+                    "[Debug] postMessage() GetBpmnFilesCommand",
+                    bpmnFileQuery,
+                );
+                window.dispatchEvent(
+                    new MessageEvent("message", {
+                        data: bpmnFileQuery,
+                    }),
+                );
                 break;
             }
-            case `${globalViewType}.${MessageType.error}`: {
-                console.error("[Log]", logger);
+            case message instanceof GetAiResponseCommand: {
+                const aiResponseQuery = new AiResponseQuery("The command was executed");
+                console.debug(
+                    "[Debug] postMessage() GetAiResponseCommand",
+                    aiResponseQuery,
+                );
+                window.dispatchEvent(
+                    new MessageEvent("message", {
+                        data: aiResponseQuery,
+                    }),
+                );
                 break;
             }
-            case `${globalViewType}.${MessageType.info}`: {
-                console.log("[Log]", logger);
+            case message instanceof LogInfoCommand: {
+                console.log("[Log]", (message as LogInfoCommand).message);
+                break;
+            }
+            case message instanceof LogErrorCommand: {
+                console.error("[Log]", (message as LogInfoCommand).message);
                 break;
             }
         }
-    }
-
-    setState(state: CopilotState): void {
-        this.state = state;
-        console.log("[Log] setState()", this.getState());
-    }
-
-    updateState(state: Partial<CopilotState>): void {
-        const currentState = this.getState();
-        let viewState: string;
-        if (state?.viewState) {
-            viewState = state.viewState;
-        } else {
-            viewState = currentState.viewState;
-        }
-        let prompts: TemplatePrompts;
-        if (state?.prompts) {
-            prompts = state.prompts;
-        } else {
-            prompts = currentState.prompts;
-        }
-        let bpmnFiles: string[];
-        if (state?.bpmnFiles) {
-            bpmnFiles = state.bpmnFiles;
-        } else {
-            bpmnFiles = currentState.bpmnFiles;
-        }
-        let currentPrompt: Prompt;
-        if (state?.currentPrompt) {
-            currentPrompt = state.currentPrompt;
-        } else {
-            currentPrompt = currentState.currentPrompt;
-        }
-        let response: string;
-        if (state?.response) {
-            response = state.response;
-        } else {
-            response = currentState.response;
-        }
-
-        this.state = {
-            viewState,
-            prompts,
-            bpmnFiles,
-            currentPrompt,
-            response,
-        };
-
-        console.log("[Log] updateState()", this.getState());
     }
 }
 
-const mockedInitData: TemplatePrompts = {
-    categories: [
-        {
-            name: "General Question",
-            prompts: [
-                {
-                    text: "What is business process modeling, and why is it important for organizations?",
-                },
-                {
-                    text: "What does this process do?",
-                    process: true,
-                },
-            ],
-        },
-        {
-            name: "BPMN Help",
-            prompts: [
-                {
-                    text: "How can I represent decision points in a BPMN Diagram?",
-                },
-                {
-                    text: "What's the best way to depict parallel activities in BPMN?",
-                },
-            ],
-        },
+// Mocked Data
+const mockedPrompts = new Map<string, DefaultPrompt[]>([
+    [
+        "General Question",
+        [
+            new DefaultPrompt(
+                "What is business process modeling, and why is it important for organizations?",
+            ),
+            new DefaultPrompt("What does this process do?", true),
+        ],
     ],
-};
+    [
+        "BPMN Help",
+        [
+            new DefaultPrompt("How can I represent decision points in a BPMN Diagram?"),
+            new DefaultPrompt(
+                "What's the best way to depict parallel activities in BPMN?",
+            ),
+        ],
+    ],
+]);
+
+const mockedBpmnFiles = [
+    new BpmnFile("test1.bpmn", "workspace1", "/full/path/to/workspace1/test1.bpmn"),
+    new BpmnFile("test2.bpmn", "workspace2", "/full/path/to/workspace2/test2.bpmn"),
+    new BpmnFile("test3.bpmn", "workspace3", "/full/path/to/workspace3/test3.bpmn"),
+    new BpmnFile("test4.bpmn", "workspace3", "/full/path/to/workspace3/test4.bpmn"),
+];
