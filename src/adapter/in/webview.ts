@@ -49,7 +49,7 @@ export class CopilotWebview {
         this.panel = window.createWebviewPanel(
             this.viewType,
             "Miranum IDE",
-            ViewColumn.One,
+            ViewColumn.Beside,
             {
                 enableScripts: true,
                 localResourceRoots: [Uri.joinPath(extensionUri, this.webviewPath)],
@@ -121,6 +121,9 @@ export class CopilotWebview {
 
         const scriptUri = webview.asWebviewUri(Uri.joinPath(baseUri, "main.js"));
         const styleUri = webview.asWebviewUri(Uri.joinPath(baseUri, "main.css"));
+        const codiconUri = webview.asWebviewUri(
+            Uri.joinPath(baseUri, "codicons", "codicon.css"),
+        );
 
         const nonce = getNonce();
 
@@ -139,6 +142,7 @@ export class CopilotWebview {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
                 <link href="${styleUri}" rel="stylesheet" type="text/css" />
+                <link href="${codiconUri}" rel="stylesheet" type="text/css" />
 
                 <title>Miranum Copilot</title>
             </head>

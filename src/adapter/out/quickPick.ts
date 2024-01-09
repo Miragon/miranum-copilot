@@ -346,11 +346,17 @@ async function showInputBox({
             inputBox.totalSteps = totalSteps;
             inputBox.placeholder = placeholder;
             inputBox.prompt = prompt;
-            inputBox.busy = busy;
 
             // TODO: Validate input
             disposables.push(
-                inputBox.onDidAccept(() => resolve(inputBox.value)),
+                inputBox.onDidAccept(() => {
+                    inputBox.enabled = false;
+                    inputBox.busy = true;
+                    resolve(inputBox.value)
+                    inputBox.enabled = true;
+                    inputBox.busy = false;
+                    inputBox.hide();
+                }),
                 inputBox.onDidHide(() => reject()),
             );
 

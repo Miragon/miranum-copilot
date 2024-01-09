@@ -13,7 +13,6 @@ import {
     LogInfoCommand,
     MiranumCopilotQuery,
     PromptQuery,
-    Template,
 } from "../../shared";
 import { createResolver } from "@/utils";
 
@@ -74,6 +73,7 @@ onBeforeMount(async () => {
 
     try {
         const state = vscode.getState("DefaultViewState"); // Throws MissingStateError if no state is available
+
         // TODO: Ask backend if there were unsuccessful requests
 
         bpmnFiles.value = state.bpmnFiles;
@@ -188,7 +188,7 @@ main {
         "output";
     gap: 40px;
 
-    width: 800px;
+    max-width: 800px;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

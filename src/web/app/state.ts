@@ -22,7 +22,7 @@ export function setGlobalState(newState: ConcreteState): void {
 
 interface CopilotStateParams {
     bpmnFiles: BpmnFile[];
-    prompts: Map<string, DefaultPrompt[]>;
+    prompts: string;
 }
 
 class CopilotState {
@@ -49,7 +49,7 @@ class CopilotState {
     static createFrom({ bpmnFiles, prompts }: CopilotStateParams): CopilotState {
         const state = new CopilotState();
         state.bpmnFiles = bpmnFiles;
-        state.prompts = prompts;
+        state.prompts = new Map<string, DefaultPrompt[]>(JSON.parse(prompts));
         return state;
     }
 }
@@ -100,7 +100,7 @@ export class DefaultViewState extends CopilotState {
     }: DefaultViewStateParams): DefaultViewState {
         const state = new DefaultViewState();
         state.bpmnFiles = bpmnFiles;
-        state.prompts = prompts;
+        state.prompts = new Map<string, DefaultPrompt[]>(JSON.parse(prompts));
         state.currentPrompt = currentPrompt;
         state.selectedBpmnFile = selectedBpmnFile;
         state.aiResponse = aiResponse;
@@ -110,7 +110,7 @@ export class DefaultViewState extends CopilotState {
     serialize(): DefaultViewStateParams {
         return {
             bpmnFiles: this.bpmnFiles,
-            prompts: this.prompts,
+            prompts: JSON.stringify(Array.from(this.prompts.entries())),
             currentPrompt: this.currentPrompt,
             selectedBpmnFile: this.selectedBpmnFile,
             aiResponse: this.aiResponse,

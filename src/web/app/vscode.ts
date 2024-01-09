@@ -82,7 +82,7 @@ class VsCodeImpl implements VsCode {
         // if there are multiple views with different state ids, we need to check which one has changed
         this.vscode.setState({
             lastViewStateId: "DefaultViewState",
-            defaultViewState: state,
+            defaultViewState: state.serialize(),
         });
     }
 

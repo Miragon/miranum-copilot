@@ -17,7 +17,7 @@ const selectedCategory = ref("");
 
 const buttonStyle = computed(() => {
     return {
-        left: isSidebarVisible.value ? "33%" : "0",
+        left: isSidebarVisible.value ? `44%` : "0",
     };
 });
 
@@ -41,13 +41,9 @@ const toggleSidebar = () => {
 
 <template>
     <div class="sidebar-container">
-        <button :style="buttonStyle" @click="toggleSidebar">
-            <div class="hamburger-icon">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </button>
+        <vscode-button :style="buttonStyle" class="menu-btn" @click="toggleSidebar">
+            <span class="codicon codicon-menu"></span>
+        </vscode-button>
         <div id="sidebar" :class="{ show: isSidebarVisible }">
             <!-- Sidebar content -->
             <ul>
@@ -77,12 +73,12 @@ const toggleSidebar = () => {
 
 <style scoped>
 #sidebar {
-    width: 33%;
+    width: 44%;
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
-    background-color: #202020;
+    background-color: var(--vscode-editor-background);
     overflow-y: auto;
     transition: transform 0.3s ease-in-out;
     transform: translateX(-100%);
@@ -97,28 +93,12 @@ const toggleSidebar = () => {
     position: relative;
 }
 
-button {
+.menu-btn {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 9999;
     transition: left 0.3s ease-in-out;
-    background-color: #383838;
-    color: #e0e0e0;
-}
-
-.hamburger-icon {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 19px;
-}
-
-.hamburger-icon span {
-    display: block;
-    width: 20px;
-    height: 3px;
-    background-color: #e0e0e0;
 }
 
 #sidebar ul {
@@ -135,16 +115,16 @@ button {
     transition:
         background-color 0.3s,
         transform 0.2s;
-    background-color: #303030;
+    background-color: var(--vscode-editor-background);
     text-align: center;
     font-size: 20px;
     font-weight: bold;
-    color: #e0e0e0;
+    color: var(--vscode-editor-foreground);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #sidebar li:hover {
-    background-color: #404040;
+    background-color: var(--vscode-editor-hoverHighlightBackground);
     transform: scale(1.02);
 }
 
@@ -153,11 +133,11 @@ button {
     margin: 20px 0;
     padding: 20px;
     cursor: default;
-    font-size: 22px;
+    font-size: 16px;
     text-align: left;
     font-weight: normal;
     line-height: 2;
-    color: #e0e0e0;
+    color: var(--vscode-editor-foreground);
 }
 
 .expand-icon {
