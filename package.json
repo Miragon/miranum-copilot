@@ -21,7 +21,7 @@
     "engines": {
         "vscode": "^1.82.0"
     },
-    "icon": "./images/miranum_logo.png",
+    "icon": "./images/miranum_icon.png",
     "categories": [
         "Other"
     ],
