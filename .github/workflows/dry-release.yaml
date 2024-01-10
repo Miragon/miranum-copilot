@@ -32,7 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-      - create-release
     steps:
       - name: Setup NodeJS 16
         uses: actions/setup-node@v4
