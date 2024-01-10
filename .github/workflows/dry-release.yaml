@@ -27,7 +27,6 @@ jobs:
             README.md
             CHANGELOG.md
             package.json
-            tsconfig.json
 
   package-miranum-copilot:
     runs-on: ubuntu-latest
@@ -43,7 +42,7 @@ jobs:
         with:
           name: miranum-copilot
       - name: Prepare
-        run: npm install -g @vscode/vsce@latest
+        run: npm install && npm install -g @vscode/vsce@latest
       - name: Build vsce package
         run: vsce package --out miranum-copilot.vsix
       - uses: actions/upload-artifact@v4
