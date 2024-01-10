@@ -14,10 +14,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Setup NodeJS 16
+      - name: Setup NodeJS 18
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
       - name: Install dependencies
         run: npm install
       - name: Build
@@ -34,6 +34,7 @@ jobs:
             README.md
             CHANGELOG.md
             package.json
+            package-lock.json
 
   create-release:
     if: github.event.inputs.release-tag
@@ -69,16 +70,16 @@ jobs:
       - build
       - create-release
     steps:
-      - name: Setup NodeJS 16
+      - name: Setup NodeJS 18
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       - uses: actions/download-artifact@v4
         with:
           name: miranum-copilot
       - name: Prepare
-        run: npm install -g @vscode/vsce@latest
+        run: npm install && npm install -g @vscode/vsce@latest
       - name: Publish extension
         run: vsce publish
         env:
