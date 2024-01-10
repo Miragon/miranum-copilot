@@ -27,6 +27,7 @@ jobs:
             README.md
             CHANGELOG.md
             package.json
+            tsconfig.json
 
   package-miranum-copilot:
     runs-on: ubuntu-latest
