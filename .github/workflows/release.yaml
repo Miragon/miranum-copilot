@@ -26,7 +26,6 @@ jobs:
         with:
           name: miranum-copilot
           path: |
-            src/
             dist/
             images/
             resources/
@@ -79,7 +78,7 @@ jobs:
         with:
           name: miranum-copilot
       - name: Prepare
-        run: npm install && npm install -g @vscode/vsce@latest
+        run: npm install -g @vscode/vsce@latest
       - name: Publish extension
         run: vsce publish
         env:
