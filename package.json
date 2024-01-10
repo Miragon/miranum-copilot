@@ -21,7 +21,7 @@
     "engines": {
         "vscode": "^1.82.0"
     },
-    "icon": "images/miranum_logo.png",
+    "icon": "./images/miranum_icon.png",
     "categories": [
         "Other"
     ],
@@ -90,7 +90,6 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
         "pretest": "npm run lint && npm run compile",
         "compile": "tsc --skipLibCheck -p ./",
         "lint": "eslint src --ext ts",
