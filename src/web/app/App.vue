@@ -74,14 +74,22 @@ onBeforeMount(async () => {
     try {
         const state = vscode.getState("DefaultViewState"); // Throws MissingStateError if no state is available
 
-        // TODO: Ask backend if there were unsuccessful requests
+        vscode.postMessage(new GetBpmnFilesCommand());
+        vscode.postMessage(new GetPromptsCommand());
 
-        bpmnFiles.value = state.bpmnFiles;
-        prompts.value = state.prompts;
+        const [bpmnFilesData, promptsData] = [
+            await bpmnFilesResolver.wait(),
+            await promptsResolver.wait(),
+        ];
+
+        bpmnFiles.value = bpmnFilesData ?? [];
+        prompts.value = promptsData ?? new Map();
         userPrompt.value = state.currentPrompt;
         aiResponse.value = state.aiResponse;
         selectedBpmn.value = state.selectedBpmnFile;
 
+        state.bpmnFiles = bpmnFilesData ?? [];
+        state.prompts = promptsData ?? new Map();
         setGlobalState(state);
 
         loading.value = false;
