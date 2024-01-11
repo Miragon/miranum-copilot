@@ -6,4 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.5.7] - 2024-01-11
+
 - Initial release
+
+
+[unreleased]: https://github.com/Miragon/miranum-ide/compare/release/v0.1.0...HEAD
+[0.1.0]: https://github.com/Miragon/miranum-ide/compare/release/v0.1.0
