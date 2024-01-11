@@ -5,17 +5,18 @@
             "name": "General Questions",
             "prompts": [
                 {
-                    "text": "What is business process modeling, and why is it important for organizations?"
+                    "text": "Please explain in the role of a BPM Consultant what Business Process Modeling is and why it is important for organizations. Also provide five examples for typical business processes."
                 },
                 {
-                    "text": "What does this process do?",
+                    "text": "In the role of a BPM Consultant please give a brief summary of what this process does and explain its structure and elements in a clear way:",
                     "process": true
                 },
                 {
-                    "text": "What are common mistakes to avoid when creating BPMN diagrams?"
+                    "text": "In the role of a BPM Consultant name common mistakes to avoid when creating BPMN diagrams."
                 },
                 {
-                    "text": "Can you create a basic bpmn diagram for the following process?"
+                    "text": "Please create a basic text-based BPMN diagram for the following process:",
+                    "process": true
                 }
             ]
         },
@@ -23,22 +24,22 @@
             "name": "BPMN Help",
             "prompts": [
                 {
-                    "text": "How can I represent decision points in a BPMN Diagram?"
+                    "text": "How can decision points be represented in a BPMN Diagram? Also provide a basic example of a decision point."
                 },
                 {
-                    "text": "What's the best way to depict parallel activities in BPMN?"
+                    "text": "Please explain what the best way to depict parallel activities is in BPMN and provide a basic example."
                 },
                 {
-                    "text": "Explain the different types of gateways in BPMN and when to use each."
+                    "text": "Display the different types of gateways in BPMN and explain for which cases each one is used."
                 },
                 {
-                    "text": "Can you provide examples of inclusive and exclusive gateways?"
+                    "text": "In the context of BPM please provide examples of inclusive and exclusive gateways."
                 },
                 {
-                    "text": "Can you help me understand when to use manual tasks and automated tasks?"
+                    "text": "Please help me understand the distinction of manual tasks and automated tasks in the context of BPMN and when to use them."
                 },
                 {
-                    "text": "What are some best practices for naming tasks and activities in BPMN?"
+                    "text": "Please name some best practices for naming tasks and activities in the context of BPMN."
                 }
             ]
         },
@@ -46,16 +47,16 @@
             "name": "Specific Tasks",
             "prompts": [
                 {
-                    "text": "Give me ideas on how to represent user tasks in BPMN."
+                    "text": "In the role of a BPM Consultant provide me with some ideas on how to represent user tasks in BPMN."
                 },
                 {
-                    "text": "How do I model a service task that interacts with an external system?"
+                    "text": "In the role of a BPM Consultant explain how I model a service task that interacts with an external system."
                 },
                 {
-                    "text": "How can I show that an error occurred during a process step?"
+                    "text": "In the context of BPMN, how can I show that an error occurred during a process step in the best way?"
                 },
                 {
-                    "text": "Are there ways to improve this model?",
+                    "text": "In the role of a BPM Consultant please check if there are ways to improve this provided model and propose improvements accordingly.",
                     "process": true
                 }
             ]
@@ -64,22 +65,22 @@
             "name": "Forms",
             "prompts": [
                 {
-                    "text": "What benefits does the creation and usage of forms have?"
+                    "text": "What benefits does the creation and usage of forms in the realm of BPMN have?"
                 },
                 {
-                    "text": "Generate a form for user tasks in the process.",
+                    "text": "Generate a form for user tasks in the provided process.",
                     "process": true
                 },
                 {
-                    "text": "Include a brief description for each form field in the form.",
+                    "text": "Include a brief description for each form field in the provided form.",
                     "form": true
                 },
                 {
-                    "text": "How can I optimize this existing form?",
+                    "text": "In the role of a BPM Specialist tell me how I could optimize this existing form.",
                     "form": true
                 },
                 {
-                    "text": "Design a visually appealing form layout for the process.",
+                    "text": "Design a visually appealing form layout for the provided process.",
                     "process": true
                 }
             ]
