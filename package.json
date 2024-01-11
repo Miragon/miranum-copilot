@@ -1,8 +1,8 @@
 {
     "name": "miranum-copilot",
-    "displayName": "miranum-copilot",
-    "description": "A copilot that helps BPM-Developer.",
-    "license": "Apache-2.0",
+    "displayName": "Miranum Copilot",
+    "description": "A AI-powered copilot for the unique needs and challenges faced in BPM.",
+    "license": "SEE LICENSE IN LICENSE",
     "version": "0.1.0",
     "publisher": "miragon-gmbh",
     "preview": true,
