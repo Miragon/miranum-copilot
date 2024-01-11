@@ -37,7 +37,7 @@ Management (BPM).
 
 ### Features
 
-> ❗Miranum Copilot is a preview release.❗
+> ❗Miranum Copilot is a preview release❗
 
 * Question & Answering for BPM-Related Queries
 * Automated Process Documentation for BPMN Processes
